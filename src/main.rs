@@ -14,6 +14,7 @@ use std::io;
 use std::io::stdin;
 use id3::Tag;
 use id3::TagLike;
+use std::collections::HashMap;
 
 const CURRENT: GlobalSignal<Option<i32>> = GlobalSignal::new(|| Some(1));
 const DB: GlobalSignal<SqliteConnection> = GlobalSignal::new(|| establish_connection());
@@ -27,25 +28,25 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    use_future(|| async {
-        let songs = get_song_files().unwrap();
-
-        for song in songs {
-            let tag = Tag::read_from_path(song.clone()).unwrap();
-
-            let title = tag.title().unwrap_or_default();
-            let artist = tag.artist().unwrap_or_default();
-            let album = tag.album().unwrap_or_default();
-            let genre = tag.genre().unwrap_or_default();
-            let mut year = String::new();
-            if let Some(tag_year) = tag.get("Date") {
-                year = tag_year.to_string();
-                println!("{year}");
-            }
-
-            create_track(&mut *DB.write(), &song, title, artist, album, genre, &year, "");
-        }
-    });
+    // use_future(|| async {
+    //     let songs = get_song_files().unwrap();
+    //
+    //     for song in songs {
+    //         let tag = Tag::read_from_path(song.clone()).unwrap();
+    //
+    //         let title = tag.title().unwrap_or_default();
+    //         let artist = tag.artist().unwrap_or_default();
+    //         let album = tag.album().unwrap_or_default();
+    //         let genre = tag.genre().unwrap_or_default().replace("\0", ";");
+    //         let mut year = String::new();
+    //         if let Some(tag_year) = tag.get("Date") {
+    //             year = tag_year.to_string();
+    //             println!("{year}");
+    //         }
+    //
+    //         create_track(&mut *DB.write(), &song, title, artist, album, &genre, &year, "");
+    //     }
+    // });
 
     let results = use_signal(|| load_tracks(&mut *DB.write()));
 
@@ -57,7 +58,8 @@ fn App() -> Element {
 #[component]
 fn SongView() -> Element {
     let current_song = use_memo(|| get_song(CURRENT().unwrap()));
-    let genres = use_memo(move || current_song().genre.split("\0").map(|s| s.to_string()).collect::<Vec<String>>());
+    let genres = use_memo(move || current_song().genre.split(";").map(|s| s.to_string()).collect::<Vec<String>>());
+    let matches = use_memo(move || find_song_matches(&genres(), 0));
 
     rsx! {
         h2 {
@@ -72,8 +74,11 @@ fn SongView() -> Element {
         }
         div {
             for genre in genres() {
-                "{genre}"
+                "{genre} | "
             }
+        }
+        div {
+            "{matches:?}"
         }
     }
 }
@@ -90,6 +95,23 @@ pub fn get_song(trackid: i32) -> Track {
         [0].clone()
 }
 
+pub fn find_song_matches(genres: &Vec<String>, limit: i32) -> Vec<(String, i32)> {
+    let mut songs = HashMap::new();
+
+    for genre in genres {
+        let genres_songs = load_genre(genre);
+        println!("{:?}, {:?}", genres_songs.len(), genre);
+        for song in genres_songs {
+            *songs.entry(song.file).or_insert(0) += 1;
+        }
+    }
+
+    let mut songs = songs.into_iter().collect::<Vec<(String, i32)>>();
+    songs.sort_by(|a, b| b.1.cmp(&a.1));
+
+    songs
+}
+
 pub fn load_tracks(conn: &mut SqliteConnection) -> Vec<Track> {
     use crate::schema::tracks::dsl::*;
 
@@ -99,6 +121,14 @@ pub fn load_tracks(conn: &mut SqliteConnection) -> Vec<Track> {
         .expect("Error loading posts");
 
     results
+}
+
+pub fn load_genre(genre_to_match: &str) -> Vec<Track> {
+    use crate::schema::tracks::dsl::*;
+
+    tracks
+        .filter(genre.like(format!("%{genre_to_match}%")))
+        .load::<Track>(&mut *DB.write()).expect("error")
 }
 
 pub fn create_track(
