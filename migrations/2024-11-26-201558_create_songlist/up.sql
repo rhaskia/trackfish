@@ -15,3 +15,10 @@ CREATE TABLE listens (
     listenstart DATETIME NOT NULL,
     listentime INTEGER NOT NULL
 );
+
+CREATE TABLE genres (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    genre1 TEXT NOT NULL,
+    genre2 TEXT NOT NULL,
+    count INTEGER NOT NULL
+);

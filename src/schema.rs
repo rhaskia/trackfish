@@ -1,6 +1,15 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    genres (id) {
+        id -> Nullable<Integer>,
+        genre1 -> Text,
+        genre2 -> Text,
+        count -> Integer,
+    }
+}
+
+diesel::table! {
     listens (id) {
         id -> Nullable<Integer>,
         trackid -> Integer,
@@ -23,6 +32,7 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
+    genres,
     listens,
     tracks,
 );
