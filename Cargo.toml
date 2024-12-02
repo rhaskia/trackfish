@@ -16,3 +16,8 @@ diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlit
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 dotenvy = "0.15"
 id3 = "1.15.0"
+rand = "0.8.5"
+tokio = "1.41.1"
+http = "1.1.0"
+http-range = "0.1.5"
+rodio = "0.20.1"

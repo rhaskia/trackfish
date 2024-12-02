@@ -1,24 +1,31 @@
 #![feature(trivial_bounds)]
 
+pub mod audio;
 pub mod models;
 pub mod schema;
 
 use diesel::prelude::*;
-use diesel::upsert::*;
 use dioxus::prelude::*;
 use dotenvy::dotenv;
-use id3::Version;
+use id3::Tag;
+use id3::TagLike;
 use models::*;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
-use std::io::stdin;
-use id3::Tag;
-use id3::TagLike;
-use std::collections::HashMap;
-use std::fs::File;
+use std::io::Cursor;
 
-const CURRENT: GlobalSignal<Option<i32>> = GlobalSignal::new(|| Some(2));
+use dioxus::desktop::wry::http;
+use dioxus::desktop::wry::http::Response;
+use dioxus::desktop::{use_asset_handler, AssetRequest};
+use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
+use std::io::SeekFrom;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+
+use audio::AudioPlayer;
+
+const CURRENT: GlobalSignal<Option<i32>> = GlobalSignal::new(|| Some(3));
 const DB: GlobalSignal<SqliteConnection> = GlobalSignal::new(|| establish_connection());
 const CURRENT_TRACK: GlobalSignal<Option<Track>> = GlobalSignal::new(|| None);
 
@@ -27,21 +34,21 @@ fn main() {
     let songs = get_song_files().unwrap();
     clear_genre_matches(&mut conn);
 
-    for song in songs {
-        let mut tag = Tag::read_from_path(song.clone()).unwrap();
-
-        let title = tag.title().unwrap_or_default();
-        let artist = tag.artist().unwrap_or_default();
-        let album = tag.album().unwrap_or_default();
-        let genre = tag.genre().unwrap_or_default().replace("\0", ";");
-        let mut year = String::new();
-        if let Some(tag_year) = tag.get("Date") {
-            year = tag_year.to_string();
-            println!("{year}");
-        }
-
-        create_track(&mut conn, &song, title, artist, album, &genre, &year, "");
-    }
+    // for song in songs {
+    //     let mut tag = Tag::read_from_path(song.clone()).unwrap();
+    //
+    //     let title = tag.title().unwrap_or_default();
+    //     let artist = tag.artist().unwrap_or_default();
+    //     let album = tag.album().unwrap_or_default();
+    //     let genre = tag.genre().unwrap_or_default().replace("\0", ";");
+    //     let mut year = String::new();
+    //     if let Some(tag_year) = tag.get("Date") {
+    //         year = tag_year.to_string();
+    //         println!("{year}");
+    //     }
+    //
+    //     create_track(&mut conn, &song, title, artist, album, &genre, &year, "");
+    // }
 
     drop(conn);
 
@@ -60,20 +67,50 @@ fn App() -> Element {
 #[component]
 fn SongView() -> Element {
     let current_song = use_memo(|| get_song(CURRENT().unwrap()));
-    let genres = use_memo(move || current_song().genre.split(";").map(|s| s.to_string()).collect::<Vec<String>>());
+    let genres = use_memo(move || {
+        current_song().genre.split(";").map(|s| s.to_string()).collect::<Vec<String>>()
+    });
     let matches = use_memo(move || find_song_matches(&current_song().file, &genres(), 0));
     let mut genre_weights = use_signal(|| HashMap::new());
+
+    let mut player = use_signal(|| AudioPlayer::new());
+
+    use_asset_handler("images", move |request, responder| {
+        let path = clean_request_url(request.uri().path().replace("/images/", ""));
+        println!("{path}");
+        let tag = Tag::read_from_path(path).unwrap();
+        let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
+
+        tokio::task::spawn(async move {
+            match get_stream_response(&mut file, &request).await {
+                Ok(response) => responder.respond(response),
+                Err(err) => eprintln!("Error: {}", err),
+            }
+        });
+    });
+
+    use_future(move || async move {
+        player.write().play_track(&current_song().file);
+    });
+
+    let skip = move |e: Event<MouseData>| {
+        if let Some(ref mut trackno) = *CURRENT.write() {
+            let next = track_from_file(&matches.read()[0].0);
+            *trackno = next.id.unwrap();
+            player.write().play_track(&current_song().file);
+            println!("{:?}", current_song);
+        }
+    };
 
     rsx! {
         h2 {
             "{current_song.read().title}"
         }
+        img {
+            src: "/images/{current_song().file}",
+        }
         button {
-            onclick: move |e| if let Some(ref mut trackno) = *CURRENT.write() {
-                let next = track_from_file(&matches.read()[0].0);
-                *trackno = next.id.unwrap();
-                println!("{:?}", current_song);
-            },
+            onclick: skip,
             "skip"
         }
         div {
@@ -101,21 +138,41 @@ fn SongView() -> Element {
     }
 }
 
+pub fn clean_request_url(url: String) -> String {
+    let mut result = String::new();
+
+    let mut i = 0;
+    while i < url.len() {
+        let c = url.chars().nth(i).unwrap();
+        if c == '%' {
+            let hex_pair = &url[i + 1..i + 3];
+            let byte = u8::from_str_radix(hex_pair, 16).unwrap();
+            result.push(byte as char);
+            i += 3;
+        } else {
+            result.push(c);
+            i += 1;
+        }
+    }
+
+    result
+}
+
 pub fn get_song(trackid: i32) -> Track {
-    use crate::schema::tracks::id;
     use crate::schema::tracks::dsl::*;
+    use crate::schema::tracks::id;
 
     tracks
         .filter(id.eq(trackid))
         .select(Track::as_select())
         .load(&mut *DB.write())
-        .expect("Error loading tracks")
-        [0].clone()
+        .expect("Error loading tracks")[0]
+        .clone()
 }
 
 pub fn clear_genre_matches(conn: &mut SqliteConnection) {
     use crate::schema::genres::dsl::genres;
-    
+
     diesel::delete(genres).execute(conn);
 }
 
@@ -153,10 +210,7 @@ pub fn track_from_file(file_name: &str) -> Track {
 pub fn load_tracks(conn: &mut SqliteConnection) -> Vec<Track> {
     use crate::schema::tracks::dsl::*;
 
-    let results = tracks
-        .select(Track::as_select())
-        .load(conn)
-        .expect("Error loading posts");
+    let results = tracks.select(Track::as_select()).load(conn).expect("Error loading posts");
 
     results
 }
@@ -166,7 +220,8 @@ pub fn load_genre(genre_to_match: &str) -> Vec<Track> {
 
     tracks
         .filter(genre.like(format!("%{genre_to_match}%")))
-        .load::<Track>(&mut *DB.write()).expect("error")
+        .load::<Track>(&mut *DB.write())
+        .expect("error")
 }
 
 pub fn create_track(
@@ -186,7 +241,8 @@ pub fn create_track(
     diesel::insert_into(tracks::table)
         .values(&new_track)
         .returning(Track::as_returning())
-        .on_conflict((tracks::dsl::file)).do_nothing()
+        .on_conflict(tracks::dsl::file)
+        .do_nothing()
         .execute(conn)
         .expect("Error saving new track");
 }
@@ -217,3 +273,148 @@ fn get_song_files() -> Result<Vec<String>, io::Error> {
 
     Ok(mp3_files)
 }
+
+/// This was taken from wry's example
+async fn get_stream_response(
+    asset: &mut (impl tokio::io::AsyncSeek + tokio::io::AsyncRead + Unpin + Send + Sync),
+    request: &AssetRequest,
+) -> Result<Response<Vec<u8>>, Box<dyn std::error::Error>> {
+    // get stream length
+    let len = {
+        let old_pos = asset.stream_position().await?;
+        let len = asset.seek(SeekFrom::End(0)).await?;
+        asset.seek(SeekFrom::Start(old_pos)).await?;
+        len
+    };
+
+    let mut resp = ResponseBuilder::new().header(CONTENT_TYPE, "image/png");
+
+    // if the webview sent a range header, we need to send a 206 in return
+    // Actually only macOS and Windows are supported. Linux will ALWAYS return empty headers.
+    let http_response = if let Some(range_header) = request.headers().get("range") {
+        let not_satisfiable = || {
+            ResponseBuilder::new()
+                .status(StatusCode::RANGE_NOT_SATISFIABLE)
+                .header(CONTENT_RANGE, format!("bytes */{len}"))
+                .body(vec![])
+        };
+
+        // parse range header
+        let ranges = if let Ok(ranges) = http_range::HttpRange::parse(range_header.to_str()?, len) {
+            ranges
+                .iter()
+                // map the output back to spec range <start-end>, example: 0-499
+                .map(|r| (r.start, r.start + r.length - 1))
+                .collect::<Vec<_>>()
+        } else {
+            return Ok(not_satisfiable()?);
+        };
+
+        /// The Maximum bytes we send in one range
+        const MAX_LEN: u64 = 1000 * 1024;
+
+        if ranges.len() == 1 {
+            let &(start, mut end) = ranges.first().unwrap();
+
+            // check if a range is not satisfiable
+            //
+            // this should be already taken care of by HttpRange::parse
+            // but checking here again for extra assurance
+            if start >= len || end >= len || end < start {
+                return Ok(not_satisfiable()?);
+            }
+
+            // adjust end byte for MAX_LEN
+            end = start + (end - start).min(len - start).min(MAX_LEN - 1);
+
+            // calculate number of bytes needed to be read
+            let bytes_to_read = end + 1 - start;
+
+            // allocate a buf with a suitable capacity
+            let mut buf = Vec::with_capacity(bytes_to_read as usize);
+            // seek the file to the starting byte
+            asset.seek(SeekFrom::Start(start)).await?;
+            // read the needed bytes
+            asset.take(bytes_to_read).read_to_end(&mut buf).await?;
+
+            resp = resp.header(CONTENT_RANGE, format!("bytes {start}-{end}/{len}"));
+            resp = resp.header(CONTENT_LENGTH, end + 1 - start);
+            resp = resp.status(StatusCode::PARTIAL_CONTENT);
+            resp.body(buf)
+        } else {
+            let mut buf = Vec::new();
+            let ranges = ranges
+                .iter()
+                .filter_map(|&(start, mut end)| {
+                    // filter out unsatisfiable ranges
+                    //
+                    // this should be already taken care of by HttpRange::parse
+                    // but checking here again for extra assurance
+                    if start >= len || end >= len || end < start {
+                        None
+                    } else {
+                        // adjust end byte for MAX_LEN
+                        end = start + (end - start).min(len - start).min(MAX_LEN - 1);
+                        Some((start, end))
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            let boundary = format!("{:x}", rand::random::<u64>());
+            let boundary_sep = format!("\r\n--{boundary}\r\n");
+            let boundary_closer = format!("\r\n--{boundary}\r\n");
+
+            resp = resp.header(CONTENT_TYPE, format!("multipart/byteranges; boundary={boundary}"));
+
+            for (end, start) in ranges {
+                // a new range is being written, write the range boundary
+                buf.write_all(boundary_sep.as_bytes()).await?;
+
+                // write the needed headers `Content-Type` and `Content-Range`
+                buf.write_all(format!("{CONTENT_TYPE}: image/png\r\n").as_bytes()).await?;
+                buf.write_all(format!("{CONTENT_RANGE}: bytes {start}-{end}/{len}\r\n").as_bytes())
+                    .await?;
+
+                // write the separator to indicate the start of the range body
+                buf.write_all("\r\n".as_bytes()).await?;
+
+                // calculate number of bytes needed to be read
+                let bytes_to_read = end + 1 - start;
+
+                let mut local_buf = vec![0_u8; bytes_to_read as usize];
+                asset.seek(SeekFrom::Start(start)).await?;
+                asset.read_exact(&mut local_buf).await?;
+                buf.extend_from_slice(&local_buf);
+            }
+            // all ranges have been written, write the closing boundary
+            buf.write_all(boundary_closer.as_bytes()).await?;
+
+            resp.body(buf)
+        }
+    } else {
+        resp = resp.header(CONTENT_LENGTH, len);
+        let mut buf = Vec::with_capacity(len as usize);
+        asset.read_to_end(&mut buf).await?;
+        resp.body(buf)
+    };
+
+    http_response.map_err(Into::into)
+}
+
+// fn ensure_video_is_loaded() {
+//     let video_file = PathBuf::from(VIDEO_PATH);
+//     if !video_file.exists() {
+//         tokio::runtime::Runtime::new()
+//             .unwrap()
+//             .block_on(async move {
+//                 println!("Downloading video file...");
+//                 let video_url =
+//                     "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+//                 let mut response = reqwest::get(video_url).await.unwrap();
+//                 let mut file = tokio::fs::File::create(&video_file).await.unwrap();
+//                 while let Some(chunk) = response.chunk().await.unwrap() {
+//                     file.write_all(&chunk).await.unwrap();
+//                 }
+//             });
+//     }
+// }
