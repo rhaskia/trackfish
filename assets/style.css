@@ -1,0 +1,59 @@
+:root {
+    font-family: "system-ui";
+    --outline-color: #352e2e;
+}
+
+.like-button {
+    background-image: url("assets/like.svg");
+}
+
+.dislike-button {
+    background-image: url("assets/dislike.svg");
+}
+
+.skip-button {
+    background-image: url("assets/skip.svg");
+}
+ 
+.skipprev-button {
+    background-image: url("assets/skipprevious.svg");
+}
+
+.svg-button {
+    width: 24px;
+    aspect-ratio: 1;
+    border: none;
+}
+
+.songview {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.songview .buttonrow {
+    display: flex;
+    flex-direction: row;
+}
+
+.imageview {
+    width: 100%;
+    aspect-ratio: 1;
+}
+
+.imageview img {
+    object-fit: cover; 
+    object-position: center center;
+    overflow: hidden;
+    width: 100%;
+}
+
+.menubar {
+
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    border-top: 1px solid var(--outline-color);
+}

@@ -15,13 +15,17 @@ use std::env;
 use std::fs;
 use std::io;
 use std::io::Cursor;
+ use std::time::SystemTime;
 
+use dioxus::desktop::{use_window, WindowBuilder};
 use dioxus::desktop::wry::http;
 use dioxus::desktop::wry::http::Response;
 use dioxus::desktop::{use_asset_handler, AssetRequest};
 use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::time::Duration;
+use tokio::time;
 
 use audio::AudioPlayer;
 
@@ -30,10 +34,10 @@ const DB: GlobalSignal<SqliteConnection> = GlobalSignal::new(|| establish_connec
 const CURRENT_TRACK: GlobalSignal<Option<Track>> = GlobalSignal::new(|| None);
 
 fn main() {
-    let mut conn = establish_connection();
-    let songs = get_song_files().unwrap();
-    clear_genre_matches(&mut conn);
-
+    // let mut conn = establish_connection();
+    // let songs = get_song_files().unwrap();
+    // clear_genre_matches(&mut conn);
+    //
     // for song in songs {
     //     let mut tag = Tag::read_from_path(song.clone()).unwrap();
     //
@@ -49,10 +53,18 @@ fn main() {
     //
     //     create_track(&mut conn, &song, title, artist, album, &genre, &year, "");
     // }
+    //
+    // drop(conn);
 
-    drop(conn);
+    let window = WindowBuilder::new()
+        .with_title("Music Player");
 
-    launch(App);
+    let cfg = dioxus::desktop::Config::new()
+        .with_window(window)
+        .with_resource_directory("../assets/")
+        .with_menu(None);
+
+    LaunchBuilder::new().with_cfg(cfg).launch(App);
 }
 
 #[component]
@@ -60,7 +72,13 @@ fn App() -> Element {
     let results = use_signal(|| load_tracks(&mut *DB.write()));
 
     rsx! {
+        style {{ include_str!("../assets/style.css") }}
+
         SongView {}
+
+        MenuBar {
+
+        }
     }
 }
 
@@ -74,6 +92,7 @@ fn SongView() -> Element {
     let mut genre_weights = use_signal(|| HashMap::new());
 
     let mut player = use_signal(|| AudioPlayer::new());
+    let mut progress = use_signal(|| 0.0);
 
     use_asset_handler("images", move |request, responder| {
         let path = clean_request_url(request.uri().path().replace("/images/", ""));
@@ -97,44 +116,132 @@ fn SongView() -> Element {
         if let Some(ref mut trackno) = *CURRENT.write() {
             let next = track_from_file(&matches.read()[0].0);
             *trackno = next.id.unwrap();
-            player.write().play_track(&current_song().file);
+            player.write().play_track(&next.file);
+            player.write().skip();
             println!("{:?}", current_song);
         }
     };
 
+    use_future(move || async move {
+        loop {
+            *progress.write() += 0.25;
+            time::sleep(Duration::from_secs_f64(0.25)).await;
+        }
+    });
+
     rsx! {
-        h2 {
-            "{current_song.read().title}"
-        }
-        img {
-            src: "/images/{current_song().file}",
-        }
-        button {
-            onclick: skip,
-            "skip"
-        }
+        "{SystemTime::now():?}"
         div {
-            for genre in genres() {
-                "{genre} | "
-            }
-        }
-        div {
-            for i in 0..12.min(matches().len()) {
-                "{matches()[i].0}, {matches()[i].1}\n"
-            }
-        }
-        button {
-            onclick: move |e| {
-                for genre in genres() {
-                    *genre_weights.write().entry(genre).or_insert(0) += 1;
+            class: "songview",
+            div {
+                class: "imageview",
+                img {
+                    src: "/images/{current_song().file}",
                 }
-            },
-            "like"
+            }
+            h2 {
+                "{current_song.read().title}"
+            }
+            div {
+                class: "progressrow",
+                span {
+                    class: "songprogress",
+                }
+                input {
+                    r#type: "range",
+                    value: progress,
+                    max: player.read().song_length(),
+                    onchange: move |e| {
+                        let value = e.value().parse().unwrap();
+                        player.write().set_pos(value);   
+                        progress.set(value)
+                    }
+                }
+                span {
+                    class: "songlength",
+                }
+            }
+            div {
+                class: "buttonrow",
+                button {
+                    class: "skipprev-button",
+                    class: "svg-button",
+                    onclick: skip,
+                }
+                button {
+                    class: "svg-button",
+                    onclick: move |e| player.write().toggle_playing(),
+                    background_image: if player.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
+                }
+                button {
+                    class: "skip-button",
+                    class: "svg-button",
+                    onclick: skip,
+                }
+                button {
+                    onclick: move |e| {
+                        for genre in genres() {
+                            *genre_weights.write().entry(genre).or_insert(0) += 1;
+                        }
+                    },
+                    class: "like-button",
+                    class: "svg-button",
+                }
+                button {
+                    class: "dislike-button",
+                    class: "svg-button",
+                }
+            }
+            div {
+                for genre in genres() {
+                    "{genre} | "
+                }
+            }
+            div {
+                for i in 0..12.min(matches().len()) {
+                    "{matches()[i].0}, {matches()[i].1}\n"
+                }
+            }
+            "{genre_weights:?}"
         }
-        button {
-            "dislike"
+    }
+}
+
+#[component]
+pub fn MenuBar() -> Element {
+    rsx! {
+        div {
+            class: "buttonrow",
+            button {
+                class: "songview-button",
+                class: "svg-button",
+            }
+            button {
+                class: "alltracks-button",
+                class: "svg-button",
+            }
+            button {
+                class: "album-button",
+                class: "svg-button",
+            }
+            button {
+                class: "artist-button",
+                class: "svg-button",
+            }
+            button {
+                class: "genres-button",
+                class: "svg-button",
+            }
+            button {
+                class: "search-button",
+                class: "svg-button",
+            }
+            button {
+                class: "settings-button",
+                class: "svg-button",
+            }
         }
-        "{genre_weights:?}"
+
     }
 }
 
