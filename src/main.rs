@@ -3,6 +3,7 @@
 pub mod audio;
 pub mod models;
 pub mod schema;
+pub mod queue;
 
 use diesel::prelude::*;
 use dioxus::prelude::*;
@@ -28,6 +29,7 @@ use tokio::time::Duration;
 use tokio::time;
 
 use audio::AudioPlayer;
+use queue::QueueManager;
 
 const CURRENT: GlobalSignal<Option<i32>> = GlobalSignal::new(|| Some(3));
 const DB: GlobalSignal<SqliteConnection> = GlobalSignal::new(|| establish_connection());
@@ -93,9 +95,13 @@ fn SongView() -> Element {
 
     let mut player = use_signal(|| AudioPlayer::new());
     let mut progress = use_signal(|| 0.0);
+    let mut progress_held = use_signal(|| false);
+
+    let mut queue = use_signal(|| QueueManager::new(load_tracks(&mut *DB.write())));
 
     use_asset_handler("images", move |request, responder| {
-        let path = clean_request_url(request.uri().path().replace("/images/", ""));
+        let id = clean_request_url(request.uri().path().replace("/images/track-", ""));
+        let path = get_song(id.parse().unwrap()).file;
         println!("{path}");
         let tag = Tag::read_from_path(path).unwrap();
         let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
@@ -114,29 +120,35 @@ fn SongView() -> Element {
 
     let skip = move |e: Event<MouseData>| {
         if let Some(ref mut trackno) = *CURRENT.write() {
-            let next = track_from_file(&matches.read()[0].0);
+            // let next = track_from_file(&matches.read()[0].0);
+            let next = queue.write().next_song();
             *trackno = next.id.unwrap();
             player.write().play_track(&next.file);
             player.write().skip();
+            progress.set(0.0);
             println!("{:?}", current_song);
         }
     };
 
     use_future(move || async move {
+        let mut to_add = 0.0;
         loop {
-            *progress.write() += 0.25;
             time::sleep(Duration::from_secs_f64(0.25)).await;
+            if !progress_held() {
+                *progress.write() += to_add;
+                to_add = 0.0;
+            }
+            to_add += 0.25;
         }
     });
 
     rsx! {
-        "{SystemTime::now():?}"
         div {
             class: "songview",
             div {
                 class: "imageview",
                 img {
-                    src: "/images/{current_song().file}",
+                    src: "/images/track-{current_song().id.unwrap()}",
                 }
             }
             h2 {
@@ -150,12 +162,15 @@ fn SongView() -> Element {
                 input {
                     r#type: "range",
                     value: progress,
+                    step: 0.25,
                     max: player.read().song_length(),
                     onchange: move |e| {
                         let value = e.value().parse().unwrap();
                         player.write().set_pos(value);   
                         progress.set(value)
-                    }
+                    },
+                    onmousedown: move |e| progress_held.set(true),
+                    onmouseup: move |e| progress_held.set(false),
                 }
                 span {
                     class: "songlength",
@@ -163,6 +178,15 @@ fn SongView() -> Element {
             }
             div {
                 class: "buttonrow",
+                button {
+                    onclick: move |e| {
+                        for genre in genres() {
+                            *genre_weights.write().entry(genre).or_insert(0) += 1;
+                        }
+                    },
+                    class: "like-button",
+                    class: "svg-button",
+                }
                 button {
                     class: "skipprev-button",
                     class: "svg-button",
@@ -177,15 +201,6 @@ fn SongView() -> Element {
                     class: "skip-button",
                     class: "svg-button",
                     onclick: skip,
-                }
-                button {
-                    onclick: move |e| {
-                        for genre in genres() {
-                            *genre_weights.write().entry(genre).or_insert(0) += 1;
-                        }
-                    },
-                    class: "like-button",
-                    class: "svg-button",
                 }
                 button {
                     class: "dislike-button",

@@ -11,8 +11,6 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 
 diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
-# build libsqlite3 as part of the build process
-# uncomment this line if you run into setup issues
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 dotenvy = "0.15"
 id3 = "1.15.0"

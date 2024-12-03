@@ -23,6 +23,7 @@
     width: 24px;
     aspect-ratio: 1;
     border: none;
+    background-color: transparent;
 }
 
 .songview {
@@ -34,11 +35,16 @@
 .songview .buttonrow {
     display: flex;
     flex-direction: row;
+    justify-content: space-evenly;
 }
 
 .imageview {
     width: 100%;
     aspect-ratio: 1;
+        display: flex
+;
+    justify-content: center;
+    align-items: center;
 }
 
 .imageview img {
@@ -46,6 +52,7 @@
     object-position: center center;
     overflow: hidden;
     width: 100%;
+    border-radius: 8px
 }
 
 .menubar {
@@ -56,4 +63,14 @@ body {
     margin: 0;
     overflow: hidden;
     border-top: 1px solid var(--outline-color);
+}
+
+.progressrow {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+.progressrow input {
+    flex: 1 1 0;
 }
