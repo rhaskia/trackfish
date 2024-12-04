@@ -58,15 +58,7 @@ fn main() {
     //
     // drop(conn);
 
-    let window = WindowBuilder::new()
-        .with_title("Music Player");
-
-    let cfg = dioxus::desktop::Config::new()
-        .with_window(window)
-        .with_resource_directory("../assets/")
-        .with_menu(None);
-
-    LaunchBuilder::new().with_cfg(cfg).launch(App);
+    dioxus::launch(App);
 }
 
 #[component]
