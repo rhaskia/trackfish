@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::Track;
+use crate::track::Track;
 use rand::Rng;
 
 pub struct QueueManager {

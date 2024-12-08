@@ -3,10 +3,6 @@
     --outline-color: #352e2e;
 }
 
-* {
-    background: red;
-}
-
 .like-button {
     background-image: url("assets/like.svg");
 }
