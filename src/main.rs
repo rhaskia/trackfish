@@ -97,7 +97,6 @@ fn App() -> Element {
 
 
         div {
-            color: "#ff0000",
             "{tracks.read().len()}"
         }
 
@@ -112,7 +111,7 @@ fn App() -> Element {
 
 #[component]
 fn SongView() -> Element {
-    // let current_song = use_memo(|| get_song(CURRENT().unwrap()));
+    let current_song = use_memo(|| TRACKS.read()[CURRENT()].clone());
     // let genres = use_memo(move || {
     //     current_song().genre.split(";").map(|s| s.to_string()).collect::<Vec<String>>()
     // });
@@ -163,8 +162,7 @@ fn SongView() -> Element {
                 }
             }
             h2 {
-                // "{current_song.read().title}"
-                "title"
+                "{current_song.read().title}"
             }
             div {
                 class: "progressrow",
