@@ -1,6 +1,6 @@
 #![feature(trivial_bounds)]
 
-pub mod audio;
+//pub mod audio;
 // pub mod models;
 // pub mod schema;
 pub mod queue;
@@ -14,25 +14,27 @@ use id3::TagLike;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::fs::DirEntry;
 use std::io;
 use std::io::Cursor;
 use std::time::SystemTime;
 
-use dioxus::desktop::{use_window, WindowBuilder};
-use dioxus::desktop::wry::http;
-use dioxus::desktop::wry::http::Response;
-use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
+// use dioxus::desktop::{use_window, WindowBuilder};
+// use dioxus::desktop::wry::http;
+// use dioxus::desktop::wry::http::Response;
+use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode, Response};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::time::Duration;
 use tokio::time;
+use tracing::Level;
 
 #[cfg(target_os = "android")]
 use dioxus::mobile::{use_asset_handler, AssetRequest};
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, AssetRequest};
 
-use audio::AudioPlayer;
+//use audio::AudioPlayer;
 use queue::QueueManager;
 use track::Track;
 
@@ -64,7 +66,7 @@ fn main() {
     // }
     //
     // drop(conn);
-    //dioxus_logger::init(Level::INFO).expect("logger failed to init");
+    dioxus_logger::init(Level::INFO).expect("logger failed to init");
     
     dioxus::launch(App);
 }
@@ -72,8 +74,9 @@ fn main() {
 #[component]
 fn App() -> Element {
     // lazy way of cross platform support
-    println!("{:?}", DIR());
-    let tracks = use_signal(|| get_song_files(DIR()).unwrap());
+    tracing::info!("{:?}", DIR());
+   let tracks = use_signal(|| get_song_files(DIR()).unwrap());
+    let read_dir = use_signal(|| fs::read_dir(DIR()).unwrap().collect::<Vec<std::io::Result<DirEntry>>>());
 
     use_asset_handler("trackimage", move |request, responder| {
         println!("{:?}", request.uri());
@@ -97,11 +100,14 @@ fn App() -> Element {
 
 
         div {
-            "{tracks.read().len()}"
+            "{tracks.read():?}"
         }
 
+        div {
+            "{read_dir:?}"
+        }
 
-        SongView {}
+        //SongView {}
 
         MenuBar {
 
@@ -118,7 +124,7 @@ fn SongView() -> Element {
     // let matches = use_memo(move || find_song_matches(&current_song().file, &genres(), 0));
     // let mut genre_weights = use_signal(|| HashMap::new());
     
-    let mut player = use_signal(|| AudioPlayer::new());
+    //let mut player = use_signal(|| AudioPlayer::new());
     let mut progress = use_signal(|| 0.0);
     let mut progress_held = use_signal(|| false);
     
@@ -205,7 +211,7 @@ fn SongView() -> Element {
                 button {
                     class: "svg-button",
                     // onclick: move |e| player.write().toggle_playing(),
-                    background_image: if player.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
+                    // background_image: if player.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
                 }
                 button {
                     class: "skip-button",
@@ -321,6 +327,7 @@ pub fn MenuBar() -> Element {
 //
 pub fn load_tracks(directory: &str) -> Vec<Track> {
     let files = get_song_files(directory).unwrap();
+    tracing::info!("{files:?}");
 
     files.into_iter().map(|file| load_track(file)).collect()
 }
