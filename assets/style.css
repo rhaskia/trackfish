@@ -3,6 +3,19 @@
     --outline-color: #352e2e;
 }
 
+body {
+    height: 100vh;
+}
+
+#main {
+    height: 100%;
+}
+
+.mainview {
+    display: flex;
+    height: 100%;
+}
+
 .like-button {
     background-image: url("assets/like.svg");
 }
@@ -30,6 +43,8 @@
     padding: 20px;
     display: flex;
     flex-direction: column;
+    flex: 1 1 0;
+    border-right: 1px solid grey;
 }
 
 .songview .buttonrow {
@@ -38,11 +53,18 @@
     justify-content: space-evenly;
 }
 
+.listensview {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 3;
+    overflow-y: scroll;
+}
+
 .imageview {
     width: 100%;
     aspect-ratio: 1;
-        display: flex
-;
+        display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -56,7 +78,7 @@
 }
 
 .menubar {
-
+    border-top: 1px solid grey;
 }
 
 body {

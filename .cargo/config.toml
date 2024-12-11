@@ -1,3 +1,35 @@
+[target.aarch64-linux-android]
+linker = 'C:\Users\user\AppData\Local\Android\Sdk\ndk\25.2.9519653\toolchains/llvm/prebuilt/windows-x86_64\bin\aarch64-linux-android24-clang.cmd'
+rustflags = [
+    "-Clink-arg=-landroid",
+    "-Clink-arg=-llog",
+    "-Clink-arg=-lOpenSLES",
+]
+
+[target.armv7-linux-androideabi]
+linker = 'C:\Users\user\AppData\Local\Android\Sdk\ndk\25.2.9519653\toolchains/llvm/prebuilt/windows-x86_64\bin\armv7a-linux-androideabi24-clang.cmd'
+rustflags = [
+    "-Clink-arg=-landroid",
+    "-Clink-arg=-llog",
+    "-Clink-arg=-lOpenSLES",
+]
+
+[target.i686-linux-android]
+linker = 'C:\Users\user\AppData\Local\Android\Sdk\ndk\25.2.9519653\toolchains/llvm/prebuilt/windows-x86_64\bin\i686-linux-android24-clang.cmd'
+rustflags = [
+    "-Clink-arg=-landroid",
+    "-Clink-arg=-llog",
+    "-Clink-arg=-lOpenSLES",
+]
+
+[target.x86_64-linux-android]
+linker = 'C:\Users\user\AppData\Local\Android\Sdk\ndk\25.2.9519653\toolchains/llvm/prebuilt/windows-x86_64\bin\x86_64-linux-android24-clang.cmd'
+rustflags = [
+    "-Clink-arg=-landroid",
+    "-Clink-arg=-llog",
+    "-Clink-arg=-lOpenSLES",
+]
+
 [profile]
 
 [profile.dioxus-wasm]
