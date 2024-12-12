@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
 import eyed3
 import os
 import string
 
-directory = "/mnt/e/Music/"
+directory = "E:/Music/"
 files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 data = {}
 
@@ -28,9 +27,10 @@ def max(str1, str2):
         return str1
     return str2
 
+all_lists = []
 
 for file in files: 
-    audiofile = eyed3.load("/mnt/e/Music/" + file)
+    audiofile = eyed3.load("E:/Music/" + file)
 
     if not audiofile: 
         continue
@@ -38,20 +38,21 @@ for file in files:
     genre = audiofile.tag.genre 
 
     if genre:
-        genres = genre.name.split("\0")
+        genres = [clean(g) for g in genre.name.split("\0")]
+        all_lists.append(','.join(genres))
+            
         for genre1 in genres: 
             for genre2 in genres:
-                genre1 = clean(genre1)
-                genre2 = clean(genre2)
+                print(genre1, genre2)
                 firstgenre = min(genre1, genre2)
                 secondgenre = max(genre1, genre2)
                 key = (firstgenre, secondgenre)
                 data[key] = data.get(key, 0) + 1
-
-print(data)
 
 data = [(k[0], k[1], v) for k, v in data.items() if k[0] != k[1]]
 
 with open('weights.txt', 'w') as file:
     file.writelines(['' + line[0] + ',' + line[1] + ',' + str(line[2]) + '\n' for line in data])
 
+with open('genrelist.txt', 'w') as file:
+    file.write('\n'.join(all_lists))

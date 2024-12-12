@@ -29,7 +29,7 @@ with open("weights.txt", 'r') as csvfile:
         v_name[v2] = target
 
         g.add_edge(v1, v2)
-        e_weight[g.edge(v1, v2)] = 1.0 / float(weight)
+        e_weight[g.edge(v1, v2)] = 1 / float(weight)
 
 state = minimize_blockmodel_dl(g)
 vb, eb = betweenness(g)
@@ -42,7 +42,7 @@ def on_hover_vertex(v_index):
     else:
         v_inspector.set_text("")
 
-pos = sfdp_layout(g, eweight=e_weight, C=0.3,r=2,p=2)
+pos = sfdp_layout(g, eweight=e_weight, C=0.3,r=1,p=3)
 
 state.draw(output="graph.pdf", pos=pos, vertex_text=g.vertex_index)
 
