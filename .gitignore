@@ -8,3 +8,4 @@ dist
 build
 
 weights.txt
+predicted_genres.txt

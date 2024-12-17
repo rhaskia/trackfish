@@ -1,4 +1,4 @@
-#![feature(trivial_bounds)]
+//#![feature(trivial_bounds)]
 
 //pub mod audio;
 // pub mod models;
@@ -20,14 +20,15 @@ use std::io::Cursor;
 use std::time::SystemTime;
 
 // use dioxus::desktop::{use_window, WindowBuilder};
-use dioxus::desktop::wry::http;
-use dioxus::desktop::wry::http::Response;
+// use dioxus::desktop::wry::http;
+// use dioxus::desktop::wry::http::Response;
 use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::time;
 use tokio::time::Duration;
 use tracing::Level;
+use http::Response;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, AssetRequest};
@@ -48,33 +49,28 @@ const DIR: GlobalSignal<&str> = GlobalSignal::new(|| {
         "E:/Music"
     }
 });
-const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| load_tracks(DIR()));
+const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| Vec::new());
 
 fn main() {
-    // let mut conn = establish_connection();
-    // let songs = get_song_files().unwrap();
-    // clear_genre_matches(&mut conn);
-    //
-    // for song in songs {
-    //     let mut tag = Tag::read_from_path(song.clone()).unwrap();
-    //
-    //     let title = tag.title().unwrap_or_default();
-    //     let artist = tag.artist().unwrap_or_default();
-    //     let album = tag.album().unwrap_or_default();
-    //     let genre = tag.genre().unwrap_or_default().replace("\0", ";");
-    //     let mut year = String::new();
-    //     if let Some(tag_year) = tag.get("Date") {
-    //         year = tag_year.to_string();
-    //         println!("{year}");
-    //     }
-    //
-    //     create_track(&mut conn, &song, title, artist, album, &genre, &year, "");
-    // }
-    //
-    // drop(conn);
-    dioxus_logger::init(Level::INFO).expect("logger failed to init");
+    //dioxus_logger::init(Level::INFO).expect("logger failed to init");
 
-    dioxus::launch(App);
+    dioxus::launch(App2);
+}
+
+fn App2() -> Element {
+    // use_future(|| async {
+    //     crossbow::Permission::StorageRead.request_async().await;
+    //     //TRACKS.write().set(load_tracks(DIR()));
+    // });
+
+    rsx!{
+        div {
+            "hi"
+        }
+        h2 {
+            "hi 2"
+        }
+    }
 }
 
 #[component]
@@ -86,24 +82,27 @@ fn App() -> Element {
 
     let mut queue = use_signal(|| QueueManager::new(TRACKS()));
 
-    use_asset_handler("trackimage", move |request, responder| {
-        println!("{:?}", request.uri());
-        let id = request.uri().path().replace("/trackimage/", "");
-        let path = &TRACKS.read()[CURRENT()].file;
-        println!("{path}");
-        let tag = Tag::read_from_path(path).unwrap();
-        let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
+    // use_asset_handler("trackimage", move |request, responder| {
+    //     println!("{:?}", request.uri());
+    //     let id = request.uri().path().replace("/trackimage/", "");
+    //     let path = &TRACKS.read()[CURRENT()].file;
+    //     println!("{path}");
+    //     let tag = Tag::read_from_path(path).unwrap();
+    //     let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
+    //
+    //     tokio::task::spawn(async move {
+    //         match get_stream_response(&mut file, &request).await {
+    //             Ok(response) => responder.respond(response),
+    //             Err(err) => eprintln!("Error: {}", err),
+    //         }
+    //     });
+    // });
 
-        tokio::task::spawn(async move {
-            match get_stream_response(&mut file, &request).await {
-                Ok(response) => responder.respond(response),
-                Err(err) => eprintln!("Error: {}", err),
-            }
-        });
+    use_future(|| async {
     });
 
     rsx! {
-        style {{ include_str!("../assets/style.css") }}
+        //style {{ include_str!("../assets/style.css") }}
 
         div {
             class: "mainview",
@@ -111,7 +110,7 @@ fn App() -> Element {
             
             div {
                 class: "listensview",
-                "Next Up: {queue.read().next_up().title}"
+                //"Next Up: {queue.read().next_up().title}"
             }
         }
 

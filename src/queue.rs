@@ -36,10 +36,24 @@ impl QueueManager {
     }
 
     // what ??
-    pub fn next_track(&mut self) {
-        let current_queue = &self.queues[self.current_queue];
+    pub fn next_track(&mut self) -> usize {
+        let current_queue = &mut self.queues[self.current_queue];
 
-        //let 
+        current_queue.current_track += 1;
+
+        if let Some(next) = current_queue.cached_order.get(current_queue.current_track) {
+            return *next;
+        }
+
+        match current_queue.shuffle_mode {
+            ShuffleMode::PlaySimilar => self.next_similar(),
+            ShuffleMode::Random => 0, // play next queue
+            ShuffleMode::None => 0,
+        }
+    }
+
+    pub fn next_similar(&mut self) -> usize {
+        0
     }
 
     pub fn skip(&mut self) {
@@ -58,25 +72,36 @@ impl QueueManager {
         self.current_playing = next_track;
     }
 
+    // more so fill out the cached order
     pub fn shuffle_queue(&mut self) {
-        let current_queue = &mut self.queues[self.current_queue];
-
         // allow for override shuffle mode
-        match current_queue.shuffle_mode {
-            ShuffleMode::PlaySimilar => {}, // maybe just clear out listens/weights
+        match self.get_current_queue().shuffle_mode {
+            ShuffleMode::PlaySimilar => {
+                self.mut_current_queue().cached_order = Vec::new();
+            }, // maybe just clear out listens/weights
             ShuffleMode::Random => {
-                let unshuffled = self.get_matching(current_queue.queue_type);      
+                let current_type = self.get_current_queue().queue_type.clone();
+                let unshuffled = self.get_matching(current_type);      
 
-                current_queue.cached_order = unshuffled;
+                self.mut_current_queue().cached_order = unshuffled;
             },
+            ShuffleMode::None => {},
         }
     } 
 
     pub fn get_matching(&self, queue_type: QueueType) -> Vec<usize> {
         if queue_type == QueueType::AllTracks { return (0..self.all_tracks.len()).collect(); }
 
-        self.all_tracks.iter().enumerate().filter(|(track, index)| track.matches(queue_type)).map(|(_, index)| index).collect()
+        self.all_tracks.iter().enumerate().filter(|(index, track)| track.matches(queue_type.clone())).map(|(index, track)| index).collect()
     }
+
+    fn get_current_queue(&self) -> &Queue {
+        &self.queues[self.current_queue]
+    } 
+    
+    fn mut_current_queue(&mut self) -> &mut Queue {
+        &mut self.queues[self.current_queue]
+    } 
 }
 
 // Queue creation
@@ -110,13 +135,13 @@ impl QueueManager {
         self.current_playing
     }
 
-
-    pub fn next_up(&self) -> Track {
-        let current_queue = self.queues[self.current_queue];
-        self.all_tracks[current_queue[0]].clone()
+    pub fn next_up(&self) -> Option<Track> {
+        let current_queue = &self.queues[self.current_queue];
+        Some(self.all_tracks.get(*current_queue.cached_order.get(0)?)?.clone())
     }
 }
 
+#[derive(Clone, PartialEq)]
 pub struct Queue {
     pub queue_type: QueueType,
     pub current_track: usize,
@@ -157,11 +182,14 @@ impl Queue {
     }
 }
 
+#[derive(PartialEq, Clone)]
 pub enum ShuffleMode {
     PlaySimilar,
     Random,
+    None,
 }
 
+#[derive(PartialEq, Clone)]
 pub enum QueueType {
     AllTracks,
     Artist(String),
@@ -175,13 +203,13 @@ impl Display for QueueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AllTracks => f.write_str("All Tracks"),
-            Self::Exclusion(excluded) => f.write_fmt("Excluding {}", excluded),
+            Self::Exclusion(excluded) => f.write_str(&format!("Excluding {excluded}")),
             Self::Artist(artist) => f.write_str(artist),
             Self::Album(album) => f.write_str(album),
             Self::Genre(genre) => f.write_str(genre),
             Self::Union(types) => {
                 for queue_type in types {
-                    f.fmt(queue_type)?;
+                    queue_type.fmt(f)?;
                 }
                 Ok(())
             },
