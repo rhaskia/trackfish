@@ -1,5 +1,6 @@
-use crate::track::Track;
-use rand::{Rng, thread_rng};
+use crate::track::{Track, TrackInfo, strip_unnessecary, self, similar};
+use rand::prelude::*;
+use rand_distr::{Distribution, WeightedIndex};
 use std::{
     collections::HashMap,
     time::{Duration, Instant}, fmt::{Display, Pointer},
@@ -8,6 +9,9 @@ use rand::prelude::SliceRandom;
 
 pub struct QueueManager {
     all_tracks: Vec<Track>,
+    track_info: Vec<TrackInfo>,
+    pub artists: Vec<String>,
+    pub genres: Vec<String>,
     pub listens: Vec<Listen>,
     current_playing: usize,
     current_started: Instant,
@@ -32,7 +36,36 @@ impl QueueManager {
             queues: vec![Queue::all()],
             queue_tracks: vec![],
             current_queue: 0,
+            track_info: Vec::new(),
+            artists: Vec::new(),
+            genres: Vec::new(),
         }
+    }
+
+    pub fn propagate_info(&mut self) {
+        for track in self.all_tracks.clone() {
+            let mut genres = track.genre.iter().map(|genre| self.genre_index(genre)).collect::<Vec<usize>>();
+            genres.sort_by(|a, b| b.cmp(a));
+            let artist = self.artist_index(&track.artist);
+
+            self.track_info.push(TrackInfo { genres, artist, bpm: 100 });
+        }
+    }
+
+    pub fn genre_index(&mut self, genre: &str) -> usize {
+        if let Some(idx) = self.genres.iter().position(|genre2: &String| similar(genre, genre2)) {
+            return idx;
+        }
+        self.genres.push(strip_unnessecary(genre));
+        self.genres.len()
+    }
+
+    pub fn artist_index(&mut self, artist: &str) -> usize {
+        if let Some(idx) = self.artists.iter().position(|artist2: &String| *artist2 == strip_unnessecary(artist)) {
+            return idx;
+        }
+        self.artists.push(strip_unnessecary(artist));
+        self.artists.len()
     }
 
     // what ??
@@ -53,7 +86,14 @@ impl QueueManager {
     }
 
     pub fn next_similar(&mut self) -> usize {
-        0
+        let current = &self.track_info[self.current()];
+
+        let mut weights: Vec<f64> = self.track_info.iter().map(|track| track.genres_match(current)).filter(|weight| *weight > 0.1).collect();
+        //matches.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+        let dist = WeightedIndex::new(weights).unwrap(); 
+        let mut rng = thread_rng();
+
+        dist.sample(&mut rng)
     }
 
     pub fn skip(&mut self) {
@@ -75,15 +115,15 @@ impl QueueManager {
     // more so fill out the cached order
     pub fn shuffle_queue(&mut self) {
         // allow for override shuffle mode
-        match self.get_current_queue().shuffle_mode {
+        match self.get_queue().shuffle_mode {
             ShuffleMode::PlaySimilar => {
-                self.mut_current_queue().cached_order = Vec::new();
+                self.mut_queue().cached_order = Vec::new();
             }, // maybe just clear out listens/weights
             ShuffleMode::Random => {
-                let current_type = self.get_current_queue().queue_type.clone();
+                let current_type = self.get_queue().queue_type.clone();
                 let unshuffled = self.get_matching(current_type);      
 
-                self.mut_current_queue().cached_order = unshuffled;
+                self.mut_queue().cached_order = unshuffled;
             },
             ShuffleMode::None => {},
         }
@@ -95,11 +135,11 @@ impl QueueManager {
         self.all_tracks.iter().enumerate().filter(|(index, track)| track.matches(queue_type.clone())).map(|(index, track)| index).collect()
     }
 
-    fn get_current_queue(&self) -> &Queue {
+    pub fn get_queue(&self) -> &Queue {
         &self.queues[self.current_queue]
     } 
     
-    fn mut_current_queue(&mut self) -> &mut Queue {
+    pub fn mut_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
     } 
 }
@@ -133,6 +173,10 @@ impl QueueManager {
 
     pub fn current(&self) -> usize {
         self.current_playing
+    }
+
+    pub fn current_track(&self) -> Track {
+        self.all_tracks[self.current_playing].clone()
     }
 
     pub fn next_up(&self) -> Option<Track> {
@@ -182,7 +226,7 @@ impl Queue {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ShuffleMode {
     PlaySimilar,
     Random,

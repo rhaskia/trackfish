@@ -10,7 +10,7 @@ pub struct Track {
     pub title: String,
     pub album: String,
     pub artist: String,
-    pub genre: String,
+    pub genre: Vec<String>,
     pub year: String,
     pub len: f64,
 }
@@ -29,11 +29,11 @@ impl Track {
 }
 
 pub fn similar(str1: &str, str2: &str) -> bool {
-    strip_unnessecary(str1).to_lowercase() == strip_unnessecary(str2).to_lowercase()
+    strip_unnessecary(str1) == strip_unnessecary(str2)
 }
 
 pub fn strip_unnessecary(s: &str) -> String {
-    s.chars().filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation())).collect()
+    s.chars().filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation())).collect::<String>().to_lowercase()
 }
 
 pub fn load_tracks(directory: &str) -> Vec<Track> {
@@ -49,7 +49,7 @@ pub fn load_track(file: String) -> Track {
     let title = tag.title().unwrap_or_default().to_string();
     let artist = tag.artist().unwrap_or_default().to_string();
     let album = tag.album().unwrap_or_default().to_string();
-    let genre = tag.genre().unwrap_or_default().replace("\0", ";");
+    let genre = tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
     let len = tag.duration().unwrap_or(1) as f64;
     let mut year = String::new();
     if let Some(tag_year) = tag.get("Date") {
@@ -75,4 +75,26 @@ fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
         .collect();
 
     Ok(mp3_files)
+}
+
+#[derive(Debug)]
+pub struct TrackInfo {
+    pub genres: Vec<usize>,
+    pub artist: usize,
+    pub bpm: i32,
+}
+
+impl TrackInfo {
+    pub fn genres_match(&self, other: &TrackInfo) -> f64 {
+        let mut matches = 0;
+        let total = other.genres.len().min(self.genres.len());
+        for genre1 in &self.genres {
+            for genre2 in &other.genres {
+                if genre1 == genre2 {
+                    matches += 1;
+                }
+            }
+        }
+        matches as f64 / total as f64
+    }
 }

@@ -20,6 +20,7 @@ http-range = "0.1.5"
 dioxus-logger = "0.6.0"
 tracing = "0.1.41"
 crossbow = "0.2.3"
+rand_distr = "0.4.3"
 
 [profile]
 
