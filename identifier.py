@@ -89,16 +89,15 @@ def load_data(labeled):
         features = extract_features(file_path)
         genres = get_genres(file)
         if features is not None:
-            encoded_genres = mlb.fit_transform([genres])
-
-            X.append(features)
-            y.append(encoded_genres)
+            for genre in genres: 
+                X.append(features)
+                y.append(genre)
 
     return np.array(X), np.array(y)
 
 # Train a Random Forest classifier
 def train_model(X_train, y_train):
-    chain = ClassifierChain(RandomForestClassifier(n_estimators=100, random_state=42))
+    chain = RandomForestClassifier(n_estimators=100, random_state=42)
     chain.fit(X_train, y_train)
     return chain
 
@@ -110,7 +109,7 @@ def predict_genres(model, unlabeled):
         file_path = os.path.join("E:/music/", file_name)
         features = extract_features(file_path)
         if features is not None:
-            predicted_genre = model.predict([features])[0]
+            predicted_genre = model.predict_proba([features])[0]
             predictions.append((file_name, predicted_genre))
     
     return predictions
@@ -126,7 +125,7 @@ def clean(str1):
         return no_punc
 
 directory = "E:/Music/"
-files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))][300:400]
+files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and f.endswith(".mp3")][:100]
 labeled = []
 unlabeled = []
 all_genres = []
@@ -146,13 +145,9 @@ print(len(all_genres))
 genre_len = len(all_genres)
 fit_genres = np.array([all_genres]).reshape(-1, 1)
 
-encoder = OneHotEncoder(sparse_output=False) 
-encoder.fit(X=fit_genres)
-
-mlb = MultiLabelBinarizer(classes=all_genres)
+print("loaded all data")
             
 X, y = load_data(labeled)
-y = y.reshape(y.shape[0], genre_len)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 print(X.shape, y.shape)
 
@@ -168,5 +163,7 @@ predicted_genres = predict_genres(model, unlabeled)
 # Save predictions (optional)
 with open("predicted_genres.txt", "w", encoding ="utf-8") as f:
     for file_name, genres in predicted_genres:
-        genres = [(all_genres[i], genres[i]) for i in range(0, len(all_genres)) if genres[i] != 0.0]
-        f.write(f"{file_name}: {genres}\n")
+        f.write(f"{file_name}: ")
+        top_genres = [str(all_genres[i]) + ";" + str(genres[i]) for i in np.array(genres).argsort()][::-1][:4]
+        f.write(",".join(top_genres))
+        f.write("\n")

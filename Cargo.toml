@@ -20,6 +20,18 @@ http-range = "0.1.5"
 dioxus-logger = "0.6.0"
 tracing = "0.1.41"
 crossbow = "0.2.3"
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
 #macroquad = "0.4.13"
 #slint = { version="1.8.0", features=["backend-android-activity-06"]}
 #rodio = "0.20.1"

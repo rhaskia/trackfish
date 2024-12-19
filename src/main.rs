@@ -27,6 +27,7 @@ use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::time;
 use tokio::time::Duration;
+use tokio::runtime::Runtime;
 use tracing::Level;
 use http::Response;
 
@@ -52,7 +53,13 @@ const DIR: GlobalSignal<&str> = GlobalSignal::new(|| {
 const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| Vec::new());
 
 fn main() {
-    //dioxus_logger::init(Level::INFO).expect("logger failed to init");
+    let mut rt = Runtime::new().unwrap();
+
+    let future = async {
+        crossbow::Permission::Sensors.request_async().await;
+    };
+
+    rt.block_on(future);
 
     dioxus::launch(App2);
 }
