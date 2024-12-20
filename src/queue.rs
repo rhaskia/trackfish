@@ -57,7 +57,7 @@ impl QueueManager {
             return idx;
         }
         self.genres.push(strip_unnessecary(genre));
-        self.genres.len()
+        self.genres.len() - 1
     }
 
     pub fn artist_index(&mut self, artist: &str) -> usize {
@@ -87,17 +87,21 @@ impl QueueManager {
 
     pub fn next_similar(&mut self) -> usize {
         let current = &self.track_info[self.current()];
+        for genre in &current.genres {
+            println!("{:?}", self.genres[*genre]);
+        }
 
-        let mut weights: Vec<f64> = self.track_info.iter().map(|track| track.genres_match(current)).filter(|weight| *weight > 0.1).collect();
-        //matches.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
-        let dist = WeightedIndex::new(weights).unwrap(); 
+        let mut weights: Vec<f64> = self.track_info.iter().map(|track| track.genres_match(current)).collect();
+        println!("{weights:?}");
+        let dist = WeightedIndex::new(weights.clone()).unwrap(); 
         let mut rng = thread_rng();
 
-        dist.sample(&mut rng)
+        let next = dist.sample(&mut rng);
+        next
     }
 
     pub fn skip(&mut self) {
-        let current_track = &self.all_tracks[self.current_playing];
+        let current_track = self.current_track();
 
         self.listens.push(Listen::new(
             self.current_playing,
@@ -107,6 +111,7 @@ impl QueueManager {
         ));
 
         let next_track = self.next_track();
+        println!("{:?}", self.all_tracks[next_track]);
 
         self.current_started = Instant::now();
         self.current_playing = next_track;
