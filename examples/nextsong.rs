@@ -7,8 +7,8 @@ fn main() {
 
     println!("{:?}", queue.current_track());
 
-    queue.mut_queue().shuffle_mode = ShuffleMode::PlaySimilar;
-    queue.skip();
-
-    println!("{:?}", queue.current_track());
+    for _ in 0..10 {
+        queue.skip();
+        println!("{:?}", queue.current_track());
+    }
 }

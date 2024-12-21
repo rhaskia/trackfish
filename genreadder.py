@@ -38,6 +38,12 @@ for file in files:
             data[genre] += [file]
 
         all_genres += genres
+        if len(genres) < 3:
+            print(file + "only has genres " + str(genres))
+            new_genres = input("> ")
+            audiofile.tag.genre = new_genres.replace(';', '\0')
+            audiofile.tag.save()
+
     else:
         print(file + " has no genre tag")
         new_genres = input("> ")

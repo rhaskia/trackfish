@@ -87,16 +87,13 @@ impl QueueManager {
 
     pub fn next_similar(&mut self) -> usize {
         let current = &self.track_info[self.current()];
-        for genre in &current.genres {
-            println!("{:?}", self.genres[*genre]);
-        }
 
         let mut weights: Vec<f64> = self.track_info.iter().map(|track| track.genres_match(current)).collect();
-        println!("{weights:?}");
         let dist = WeightedIndex::new(weights.clone()).unwrap(); 
         let mut rng = thread_rng();
 
         let next = dist.sample(&mut rng);
+        println!("{:?}", weights[next]);
         next
     }
 
@@ -111,7 +108,6 @@ impl QueueManager {
         ));
 
         let next_track = self.next_track();
-        println!("{:?}", self.all_tracks[next_track]);
 
         self.current_started = Instant::now();
         self.current_playing = next_track;
