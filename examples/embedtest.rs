@@ -1,3 +1,3 @@
 fn main() {
-    music::embed::embed();
+    music::embed::embed().unwrap();
 }

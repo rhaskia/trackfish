@@ -125,20 +125,22 @@ autoencoder = Autoencoder(latent_dim, shape)
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError())
 
 autoencoder.fit(x_train, x_train,
-                epochs=10,
+                epochs=100,
                 shuffle=True,
                 validation_data=(x_test, x_test))
 
 encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
 
+print(autoencoder.encoder(np.array([[0 for i in range(1094)]])).numpy())
+
 #autoencoder.encoder.save("encoder" + str(latent_dim) + ".keras")
 
 autoencoder.encoder.export("./models/")
 
 for j in range(30):
-    for genre in decoded_imgs[j].argsort()[::-1][:10]:
-        print(genre_index[genre], end=",")
+    for i in decoded_imgs[j].argsort()[::-1][:10]:
+        print(genre_index[i], end=",")
     print([genre_index[g] for g in all_lists[split + j]])
 
 # pop_index = genre_index.index("pop") 

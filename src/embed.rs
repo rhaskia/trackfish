@@ -1,48 +1,52 @@
-use tensorflow::SavedModelBundle;
-use tensorflow::SessionOptions;
-use tensorflow::Graph;
-use tensorflow::SessionRunArgs;
-use tensorflow::Tensor;
-use tensorflow::Session;
+use std::collections::HashMap;
+use tensorflow::{
+    Graph, MetaGraphDef, SavedModelBundle, Session, SessionOptions, SessionRunArgs, SignatureDef,
+    Tensor, TensorInfo, Operation, FetchToken
+};
 
-pub struct AutoEncoder {
-
-}
+pub struct AutoEncoder {}
 
 pub fn embed() -> anyhow::Result<()> {
-    let model_path = "E:/rust/music/models"; 
+    let model_path = "E:/rust/music/models";
 
     // Build a new graph
     let mut graph = Graph::new();
 
     // Load the saved model
-    let model_bundle: SavedModelBundle = SavedModelBundle::load(
-        &SessionOptions::new(), 
-        &["serve"],
-        &mut graph, 
-        model_path,
-    ).unwrap();
+    let model_bundle: SavedModelBundle =
+        SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, model_path).unwrap();
 
     let graph_definition: &MetaGraphDef = model_bundle.meta_graph_def();
-    let serv_default: &SignatureDef = 
-            graph_definition.get_signature("serving_default")?;
+    let serv_default: &SignatureDef = graph_definition.get_signature("serving_default")?;
 
-    let mut session = Session::new(&SessionOptions::new(), &graph)?;
+    let sign_def: &HashMap<String, SignatureDef> = graph_definition.signatures();
+    println!("SIGNATURES: {:#?}", sign_def);
 
-    let input_data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-    let tensor1 = Tensor::new(&[1, input_data.len() as u64]).with_values(&input_data)?;
+    let model_input: &TensorInfo = serv_default.get_input("keras_tensor")?;
+    let model_input_index = model_input.name().index;
 
-    let input_operation = graph.operation_by_name("serving_default_input_1")?; 
-    let output_operation = graph.operation_by_name("StatefulPartitionedCall")?; 
+    let model_output: &TensorInfo = serv_default.get_output("output_0")?;
+    let model_output_index = model_output.name().index;
+    println!("OUTPUT: {:#?}", model_output);
 
-    // Run the encoder
-    let mut args = SessionRunArgs::new();
-    args.add_feed(&op1, 0, &tensor1);
-    let result_token = args.request_fetch(&op3, 0);
-    session.run(&mut args)?;
-    let result_tensor = args.fetch(result_token)?;
+    let input_op: Operation =
+       graph.operation_by_name_required(&model_input.name().name)?;
+    let output_op: Operation =
+       graph.operation_by_name_required(&model_output.name().name)?;
 
-    println!("Encoded values: {:?}", result_tensor);
+    let mut in_values: [f32; 1094] = [0.0; 1094];
+    let input_tensor: Tensor<f32> = Tensor::new(&[1, 1094]).with_values(&in_values)?;
+
+    let mut steps: SessionRunArgs = SessionRunArgs::new();
+    steps.add_feed(&input_op, model_input_index, &input_tensor);
+    let output_fetch: FetchToken = steps.request_fetch(&output_op,
+              model_output_index);
+    let session: Session = model_bundle.session;
+    session.run(&mut steps)?;
+
+    let output: Tensor<f32> = steps.fetch::<f32>(output_fetch)?;
+    println!("OUTPUT SHAPE: {}", output.shape());
+    println!("OUTPUT: {:#?}", output);
 
     Ok(())
 }
