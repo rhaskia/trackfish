@@ -125,7 +125,7 @@ def clean(str1):
         return no_punc
 
 directory = "E:/Music/"
-files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and f.endswith(".mp3")][:100]
+files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and f.endswith(".mp3")][:10]
 labeled = []
 unlabeled = []
 all_genres = []
@@ -153,10 +153,14 @@ print(X.shape, y.shape)
 
 model = train_model(X_train, y_train)
 
+sine = model.predict(extract_features("E:/Downloads/sinewave.wav"))
+print(sine)
+
 # Evaluate the model (optional)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Accuracy: {accuracy}") 
+
 
 predicted_genres = predict_genres(model, unlabeled)
 

@@ -14,6 +14,8 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras import layers, losses
 from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
+import utils
+import random
 
 logging.disable()
 
@@ -56,14 +58,44 @@ for file in files:
 
         all_lists.append(encoding)
 
+tracks = utils.load('data/fma_metadata/tracks.csv')
+genre_csv = utils.load('data/fma_metadata/genres.csv')
+
+train = tracks['set', 'split'] == 'training'
+val = tracks['set', 'split'] == 'validation'
+test = tracks['set', 'split'] == 'test'
+
+small = tracks['set', 'subset'] <= 'medium'
+extra_genres = tracks.loc[small & train, ('track', 'genres')]
+print(extra_genres.shape)
+
+for genre in extra_genres:
+    genres = [clean(genre_csv['title'][g]) for g in genre]
+    encoding = []
+        
+    for genre1 in genres: 
+        try:
+            index = genre_index.index(genre1) 
+            encoding.append(index)
+        except ValueError:
+            encoding.append(len(genre_index))
+            genre_index.append(genre1)
+
+    all_lists.append(encoding)
+
+random.shuffle(all_lists)
+
 genre_len = len(genre_index)
+print(genre_len)
 one_hot_encodings = []
 for song in all_lists:
     encoding = [1 if i in song else 0 for i in range(0, genre_len)]
     one_hot_encodings.append(encoding)
 
 x = np.array(one_hot_encodings)
-x_train, x_test = x[:1400], x[1400:]
+split = int((4 * len(x)) // 5)
+print(split, len(x))
+x_train, x_test = x[:split], x[split:]
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
@@ -88,13 +120,13 @@ class Autoencoder(Model):
 
 
 shape = x_test.shape[1:]
-latent_dim = 128
+latent_dim = 4
 autoencoder = Autoencoder(latent_dim, shape)
 
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError())
 
 autoencoder.fit(x_train, x_train,
-                epochs=500,
+                epochs=100,
                 shuffle=True,
                 validation_data=(x_test, x_test))
 
@@ -102,4 +134,21 @@ encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
 
 for j in range(30):
-    print([genre_index[i] for i in all_lists[1400 + j]], [genre_index[i] for i in range(genre_len) if decoded_imgs[j][i] > 0.05][:10])
+    for genre in decoded_imgs[j].argsort()[::-1][:10]:
+        print(genre_index[genre], end=",")
+    print([genre_index[g] for g in all_lists[split + j]])
+
+# pop_index = genre_index.index("pop") 
+# rap_index = genre_index.index("rock") 
+# country_index = genre_index.index("country") 
+# pop = [1 if i == pop_index else 0 for i in range(0, genre_len)]
+# rap = [1 if i == rap_index else 0 for i in range(0, genre_len)]
+# country = [1 if i == country_index else 0 for i in range(0, genre_len)]
+# encoded_imgs = autoencoder.encoder(np.array([pop, rap, country])).numpy()
+# added = np.array([(1.0 / encoded_imgs[0])]).reshape(1, 128)
+# decoded_imgs = autoencoder.decoder(added).numpy()
+# print(decoded_imgs.shape)
+#
+# for j in range(1):
+#     for genre in decoded_imgs[j].argsort()[::-1][:10]:
+#         print(genre_index[genre], end=", ")
