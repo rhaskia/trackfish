@@ -26,7 +26,7 @@ data = {}
 def clean(str1):
     no_whitespace = ''.join(str1.split()).lower()
 
-    no_punc = ''.join(char for char in no_whitespace if char not in string.punctuation)
+    no_punc = ''.join(char for char in no_whitespace if char not in string.punctuation and char != "\ufeff")
 
     if no_punc.endswith("music"):
         return no_punc[:-5]
@@ -58,6 +58,7 @@ for file in files:
 
         all_lists.append(encoding)
 
+
 tracks = utils.load('data/fma_metadata/tracks.csv')
 genre_csv = utils.load('data/fma_metadata/genres.csv')
 
@@ -82,6 +83,9 @@ for genre in extra_genres:
             genre_index.append(genre1)
 
     all_lists.append(encoding)
+
+with open("./models/genrelist", 'w') as f:
+    f.write("\n".join(genre_index))
 
 random.shuffle(all_lists)
 
@@ -119,24 +123,25 @@ class Autoencoder(Model):
     return decoded
 
 shape = x_test.shape[1:]
-latent_dim = 4
+latent_dim = 16
 autoencoder = Autoencoder(latent_dim, shape)
 
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError())
 
 autoencoder.fit(x_train, x_train,
-                epochs=100,
+                epochs=500,
                 shuffle=True,
                 validation_data=(x_test, x_test))
 
 encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
 
-print(autoencoder.encoder(np.array([[0 for i in range(1094)]])).numpy())
-
 #autoencoder.encoder.save("encoder" + str(latent_dim) + ".keras")
 
-autoencoder.encoder.export("./models/")
+autoencoder.encoder.export("./models/encoder" + str(latent_dim) + "/")
+autoencoder.decoder.export("./models/decoder" + str(latent_dim) + "/")
+
+
 
 for j in range(30):
     for i in decoded_imgs[j].argsort()[::-1][:10]:
