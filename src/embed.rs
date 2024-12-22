@@ -23,14 +23,15 @@ pub fn embed() -> anyhow::Result<()> {
         model_path,
     ).unwrap();
 
-        // Create a session
+    let graph_definition: &MetaGraphDef = model_bundle.meta_graph_def();
+    let serv_default: &SignatureDef = 
+            graph_definition.get_signature("serving_default")?;
+
     let mut session = Session::new(&SessionOptions::new(), &graph)?;
 
-    // Prepare input data (example: a single input vector)
-    let input_data = vec![1.0, 2.0, 3.0, 4.0, 5.0]; // Replace with your actual input data
+    let input_data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
     let tensor1 = Tensor::new(&[1, input_data.len() as u64]).with_values(&input_data)?;
 
-    // Get input and output tensors from the saved model
     let input_operation = graph.operation_by_name("serving_default_input_1")?; 
     let output_operation = graph.operation_by_name("StatefulPartitionedCall")?; 
 
