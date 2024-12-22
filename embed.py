@@ -118,7 +118,6 @@ class Autoencoder(Model):
     decoded = self.decoder(encoded)
     return decoded
 
-
 shape = x_test.shape[1:]
 latent_dim = 4
 autoencoder = Autoencoder(latent_dim, shape)
@@ -126,12 +125,16 @@ autoencoder = Autoencoder(latent_dim, shape)
 autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError())
 
 autoencoder.fit(x_train, x_train,
-                epochs=100,
+                epochs=10,
                 shuffle=True,
                 validation_data=(x_test, x_test))
 
 encoded_imgs = autoencoder.encoder(x_test).numpy()
 decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
+
+#autoencoder.encoder.save("encoder" + str(latent_dim) + ".keras")
+
+autoencoder.encoder.export("./models/")
 
 for j in range(30):
     for genre in decoded_imgs[j].argsort()[::-1][:10]:

@@ -5,6 +5,7 @@
 // pub mod schema;
 pub mod queue;
 pub mod track;
+pub mod embed;
 
 //use diesel::prelude::*;
 use dioxus::prelude::*;
