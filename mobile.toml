@@ -1,5 +1,0 @@
-[app]
-name = "music"
-stylized-name = "Music"
-#identifier = "com.example.music"
-template-pack = "dioxus"

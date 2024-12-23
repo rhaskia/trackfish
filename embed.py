@@ -26,7 +26,7 @@ data = {}
 def clean(str1):
     no_whitespace = ''.join(str1.split()).lower()
 
-    no_punc = ''.join(char for char in no_whitespace if char not in string.punctuation and char != "\ufeff")
+    no_punc = ''.join(char for char in no_whitespace if char.isalnum())
 
     if no_punc.endswith("music"):
         return no_punc[:-5]
@@ -84,7 +84,7 @@ for genre in extra_genres:
 
     all_lists.append(encoding)
 
-with open("./models/genrelist", 'w') as f:
+with open("./models/genrelist", 'w', encoding='utf-8')  as f:
     f.write("\n".join(genre_index))
 
 random.shuffle(all_lists)
