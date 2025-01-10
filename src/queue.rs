@@ -1,11 +1,11 @@
 use crate::track::{Track, TrackInfo, strip_unnessecary, self, similar};
 use rand::prelude::*;
-use rand_distr::{Distribution, WeightedIndex};
 use std::{
     collections::HashMap,
     time::{Duration, Instant}, fmt::{Display, Pointer},
 };
 use rand::prelude::SliceRandom;
+use rand::distributions::WeightedIndex;
 
 pub struct QueueManager {
     all_tracks: Vec<Track>,

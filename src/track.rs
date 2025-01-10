@@ -37,8 +37,9 @@ pub fn strip_unnessecary(s: &str) -> String {
 }
 
 pub fn load_tracks(directory: &str) -> Vec<Track> {
+    log::info!("{directory}");
     let files = get_song_files(directory).unwrap();
-    tracing::info!("{files:?}");
+    log::info!("{files:?}");
 
     files.into_iter().map(|file| load_track(file)).collect()
 }
