@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+name = "music"
 
 [dependencies]
 dioxus = { version = "0.6.1", features = ["mobile", "hooks", "html", "signals"] }
@@ -23,14 +23,13 @@ http-range = "0.1.5"
 dioxus-logger = "0.6.0"
 tracing = "0.1.41"
 crossbow = "0.2.3"
-#tensorflow = "0.21.0"
-#rodio = "0.20"
+tensorflow = "0.21.0"
+rodio = "0.20"
 anyhow = "1.0.94"
 android_logger = "0.14.1"
 log = "0.4.22"
-jni = "0.21.1"
-ndk-glue = "0.7.0"
-ndk = "0.9.0"
+ndarray = "0.16"
+ndarray-npy = "0.9"
 
 [profile]
 
