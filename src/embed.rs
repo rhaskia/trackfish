@@ -2,7 +2,12 @@ use crate::track::strip_unnessecary;
 use std::collections::HashMap;
 use std::io::Read;
 use ndarray::{Array1, Array2, ArrayBase};
-use ndarray_npy::read_npy;
+use ndarray_npy::ReadNpyExt;
+
+const E_WEIGHTS: &[u8; 69440] = include_bytes!("../models/encoder_weights.npy");
+const E_BIASES: &[u8; 192] = include_bytes!("../models/encoder_biases.npy");
+const D_WEIGHTS: &[u8; 69440] = include_bytes!("../models/decoder_weights.npy");
+const D_BIASES: &[u8; 4460] = include_bytes!("../models/decoder_biases.npy");
 
 pub struct AutoEncoder {
     encoder_weights: Array2<f32>,
@@ -16,10 +21,10 @@ impl AutoEncoder {
     pub fn new() -> anyhow::Result<Self> {
         let model_path = "./models/";
 
-        let encoder_weights = read_npy("./models/encoder_weights.npy")?;
-        let encoder_biases = read_npy("./models/encoder_biases.npy")?;
-        let decoder_weights = read_npy("./models/decoder_weights.npy")?;
-        let decoder_biases = read_npy("./models/decoder_biases.npy")?;
+        let encoder_weights = Array2::<f32>::read_npy(&E_WEIGHTS[..])?;
+        let encoder_biases = Array1::<f32>::read_npy(&E_BIASES[..])?;
+        let decoder_weights = Array2::<f32>::read_npy(&D_WEIGHTS[..])?;
+        let decoder_biases = Array1::<f32>::read_npy(&D_BIASES[..])?;
 
         let genre_index = std::fs::read_to_string("./models/genrelist")?.split("\n").map(|genre| genre.to_string()).collect();
 
