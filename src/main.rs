@@ -1,8 +1,6 @@
 //#![feature(trivial_bounds)]
 
-//pub mod audio;
-// pub mod models;
-// pub mod schema;
+pub mod audio;
 pub mod queue;
 pub mod track;
 pub mod embed;
@@ -12,6 +10,8 @@ use dioxus::prelude::*;
 //use dotenvy::dotenv;
 use id3::Tag;
 use id3::TagLike;
+use log::Level;
+use log::error;
 use queue::QueueManager;
 use track::load_tracks;
 use std::collections::HashMap;
@@ -28,27 +28,30 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::time;
 use tokio::time::Duration;
 use tokio::runtime::Runtime;
-use log::LevelFilter;
 use log::info;
 use android_logger::Config;
 use http::Response;
+use tracing_log::LogTracer;
+use log::LevelFilter;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, AssetRequest};
 #[cfg(target_os = "android")]
 use dioxus::mobile::{use_asset_handler, AssetRequest};
 
-//use audio::AudioPlayer;
+use audio::AudioPlayer;
 use track::Track;
 
 fn main() {
-    android_logger::init_once(
-        Config::default().with_max_level(LevelFilter::Info)
-        .with_tag("com.example.Music")
-    );
+    if cfg!(android) {
+       android_logger::init_once(
+            Config::default().with_max_level(LevelFilter::Trace),
+       );
+    }
 
-    info!("hi!!!");
-    info!("hello {:?}", std::fs::read_to_string("/storage/emulated/0/Music/360 [w_pDmpSSbQc].mp3"));
+    LogTracer::init().expect("Failed to initialize LogTracer");
+
+    dioxus_logger::init(dioxus_logger::tracing::Level::INFO);
 
     launch(App);
 }
@@ -68,46 +71,41 @@ const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| Vec::new());
 
 #[component]
 fn App() -> Element {
-    // lazy way of cross platform support
-    // let tracks = use_signal(|| get_song_files(DIR()).unwrap());
-    // let read_dir =
-    //     use_signal(|| fs::read_dir(DIR()).unwrap().collect::<Vec<std::io::Result<DirEntry>>>());
-    //
-    let mut queue = use_signal(|| QueueManager::new(TRACKS()));
+    let mut queue = use_signal(|| QueueManager::new(Vec::new()));
 
     use_future(move || async move { 
-        
-        info!("hello {:?}", crossbow::Permission::StorageWrite.request_async().await);
+        info!("Requested storage permissions: {:?}", crossbow::Permission::StorageWrite.request_async().await);
+        queue.set(QueueManager::new(load_tracks(DIR())));
+        info!("loaded all tracks into queue manager");
     });
 
-    // use_asset_handler("trackimage", move |request, responder| {
-    //     println!("{:?}", request.uri());
-    //     let id = request.uri().path().replace("/trackimage/", "");
-    //     let path = &TRACKS.read()[CURRENT()].file;
-    //     println!("{path}");
-    //     let tag = Tag::read_from_path(path).unwrap();
-    //     let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
-    //
-    //     tokio::task::spawn(async move {
-    //         match get_stream_response(&mut file, &request).await {
-    //             Ok(response) => responder.respond(response),
-    //             Err(err) => eprintln!("Error: {}", err),
-    //         }
-    //     });
-    // });
+    use_asset_handler("trackimage", move |request, responder| {
+        info!("{:?}", request.uri());
+        let id = request.uri().path().replace("/trackimage/", "");
+        let path = &TRACKS.read()[CURRENT()].file;
+        info!("{path}");
+        let tag = Tag::read_from_path(path).unwrap();
+        let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
+
+        tokio::task::spawn(async move {
+            match get_stream_response(&mut file, &request).await {
+                Ok(response) => responder.respond(response),
+                Err(err) => eprintln!("Error: {}", err),
+            }
+        });
+    });
 
     rsx! {
         style {{ include_str!("../assets/style.css") }}
 
         div {
             class: "mainview",
-            //SongView { queue }
-            "hi",
-            
-            div {
-                class: "listensview",
-                //"Next Up: {queue.read().next_up().title}"
-            }
+            SongView { queue }
+
+            // div {
+            //     class: "listensview",
+            //     //"Next Up: {queue.read().next_up().title}"
+            // }
         }
 
         MenuBar {
@@ -118,29 +116,22 @@ fn App() -> Element {
 
 #[component]
 fn SongView(queue: Signal<QueueManager>) -> Element {
-    info!("what?");
-    let current_song = use_memo(|| TRACKS.read()[CURRENT()].clone());
-    info!("what.. no?");
-    // let genres = use_memo(move || {
-    //     current_song().genre.split(";").map(|s| s.to_string()).collect::<Vec<String>>()
-    // });
-    // let matches = use_memo(move || find_song_matches(&current_song().file, &genres(), 0));
-    // let mut genre_weights = use_signal(|| HashMap::new());
-
-    //let mut player = use_signal(|| AudioPlayer::new());
     let mut progress = use_signal(|| 0.0);
     let mut progress_held = use_signal(|| false);
 
     let skip = move |e: Event<MouseData>| {
         queue.write().skip();
-        queue.write().play();
         *CURRENT.write() = queue.read().current();
-        info!("{:?}", current_song);
+        progress.set(0.0);
+        info!("{:?}", queue.read().current_track());
     };
 
-    use_future(move || async move {
-        queue.write().shuffle_queue();
-    });
+    let skipback = move |e: Event<MouseData>| {
+        queue.write().skipback();
+        *CURRENT.write() = queue.read().current();
+        progress.set(0.0);
+        info!("{:?}", queue.read().current_track());
+    };
     
     use_future(move || async move {
         let mut to_add = 0.0;
@@ -172,19 +163,30 @@ fn SongView(queue: Signal<QueueManager>) -> Element {
                 }
             }
             h2 {
-                "{current_song.read().title}"
+                "{queue.read().current_track_title():?}"
             }
             h3 {
                 span { 
                     class: "artistspecifier",
-                    onclick: move |e| queue.write().add_artist_queue(&current_song.read().artist),
-                    "{current_song.read().artist}" 
+                    onclick: move |e| queue.write().add_current_artist_queue(),
+                    "{queue.read().current_track_artist():?}" 
                 }
-
+                br { }
                 span { 
                     class: "albumspecifier",
-                    onclick: move |e| queue.write().add_album_queue(&current_song.read().album),
-                    "{current_song.read().album}" 
+                    onclick: move |e| queue.write().add_current_album_queue(),
+                    "{queue.read().current_track_album():?}" 
+                }
+                br {}
+                span {
+                    class: "genresspecifier",
+                    if let Some(genres) = queue.read().current_track_genres() {
+                        for genre in genres {
+                            span {
+                                "{genre}"
+                            }
+                        }
+                    }
                 }
             }
             div {
@@ -194,16 +196,16 @@ fn SongView(queue: Signal<QueueManager>) -> Element {
                 }
                 input {
                     r#type: "range",
-                    // value: progress,
+                    value: progress,
                     step: 0.25,
-                    // max: player.read().song_length(),
+                    max: queue.read().player.song_length(),
                     onchange: move |e| {
-                        // let value = e.value().parse().unwrap();
-                        // player.write().set_pos(value);
-                        // progress.set(value)
+                        let value = e.value().parse().unwrap();
+                        queue.write().player.set_pos(value);
+                        progress.set(value)
                     },
-                    // onmousedown: move |e| progress_held.set(true),
-                    // onmouseup: move |e| progress_held.set(false),
+                    onmousedown: move |e| progress_held.set(true),
+                    onmouseup: move |e| progress_held.set(false),
                 }
                 span {
                     class: "songlength",
@@ -223,7 +225,7 @@ fn SongView(queue: Signal<QueueManager>) -> Element {
                 button {
                     class: "skipprev-button",
                     class: "svg-button",
-                    onclick: skip,
+                    onclick: skipback,
                 }
                 button {
                     class: "svg-button",

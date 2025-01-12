@@ -31,14 +31,11 @@ pub struct QueueManager {
 // Basic functionality
 impl QueueManager {
     pub fn new(all_tracks: Vec<Track>) -> Self {
-        let mut rng = thread_rng();
-        let current_playing = if all_tracks.len() > 0 {
-            rng.gen_range(0..all_tracks.len())
-        } else { 0 };
+        let rng = thread_rng();
 
         let mut queue = QueueManager {
             all_tracks: all_tracks.clone(),
-            current_playing,
+            current_playing: rng.gen_range(0..all_tracks.len()),
             current_started: Instant::now(),
             listens: Vec::new(),
             progress: 0.0,
@@ -148,31 +145,6 @@ impl QueueManager {
         next
     }
 
-    pub fn skipback(&mut self) {
-        if let Some(current_track) = self.current_track() {
-            self.listens.push(Listen::new(
-                self.current_playing,
-                self.current_started,
-                current_track.len,
-                self.progress,
-            ));
-        }
-
-        info!("Skipping {} through", self.player.progress_secs());
-        if self.player.progress_secs() < 5.0 {
-            if self.listens.len() == 0 { return; }
-
-            self.current_playing = self.listens[self.listens.len() - 2].id;
-            self.current_started = Instant::now();
-
-            self.player.play_track(&self.all_tracks[self.current_playing].file);
-            self.player.skip();
-        } else {
-            self.player.set_pos(0.0);
-            self.current_started = Instant::now();
-        }
-    }
-
     pub fn skip(&mut self) {
         if let Some(current_track) = self.current_track() {
             self.listens.push(Listen::new(
@@ -280,10 +252,6 @@ impl QueueManager {
 
     pub fn current_track_artist(&self) -> Option<&str> {
         Some(&self.current_track()?.artist)
-    }
-
-    pub fn current_track_genres(&self) -> Option<&Vec<String>> {
-        Some(&self.current_track()?.genre)
     }
 
     pub fn next_up(&self) -> Option<Track> {

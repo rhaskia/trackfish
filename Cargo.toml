@@ -7,29 +7,23 @@ edition = "2021"
 name = "music"
 
 [dependencies]
-dioxus = { version = "0.6.1", features = ["mobile", "hooks", "html", "signals"] }
-# mp3-metadata = "0.3.4"
-# serde = { version = "1.0.215", features = ["derive"] }
-# serde_json = "1.0.133"
-
-#diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
-#libsqlite3-sys = { version = "0.30", features = ["bundled"] }
-#dotenvy = "0.15"
+dioxus = { version = "0.6", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"
 http = "1.1.0"
 http-range = "0.1.5"
 dioxus-logger = "0.6.0"
-tracing = "0.1.41"
 crossbow = "0.2.3"
-tensorflow = "0.21.0"
 rodio = "0.20"
 anyhow = "1.0.94"
 android_logger = "0.14.1"
 log = "0.4.22"
 ndarray = "0.16"
 ndarray-npy = "0.9"
+tracing = "0.1.41"
+tracing-android = "0.2.0"
+tracing-log = "0.2.0"
 
 [profile]
 
@@ -44,8 +38,8 @@ inherits = "dev"
 inherits = "dev"
 
 [package.metadata.android]
-android_version = 28
-target_sdk_version = 28
+android_version = 33
+target_sdk_version = 33
 min_sdk_version = 26
 
 build_targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]

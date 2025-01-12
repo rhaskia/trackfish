@@ -1,8 +1,10 @@
 use crate::queue::QueueType;
+use ndarray::Array1;
 use std::fs;
 use id3::Tag;
 use id3::TagLike;
 use std::io;
+use tracing::info;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
@@ -28,6 +30,20 @@ impl Track {
     }
 }
 
+impl Default for Track {
+    fn default() -> Self {
+        Self { 
+            file: String::new(),
+            title: String::from("No Track Selected"),
+            album: Default::default(),
+            artist: Default::default(),
+            genre: Default::default(),
+            year: Default::default(),
+            len: 100.0
+        }
+    }
+}
+
 pub fn similar(str1: &str, str2: &str) -> bool {
     strip_unnessecary(str1) == strip_unnessecary(str2)
 }
@@ -37,9 +53,8 @@ pub fn strip_unnessecary(s: &str) -> String {
 }
 
 pub fn load_tracks(directory: &str) -> Vec<Track> {
-    log::info!("{directory}");
     let files = get_song_files(directory).unwrap();
-    log::info!("{files:?}");
+    info!("Loaded {} tracks", files.len());
 
     files.into_iter().map(|file| load_track(file)).collect()
 }
@@ -78,24 +93,17 @@ fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
     Ok(mp3_files)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TrackInfo {
     pub genres: Vec<usize>,
+    pub genre_space: Array1<f32>,
     pub artist: usize,
     pub bpm: i32,
 }
 
 impl TrackInfo {
-    pub fn genres_match(&self, other: &TrackInfo) -> f64 {
-        let mut matches = 0;
-        let total = other.genres.len().min(self.genres.len());
-        for genre1 in &self.genres {
-            for genre2 in &other.genres {
-                if genre1 == genre2 {
-                    matches += 1;
-                }
-            }
-        }
-        matches as f64 / total as f64
+    pub fn genres_dist(&self, other: &TrackInfo) -> f32 {
+        let mut diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
+        diff.sum().sqrt()
     }
 }

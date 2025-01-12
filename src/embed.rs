@@ -9,6 +9,7 @@ const E_BIASES: &[u8; 192] = include_bytes!("../models/encoder_biases.npy");
 const D_WEIGHTS: &[u8; 69440] = include_bytes!("../models/decoder_weights.npy");
 const D_BIASES: &[u8; 4460] = include_bytes!("../models/decoder_biases.npy");
 
+#[derive(PartialEq)]
 pub struct AutoEncoder {
     encoder_weights: Array2<f32>,
     encoder_biases: Array1<f32>,
@@ -26,7 +27,7 @@ impl AutoEncoder {
         let decoder_weights = Array2::<f32>::read_npy(&D_WEIGHTS[..])?;
         let decoder_biases = Array1::<f32>::read_npy(&D_BIASES[..])?;
 
-        let genre_index = std::fs::read_to_string("./models/genrelist")?.split("\n").map(|genre| genre.to_string()).collect();
+        let genre_index = std::fs::read_to_string("./models/genrelist")?.split("\n").map(|genre| genre.trim().to_string()).collect();
 
         Ok(AutoEncoder {
             genre_index,
@@ -37,7 +38,7 @@ impl AutoEncoder {
         })
     }
 
-    pub fn encode(&self, input: Array1<f32>) -> anyhow::Result<Array1<f32>> {
+    pub fn encode(&self, input: Array1<f32>) -> Array1<f32> {
         assert_eq!(self.encoder_weights.shape()[0], input.len());
         assert_eq!(self.encoder_biases.len(), self.encoder_weights.shape()[1]);
         let mut result = input.dot(&self.encoder_weights) + self.encoder_biases.clone();
@@ -45,10 +46,10 @@ impl AutoEncoder {
         // ReLu Activation
         result = result.clamp(0.0, 1_000_000.0);
 
-        Ok(result)
+        result
     }
 
-    pub fn decode(&self, input: Array1<f32>) -> anyhow::Result<Array1<f32>> {
+    pub fn decode(&self, input: Array1<f32>) -> Array1<f32> {
         assert_eq!(self.decoder_weights.shape()[0], input.len());
         assert_eq!(self.decoder_biases.len(), self.decoder_weights.shape()[1]);
         let mut result = input.dot(&self.decoder_weights) + self.decoder_biases.clone();
@@ -56,7 +57,7 @@ impl AutoEncoder {
         // Sigmoid Activation
         result = 1.0 / (1.0 + (result * -1.0).exp());
 
-        Ok(result)
+        result
     }
 
     // Turns genres into a one-hot encoding before they are encoded further
