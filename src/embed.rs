@@ -18,8 +18,6 @@ pub struct AutoEncoder {
 
 impl AutoEncoder {
     pub fn new() -> anyhow::Result<Self> {
-        let model_path = "./models/";
-
         let encoder_weights = Array2::<f32>::read_npy(&E_WEIGHTS[..])?;
         let encoder_biases = Array1::<f32>::read_npy(&E_BIASES[..])?;
         let decoder_weights = Array2::<f32>::read_npy(&D_WEIGHTS[..])?;

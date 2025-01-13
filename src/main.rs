@@ -81,14 +81,12 @@ fn App() -> Element {
     });
 
     use_asset_handler("trackimage", move |request, responder| {
-        info!("{:?}", request.uri());
         let id = request.uri().path().replace("/trackimage/", "").parse().unwrap();
         let path = if let Some(track) = queue.read().get_track(id) { 
             track.file.clone()
         } else {
             return;
         };
-        info!("{path}");
         let tag = Tag::read_from_path(path).unwrap();
         let mut file = if let Some(picture) = tag.pictures().next() {
             Cursor::new(picture.data.clone())

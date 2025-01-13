@@ -50,8 +50,15 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
                 class: "artist-album-span",
                 span { 
                     class: "artistspecifier",
-                    onclick: move |e| queue.write().add_current_artist_queue(),
-                    "{queue.read().current_track_artist().unwrap_or_default()}" 
+                    for (idx, artist) in queue.read().current_track_artist().cloned().unwrap_or_default().into_iter().enumerate() {
+                        if idx > 0 {
+                            " & "
+                        }
+                        span { 
+                            onclick: move |_| queue.write().add_artist_queue(artist.to_string()),
+                            "{artist}"
+                        },
+                    }
                 }
                 span { 
                     class: "albumspecifier",
@@ -74,7 +81,7 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
                 class: "progressrow",
                 span {
                     class: "songprogress",
-                    "{queue.read().player.progress_secs():.0}"
+                    "{format_seconds(queue.read().player.progress_secs())}"
                 }
                 input {
                     r#type: "range",
@@ -91,7 +98,7 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
                 }
                 span {
                     class: "songlength",
-                    "{queue.read().player.song_length():.0}"
+                    "{format_seconds(queue.read().player.song_length())}"
                 }
             }
             div {
@@ -124,3 +131,8 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
     }
 }
 
+fn format_seconds(seconds: f64) -> String {
+    let s = seconds % 60.0;
+    let minutes = (seconds - s) / 60.0;
+    format!("{minutes:.0}:{s:02.0}")
+}

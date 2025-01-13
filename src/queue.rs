@@ -58,11 +58,10 @@ impl QueueManager {
         for track in &all_tracks {
             let mut genres = track.genre.iter().map(|genre| queue.genre_index(genre)).collect::<Vec<usize>>();
             genres.sort_by(|a, b| b.cmp(a));
-            let artist = queue.artist_index(&track.artist);
             let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
             let genre_space = queue.encoder.encode(genre_vec);
 
-            track_info.push(TrackInfo { genres, artist, bpm: 100, genre_space });
+            track_info.push(TrackInfo { genres, artist: 0, bpm: 100, genre_space });
         }
 
         queue.track_info = track_info;
@@ -116,7 +115,6 @@ impl QueueManager {
 
         for (dist, (i, _)) in dists.iter().enumerate() {
             if self.all_tracks[*i].genre[0].is_empty() { 
-                info!("{:?}", self.all_tracks[*i].genre);
                 continue;
             }
             weights[*i] += 1.0 / (1.0 + (dist as f32 / 4.0 - 2.0).exp());
@@ -144,7 +142,6 @@ impl QueueManager {
         let mut rng = thread_rng();
 
         let next = dist.sample(&mut rng);
-        info!("{:?}", weights[next]);
         next
     }
 
@@ -230,7 +227,7 @@ impl QueueManager {
 // Queue creation
 impl QueueManager {
     pub fn add_artist_queue(&mut self, artist: String) {
-        let tracks = self.get_tracks_where(|track| track.artist == artist);
+        let tracks = self.get_tracks_where(|track| track.artists.contains(&artist));
         self.queues.push(Queue::new(QueueType::Artist(artist), ShuffleMode::None, tracks));
         self.current_queue = self.queues.len() - 1;
     }
@@ -241,8 +238,9 @@ impl QueueManager {
         self.current_queue = self.queues.len() - 1;
     }
 
+    /// Replace this
     pub fn add_current_artist_queue(&mut self) {
-        let artist = self.current_track().cloned().unwrap_or_default().artist;
+        let artist = self.current_track().cloned().unwrap_or_default().artists[0].clone();
         self.add_artist_queue(artist);
     }
 
@@ -292,8 +290,8 @@ impl QueueManager {
         Some(&self.current_track()?.album)
     }
 
-    pub fn current_track_artist(&self) -> Option<&str> {
-        Some(&self.current_track()?.artist)
+    pub fn current_track_artist(&self) -> Option<&Vec<String>> {
+        Some(&self.current_track()?.artists)
     }
 
     pub fn current_track_genres(&self) -> Option<&Vec<String>> {

@@ -1,17 +1,17 @@
 use crate::queue::QueueType;
+use log::info;
 use ndarray::Array1;
 use std::fs;
 use id3::Tag;
 use id3::TagLike;
 use std::io;
-use tracing::info;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
     pub file: String,
     pub title: String,
     pub album: String,
-    pub artist: String,
+    pub artists: Vec<String>,
     pub genre: Vec<String>,
     pub year: String,
     pub len: f64,
@@ -21,7 +21,7 @@ impl Track {
     pub fn matches(&self, queue_type: QueueType) -> bool {
         match queue_type {
             QueueType::AllTracks => true,
-            QueueType::Artist(artist) => similar(&artist, &self.artist),
+            QueueType::Artist(target_artist) => self.artists.iter().any(|artist| similar(artist, &target_artist)),
             QueueType::Album(album) => similar(&album, &self.album),
             QueueType::Genre(_) => todo!(),
             QueueType::Union(_) => todo!(),
@@ -36,7 +36,7 @@ impl Default for Track {
             file: String::new(),
             title: String::from("No Track Selected"),
             album: Default::default(),
-            artist: Default::default(),
+            artists: Default::default(),
             genre: Default::default(),
             year: Default::default(),
             len: 100.0
@@ -59,21 +59,37 @@ pub fn load_tracks(directory: &str) -> Vec<Track> {
     files.into_iter().map(|file| load_track(file)).collect()
 }
 
+pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
+    for frame in tag.extended_texts() {
+        if frame.description == "ARTISTS" {
+            return Some(frame.value.split("\0").map(|artist| artist.to_string()).filter(|artist| !artist.is_empty()).collect());
+        }
+    }
+
+    None
+}
+
 pub fn load_track(file: String) -> Track {
     let tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
 
     let title = tag.title().unwrap_or_default().to_string();
-    let artist = tag.artist().unwrap_or_default().to_string();
+    
+    let artists = if let Some(artists) = get_artists(&tag) {
+        info!("Multiple artists: {artists:?}");
+        artists.iter().map(|artist| artist.to_string()).collect()
+    } else {
+        vec![tag.artist().unwrap_or_default().to_string()]
+    };
+
     let album = tag.album().unwrap_or_default().to_string();
     let genre = tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
     let len = tag.duration().unwrap_or(1) as f64;
     let mut year = String::new();
     if let Some(tag_year) = tag.get("Date") {
         year = tag_year.to_string();
-        println!("{year}");
     }
 
-    Track { file, title, artist, album, genre, year, len }
+    Track { file, title, artists, album, genre, year, len }
 }
 
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
