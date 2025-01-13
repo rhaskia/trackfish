@@ -11,8 +11,8 @@ use rand::distributions::WeightedIndex;
 pub struct QueueManager {
     pub all_tracks: Vec<Track>,
     track_info: Vec<TrackInfo>,
-    pub artists: Vec<String>,
-    pub genres: Vec<String>,
+    pub artists: Vec<(String, usize)>,
+    pub genres: Vec<(String, usize)>,
     pub listens: Vec<Listen>,
     current_playing: usize,
     current_started: Instant,
@@ -56,13 +56,30 @@ impl QueueManager {
         let mut track_info = Vec::new();
 
         for track in &all_tracks {
-            let mut genres = track.genre.iter().map(|genre| queue.genre_index(genre)).collect::<Vec<usize>>();
-            genres.sort_by(|a, b| b.cmp(a));
             let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
             let genre_space = queue.encoder.encode(genre_vec);
 
-            track_info.push(TrackInfo { genres, artist: 0, bpm: 100, genre_space });
+            track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
+
+            for genre in track.genre.clone() {
+                if let Some(index) = queue.genres.iter().position(|(g, _)| similar(g, &genre)) {
+                    queue.genres[index].1 += 1;
+                } else {
+                    queue.genres.push((title_case(&genre), 1));
+                }
+            }
+
+            for artist in track.artists.clone() {
+                if let Some(index) = queue.artists.iter().position(|(a, _)| similar(a, &artist)) {
+                    queue.artists[index].1 += 1;
+                } else {
+                    queue.artists.push((artist, 1));
+                }
+            }
         }
+
+        queue.genres.sort();
+        queue.artists.sort();
 
         queue.track_info = track_info;
 
@@ -72,22 +89,6 @@ impl QueueManager {
         }
 
         queue
-    }
-
-    pub fn genre_index(&mut self, genre: &str) -> usize {
-        if let Some(idx) = self.genres.iter().position(|genre2: &String| similar(genre, genre2)) {
-            return idx;
-        }
-        self.genres.push(strip_unnessecary(genre));
-        self.genres.len() - 1
-    }
-
-    pub fn artist_index(&mut self, artist: &str) -> usize {
-        if let Some(idx) = self.artists.iter().position(|artist2: &String| *artist2 == strip_unnessecary(artist)) {
-            return idx;
-        }
-        self.artists.push(strip_unnessecary(artist));
-        self.artists.len()
     }
 
     pub fn play_track(&mut self, idx: usize) {
@@ -414,6 +415,18 @@ impl Listen {
     }
 }
 
-pub struct Shuffler {
+pub fn title_case(s: &str) -> String {
+    let mut result = String::new();
+    let mut last_whitespace = true;
 
+    for c in s.chars() {
+        if last_whitespace {
+            result.push_str(&c.to_uppercase().collect::<String>());
+        } else {
+            result.push(c);
+        }
+        last_whitespace = c.is_whitespace();
+    }
+
+    result
 }

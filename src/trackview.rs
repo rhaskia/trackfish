@@ -6,7 +6,7 @@ use log::info;
 
 #[component]
 pub fn TrackView(queue: Signal<QueueManager>) -> Element {
-    let mut progress = use_signal(|| 0.0);
+    let mut progress = use_signal(|| queue.read().player.progress_secs());
     let mut progress_held = use_signal(|| false);
 
     let skip = move |e: Event<MouseData>| {

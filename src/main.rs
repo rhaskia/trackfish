@@ -36,6 +36,7 @@ use log::LevelFilter;
 use queuelist::QueueList;
 use trackview::TrackView;
 use all_tracks::AllTracks;
+use crate::document::eval;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, AssetRequest};
@@ -74,6 +75,10 @@ fn App() -> Element {
     let mut queue = use_signal(|| QueueManager::new(Vec::new()));
     let mut view = use_signal(|| View::Song);
 
+    use_future(|| async {
+        eval(include_str!("../js/mediasession.js")).await;
+    });
+
     use_future(move || async move { 
         info!("Requested storage permissions: {:?}", crossbow::Permission::StorageWrite.request_async().await);
         queue.set(QueueManager::new(load_tracks(DIR())));
@@ -109,11 +114,45 @@ fn App() -> Element {
                 View::Song => rsx!{ TrackView { queue } },
                 View::Queue => rsx!{ QueueList { queue } },
                 View::AllTracks => rsx!{ AllTracks { queue } },
+                View::Genres => rsx!{ GenreList { queue } },
+                View::Artists => rsx!{ ArtistList { queue } },
                 _ => rsx!{}
             }
         }
 
         MenuBar { view }
+    }
+}
+
+#[component]
+pub fn ArtistList(queue: Signal<QueueManager>) -> Element {
+    rsx! {
+        div {
+            class: "genrelist",
+            for (artist, songs) in &queue.read().artists {
+                div {
+                    class: "thinitem",
+                    "{artist}"
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn GenreList(queue: Signal<QueueManager>) -> Element {
+    rsx! {
+        div {
+            class: "genrelist",
+            for (genre, freq) in &queue.read().genres {
+                if *freq > 1 {
+                    div {
+                        class: "thinitem",
+                        "{genre}"
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -88,11 +88,6 @@ body {
     margin: 0;
 }
  
-.artist-album-span {
-    display: flex;
-    justify-content: space-between;
-}
-
 .songview span {
     text-align: center;
 }
@@ -196,7 +191,7 @@ body {
     overflow-y: scroll;
 }
 
-.alltrackslist {
+.alltrackslist, .genrelist {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
