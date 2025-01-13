@@ -5,9 +5,11 @@ pub mod queue;
 pub mod track;
 pub mod embed;
 
-//use diesel::prelude::*;
+mod all_tracks;
+mod queuelist;
+mod trackview;
+
 use dioxus::prelude::*;
-//use dotenvy::dotenv;
 use id3::Tag;
 use id3::TagLike;
 use log::Level;
@@ -15,11 +17,8 @@ use log::error;
 use queue::QueueManager;
 use track::load_tracks;
 use std::collections::HashMap;
-use std::env;
-use std::fs;
-use std::fs::DirEntry;
-use std::io;
-use std::io::Cursor;
+use std::fs::{DirEntry, read_dir};
+use std::io::{Cursor, self};
 use std::time::SystemTime;
 
 use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
@@ -34,6 +33,10 @@ use http::Response;
 use tracing_log::LogTracer;
 use log::LevelFilter;
 
+use queuelist::QueueList;
+use trackview::TrackView;
+use all_tracks::AllTracks;
+
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, AssetRequest};
 #[cfg(target_os = "android")]
@@ -43,22 +46,19 @@ use audio::AudioPlayer;
 use track::Track;
 
 fn main() {
-    if cfg!(android) {
+    if cfg!(target_os = "android") {
        android_logger::init_once(
             Config::default().with_max_level(LevelFilter::Trace),
        );
     }
 
     LogTracer::init().expect("Failed to initialize LogTracer");
-
+    
     dioxus_logger::init(dioxus_logger::tracing::Level::INFO);
 
     launch(App);
 }
 
-const CURRENT: GlobalSignal<usize> = GlobalSignal::new(|| 19);
-// //const DB: GlobalSignal<SqliteConnection> = GlobalSignal::new(|| establish_connection());
-// const CURRENT_TRACK: GlobalSignal<Option<Track>> = GlobalSignal::new(|| None);
 const DIR: GlobalSignal<&str> = GlobalSignal::new(|| {
     if cfg!(target_os = "android") {
         "/storage/emulated/0/Music/"
@@ -72,6 +72,7 @@ const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| Vec::new());
 #[component]
 fn App() -> Element {
     let mut queue = use_signal(|| QueueManager::new(Vec::new()));
+    let mut view = use_signal(|| View::Song);
 
     use_future(move || async move { 
         info!("Requested storage permissions: {:?}", crossbow::Permission::StorageWrite.request_async().await);
@@ -81,11 +82,17 @@ fn App() -> Element {
 
     use_asset_handler("trackimage", move |request, responder| {
         info!("{:?}", request.uri());
-        let id = request.uri().path().replace("/trackimage/", "");
-        let path = &TRACKS.read()[CURRENT()].file;
+        let id = request.uri().path().replace("/trackimage/", "").parse().unwrap();
+        let path = if let Some(track) = queue.read().get_track(id) { 
+            track.file.clone()
+        } else {
+            return;
+        };
         info!("{path}");
         let tag = Tag::read_from_path(path).unwrap();
-        let mut file = Cursor::new(tag.pictures().next().unwrap().data.clone());
+        let mut file = if let Some(picture) = tag.pictures().next() {
+            Cursor::new(picture.data.clone())
+        } else { return };
 
         tokio::task::spawn(async move {
             match get_stream_response(&mut file, &request).await {
@@ -100,307 +107,77 @@ fn App() -> Element {
 
         div {
             class: "mainview",
-            SongView { queue }
-
-            // div {
-            //     class: "listensview",
-            //     //"Next Up: {queue.read().next_up().title}"
-            // }
+            match &*view.read() {
+                View::Song => rsx!{ TrackView { queue } },
+                View::Queue => rsx!{ QueueList { queue } },
+                View::AllTracks => rsx!{ AllTracks { queue } },
+                _ => rsx!{}
+            }
         }
 
-        MenuBar {
-
-        }
+        MenuBar { view }
     }
 }
 
 #[component]
-fn SongView(queue: Signal<QueueManager>) -> Element {
-    let mut progress = use_signal(|| 0.0);
-    let mut progress_held = use_signal(|| false);
-
-    let skip = move |e: Event<MouseData>| {
-        queue.write().skip();
-        *CURRENT.write() = queue.read().current();
-        progress.set(0.0);
-        info!("{:?}", queue.read().current_track());
-    };
-
-    let skipback = move |e: Event<MouseData>| {
-        queue.write().skipback();
-        *CURRENT.write() = queue.read().current();
-        progress.set(0.0);
-        info!("{:?}", queue.read().current_track());
-    };
-    
-    use_future(move || async move {
-        let mut to_add = 0.0;
-        loop {
-            time::sleep(Duration::from_secs_f64(0.25)).await;
-            if !progress_held() {
-                *progress.write() += to_add;
-                queue.write().progress = progress();
-                to_add = 0.0;
-            }
-            to_add += 0.25;
-        }
-    });
-
+pub fn MenuBar(view: Signal<View>) -> Element {
     rsx! {
         div {
-            class: "songview",
-            select {
-                for queue_info in &queue.read().queues {
-                    option {
-                        "{queue_info.queue_type}",
-                    }
-                }
-            }
-            div {
-                class: "imageview",
-                img {
-                    src: "/trackimage/{CURRENT()}",
-                }
-            }
-            h2 {
-                "{queue.read().current_track_title():?}"
-            }
-            h3 {
-                span { 
-                    class: "artistspecifier",
-                    onclick: move |e| queue.write().add_current_artist_queue(),
-                    "{queue.read().current_track_artist():?}" 
-                }
-                br { }
-                span { 
-                    class: "albumspecifier",
-                    onclick: move |e| queue.write().add_current_album_queue(),
-                    "{queue.read().current_track_album():?}" 
-                }
-                br {}
-                span {
-                    class: "genresspecifier",
-                    if let Some(genres) = queue.read().current_track_genres() {
-                        for genre in genres {
-                            span {
-                                "{genre}"
-                            }
-                        }
-                    }
-                }
-            }
-            div {
-                class: "progressrow",
-                span {
-                    class: "songprogress",
-                }
-                input {
-                    r#type: "range",
-                    value: progress,
-                    step: 0.25,
-                    max: queue.read().player.song_length(),
-                    onchange: move |e| {
-                        let value = e.value().parse().unwrap();
-                        queue.write().player.set_pos(value);
-                        progress.set(value)
-                    },
-                    onmousedown: move |e| progress_held.set(true),
-                    onmouseup: move |e| progress_held.set(false),
-                }
-                span {
-                    class: "songlength",
-                }
-            }
-            div {
-                class: "buttonrow",
-                button {
-                    // onclick: move |e| {
-                    //     for genre in genres() {
-                    //         *genre_weights.write().entry(genre).or_insert(0) += 1;
-                    //     }
-                    // },
-                    class: "like-button",
-                    class: "svg-button",
-                }
-                button {
-                    class: "skipprev-button",
-                    class: "svg-button",
-                    onclick: skipback,
-                }
-                button {
-                    class: "svg-button",
-                    onclick: move |e| queue.write().toggle_playing(),
-                    background_image: if queue.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
-                }
-                button {
-                    class: "skip-button",
-                    class: "svg-button",
-                    onclick: skip,
-                }
-                button {
-                    class: "dislike-button",
-                    class: "svg-button",
-                }
-            }
-            div {
-                // for genre in genres() {
-                //     "{genre} | "
-                // }
-            }
-            div {
-                // for i in 0..12.min(matches().len()) {
-                //     "{matches()[i].0}, {matches()[i].1}\n"
-                // }
-            }
-            // "{genre_weights:?}"
-        }
-    }
-}
-
-#[component]
-pub fn MenuBar() -> Element {
-    rsx! {
-        div {
-            class: "buttonrow",
+            class: "buttonrow nav",
             button {
                 class: "songview-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Song),
+            }
+            button {
+                class: "queue-button",
+                class: "svg-button",
+                onclick: move |_| view.set(View::Queue),
             }
             button {
                 class: "alltracks-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::AllTracks),
             }
             button {
                 class: "album-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Albums),
             }
             button {
                 class: "artist-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Artists),
             }
             button {
                 class: "genres-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Genres),
             }
             button {
                 class: "search-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Search),
             }
             button {
                 class: "settings-button",
                 class: "svg-button",
+                onclick: move |_| view.set(View::Settings),
             }
         }
 
     }
 }
 
-// pub fn get_song(trackid: i32) -> Track {
-//     use crate::schema::tracks::dsl::*;
-//     use crate::schema::tracks::id;
-//
-//     tracks
-//         .filter(id.eq(trackid))
-//         .select(Track::as_select())
-//         .load(&mut *DB.write())
-//         .expect("Error loading tracks")[0]
-//         .clone()
-// }
-//
-// pub fn clear_genre_matches(conn: &mut SqliteConnection) {
-//     use crate::schema::genres::dsl::genres;
-//
-//     diesel::delete(genres).execute(conn);
-// }
-//
-// pub fn find_song_matches(song: &str, genres: &Vec<String>, limit: i32) -> Vec<(String, i32)> {
-//     let mut songs = HashMap::new();
-//
-//     for genre in genres {
-//         let genres_songs = load_genre(genre);
-//         println!("{:?}, {:?}", genres_songs.len(), genre);
-//         for song in genres_songs {
-//             *songs.entry(song.file).or_insert(0) += 1;
-//         }
-//     }
-//
-//     songs.remove(song);
-//
-//     let mut songs = songs.into_iter().collect::<Vec<(String, i32)>>();
-//     songs.sort_by(|a, b| b.1.cmp(&a.1));
-//
-//     songs
-// }
-//
-// pub fn track_from_file(file_name: &str) -> Track {
-//     use crate::schema::tracks::dsl::*;
-//
-//     let results = tracks
-//         .select(Track::as_select())
-//         .filter(file.eq(file_name))
-//         .load(&mut *DB.write())
-//         .expect("Error loading posts");
-//
-//     results[0].clone()
-// }
-//
-
-//
-// pub fn load_genre(genre_to_match: &str) -> Vec<Track> {
-//     use crate::schema::tracks::dsl::*;
-//
-//     tracks
-//         .filter(genre.like(format!("%{genre_to_match}%")))
-//         .load::<Track>(&mut *DB.write())
-//         .expect("error")
-// }
-//
-// pub fn create_track(
-//     conn: &mut SqliteConnection,
-//     file: &str,
-//     title: &str,
-//     artist: &str,
-//     album: &str,
-//     genre: &str,
-//     date: &str,
-//     body: &str,
-// ) {
-//     use crate::schema::tracks;
-//
-//     let new_track = NewTrack { file, title, artist, album, genre, date, body };
-//
-//     diesel::insert_into(tracks::table)
-//         .values(&new_track)
-//         .returning(Track::as_returning())
-//         .on_conflict(tracks::dsl::file)
-//         .do_nothing()
-//         .execute(conn)
-//         .expect("Error saving new track");
-// }
-//
-// pub fn establish_connection() -> SqliteConnection {
-//     dotenv().ok();
-//
-//     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-//     SqliteConnection::establish(&database_url)
-//         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-// }
-//
-fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
-    let entries = fs::read_dir(directory)?;
-
-    let mp3_files: Vec<String> = entries
-        .filter_map(|entry| {
-            let path = entry.ok()?.path();
-            if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("mp3") {
-                path.to_str().map(|s| s.to_string())
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    Ok(mp3_files)
+pub enum View {
+    Song, 
+    Queue,
+    AllTracks,
+    Artists,
+    Genres,
+    Albums,
+    Search,
+    Settings,
 }
 
 // This was taken from wry's example

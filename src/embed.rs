@@ -1,6 +1,4 @@
 use crate::track::strip_unnessecary;
-use std::collections::HashMap;
-use std::io::Read;
 use ndarray::{Array1, Array2, ArrayBase};
 use ndarray_npy::ReadNpyExt;
 

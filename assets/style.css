@@ -9,11 +9,14 @@ body {
 
 #main {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .mainview {
     display: flex;
-    height: 100%;
+    flex: 1 1 0;
+    flex-direction: column;
 }
 
 .like-button {
@@ -44,6 +47,7 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
+    width: calc(100% - 40px);
     border-right: 1px solid grey;
 }
 
@@ -64,7 +68,7 @@ body {
 .imageview {
     width: 100%;
     aspect-ratio: 1;
-        display: flex;
+    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -74,7 +78,23 @@ body {
     object-position: center center;
     overflow: hidden;
     width: 100%;
-    border-radius: 8px
+    aspect-ratio: 1;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.songview h3 {
+    text-align: center;
+    margin: 0;
+}
+ 
+.album-artist-span {
+    display: flex;
+    justify-content: space-between;
+}
+
+.songview span {
+    text-align: center;
 }
 
 .menubar {
@@ -95,4 +115,111 @@ body {
 
 .progressrow input {
     flex: 1 1 0;
+}
+
+.songview-button {
+    background-image: url("assets/song.svg");
+}
+
+.queue-button {
+    background-image: url("assets/queue.svg");
+}
+
+.alltracks-button {
+    background-image: url("assets/folder.svg");
+}
+
+.album-button {
+    background-image: url("assets/album.svg");
+}
+
+.artist-button {
+    background-image: url("assets/artist.svg");
+}
+
+.genres-button {
+    background-image: url("assets/genres.svg");
+}
+
+.search-button {
+    background-image: url("assets/search.svg")
+}
+
+.settings-button {
+    background-image: url("assets/settings.svg")
+}
+
+.nav .svg-button svg {
+    width: 48px;
+    height 48px;
+    background-size: 200% 200%;
+}
+
+.nav {
+    border-top: 1px solid black;
+    display: flex;
+    justify-content: space-between;
+    width: calc(100% - 20px);
+    margin: 5px;
+    padding: 5px;
+    padding-top: 10px;
+}
+
+.genresspecifier {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.trackitem {
+    height: 40px;
+    display: flex;
+    flex-direction: row; 
+    padding: 6px;
+    margin: 4px;
+}
+
+.trackitem img {
+    height: 40px;
+    width: 40px;
+    border-radius: 2px;
+}
+
+.trackitem span {
+    margin: auto 10px;
+}
+
+.queuelist {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    overflow-y: scroll;
+}
+
+.alltrackslist {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    overflow-y: scroll;
+}
+
+.queuelist .current {
+    border: 1px solid cornflowerblue;
+    border-radius: 8px;
+}
+
+input[type="range"] {
+    appearance: none;
+    background: darkgrey;
+    height: 5px;
+    border-radius: 5px;
+    margin: 10px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    width: 10px;
+    appearance: none;
+    height: 10px;
+    background: darkgrey;
+    border-radius: 10px;
 }

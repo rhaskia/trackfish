@@ -7,7 +7,7 @@ edition = "2021"
 name = "music"
 
 [dependencies]
-dioxus = { version = "0.6", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"
@@ -24,6 +24,11 @@ ndarray-npy = "0.9"
 tracing = "0.1.41"
 tracing-android = "0.2.0"
 tracing-log = "0.2.0"
+
+[features]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
 
 [profile]
 

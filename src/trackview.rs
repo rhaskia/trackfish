@@ -1,0 +1,126 @@
+use dioxus::prelude::*;
+use crate::queue::QueueManager;
+use std::time::Duration;
+use tokio::time;
+use log::info;
+
+#[component]
+pub fn TrackView(queue: Signal<QueueManager>) -> Element {
+    let mut progress = use_signal(|| 0.0);
+    let mut progress_held = use_signal(|| false);
+
+    let skip = move |e: Event<MouseData>| {
+        queue.write().skip();
+        progress.set(0.0);
+        info!("{:?}", queue.read().current_track());
+    };
+
+    let skipback = move |e: Event<MouseData>| {
+        queue.write().skipback();
+        progress.set(0.0);
+        info!("{:?}", queue.read().current_track());
+    };
+    
+    use_future(move || async move {
+        let mut to_add = 0.0;
+        loop {
+            time::sleep(Duration::from_secs_f64(0.25)).await;
+            if !progress_held() {
+                *progress.write() += to_add;
+                queue.write().progress = progress();
+                to_add = 0.0;
+            }
+            to_add += 0.25;
+        }
+    });
+
+    rsx! {
+        div {
+            class: "songview",
+            div {
+                class: "imageview",
+                img {
+                    src: "/trackimage/{queue.read().current()}"
+                }
+            }
+            h3 {
+                "{queue.read().current_track_title().unwrap_or_default()}"
+            }
+            span {
+                class: "artist-album-span",
+                span { 
+                    class: "artistspecifier",
+                    onclick: move |e| queue.write().add_current_artist_queue(),
+                    "{queue.read().current_track_artist().unwrap_or_default()}" 
+                }
+                span { 
+                    class: "albumspecifier",
+                    onclick: move |e| queue.write().add_current_album_queue(),
+                    "{queue.read().current_track_album().unwrap_or_default()}" 
+                }
+            }
+            br {}
+            span {
+                class: "genresspecifier",
+                if let Some(genres) = queue.read().current_track_genres() {
+                    for genre in genres {
+                        span {
+                            "{genre}"
+                        }
+                    }
+                }
+            }
+            div {
+                class: "progressrow",
+                span {
+                    class: "songprogress",
+                    "{queue.read().player.progress_secs():.0}"
+                }
+                input {
+                    r#type: "range",
+                    value: progress,
+                    step: 0.25,
+                    max: queue.read().player.song_length(),
+                    onchange: move |e| {
+                        let value = e.value().parse().unwrap();
+                        queue.write().player.set_pos(value);
+                        progress.set(value)
+                    },
+                    onmousedown: move |e| progress_held.set(true),
+                    onmouseup: move |e| progress_held.set(false),
+                }
+                span {
+                    class: "songlength",
+                    "{queue.read().player.song_length():.0}"
+                }
+            }
+            div {
+                class: "buttonrow",
+                button {
+                    class: "like-button",
+                    class: "svg-button",
+                }
+                button {
+                    class: "skipprev-button",
+                    class: "svg-button",
+                    onclick: skipback,
+                }
+                button {
+                    class: "svg-button",
+                    onclick: move |e| queue.write().toggle_playing(),
+                    background_image: if queue.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
+                }
+                button {
+                    class: "skip-button",
+                    class: "svg-button",
+                    onclick: skip,
+                }
+                button {
+                    class: "dislike-button",
+                    class: "svg-button",
+                }
+            }
+        }
+    }
+}
+

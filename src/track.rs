@@ -60,7 +60,7 @@ pub fn load_tracks(directory: &str) -> Vec<Track> {
 }
 
 pub fn load_track(file: String) -> Track {
-    let mut tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
+    let tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
 
     let title = tag.title().unwrap_or_default().to_string();
     let artist = tag.artist().unwrap_or_default().to_string();
@@ -103,7 +103,7 @@ pub struct TrackInfo {
 
 impl TrackInfo {
     pub fn genres_dist(&self, other: &TrackInfo) -> f32 {
-        let mut diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
+        let diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
         diff.sum().sqrt()
     }
 }

@@ -1,9 +1,8 @@
-use music::queue::{QueueManager, ShuffleMode};
+use music::queue::QueueManager;
 use music::track::load_tracks;
 
 fn main() {
     let mut queue = QueueManager::new(load_tracks("E:/music"));
-    queue.propagate_info();
 
     println!("{:?}", queue.current_track());
 

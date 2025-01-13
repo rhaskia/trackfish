@@ -3,15 +3,13 @@ use log::info;
 use ndarray::Array1;
 use rand::prelude::*;
 use std::{
-    collections::HashMap,
-    time::{Duration, Instant}, fmt::{Display, Pointer},
+    time::Instant, fmt::{Display, Pointer},
 };
-use rand::prelude::SliceRandom;
 use rand::distributions::WeightedIndex;
 
 #[derive(PartialEq)]
 pub struct QueueManager {
-    all_tracks: Vec<Track>,
+    pub all_tracks: Vec<Track>,
     track_info: Vec<TrackInfo>,
     pub artists: Vec<String>,
     pub genres: Vec<String>,
@@ -26,6 +24,7 @@ pub struct QueueManager {
     pub queue_tracks: Vec<Vec<usize>>,
     pub player: AudioPlayer,
     pub encoder: AutoEncoder,
+    pub radio_temperature: f64,
 }
 
 // Basic functionality
@@ -43,14 +42,15 @@ impl QueueManager {
             listens: Vec::new(),
             progress: 0.0,
             playing: true,
-            queues: vec![Queue::all()],
+            queues: vec![Queue::all_pos(current_playing)],
             queue_tracks: vec![],
             current_queue: 0,
             track_info: Vec::new(),
             artists: Vec::new(),
             genres: Vec::new(),
             player: AudioPlayer::new(),
-            encoder: AutoEncoder::new().unwrap()
+            encoder: AutoEncoder::new().unwrap(),
+            radio_temperature: 1.0,
         };
 
         let mut track_info = Vec::new();
@@ -91,21 +91,21 @@ impl QueueManager {
         self.artists.len()
     }
 
-    // what ??
-    pub fn next_track(&mut self) -> usize {
-        let current_queue = &mut self.queues[self.current_queue];
-
-        current_queue.current_track += 1;
-
-        if let Some(next) = current_queue.cached_order.get(current_queue.current_track) {
-            return *next;
+    pub fn play_track(&mut self, idx: usize) {
+        if let Some(current_track) = self.current_track() {
+            self.listens.push(Listen::new(
+                self.current_playing,
+                self.current_started,
+                current_track.len,
+                self.progress,
+            ));
         }
 
-        match current_queue.shuffle_mode {
-            ShuffleMode::PlaySimilar => self.next_similar(),
-            ShuffleMode::Random => 0, // play next queue
-            ShuffleMode::None => 0,
-        }
+        self.current_playing = idx;
+        self.current_started = Instant::now();
+
+        self.player.play_track(&self.all_tracks[self.current_playing].file);
+        self.player.skip();
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
@@ -119,11 +119,12 @@ impl QueueManager {
                 info!("{:?}", self.all_tracks[*i].genre);
                 continue;
             }
-            weights[*i] += (1.0 / (1.0 + (dist as f32 / 4.0 - 2.0).exp()));
+            weights[*i] += 1.0 / (1.0 + (dist as f32 / 4.0 - 2.0).exp());
         }
 
-        for i in 0..self.listens.len() {
-            weights[self.listens[i].id] -= (1.0 / ((i as f32 / 2.0 - 1.0).exp() + 1.0)).max(0.0);
+        for i in &self.current_queue().cached_order {
+            //weights[self.listens[i].id] -= (1.0 / ((i as f32 / 2.0 - 1.0).exp() + 1.0)).max(0.0);
+            weights[*i] = 0.0;
         }
 
         // for i in 0..weights.len() {
@@ -138,8 +139,7 @@ impl QueueManager {
     }
 
     pub fn next_similar(&mut self) -> usize {
-        let mut weights = self.get_weights().to_vec();
-        info!("{weights:?}");
+        let weights = self.get_weights().to_vec();
         let dist = WeightedIndex::new(weights.clone()).unwrap(); 
         let mut rng = thread_rng();
 
@@ -149,58 +149,57 @@ impl QueueManager {
     }
 
     pub fn skipback(&mut self) {
-        if let Some(current_track) = self.current_track() {
-            self.listens.push(Listen::new(
-                self.current_playing,
-                self.current_started,
-                current_track.len,
-                self.progress,
-            ));
-        }
-
         info!("Skipping {} through", self.player.progress_secs());
         if self.player.progress_secs() < 5.0 {
-            if self.listens.len() == 0 { return; }
-
-            self.current_playing = self.listens[self.listens.len() - 2].id;
-            self.current_started = Instant::now();
-
-            self.player.play_track(&self.all_tracks[self.current_playing].file);
-            self.player.skip();
-        } else {
-            self.player.set_pos(0.0);
-            self.current_started = Instant::now();
+            if self.queues[self.current_queue].current_track == 0 { return; }
+            let last = self.queues[self.current_queue].current_track - 1;
+            self.queues[self.current_queue].current_track = last;
         }
+
+        self.play_track(self.queues[self.current_queue].current());
     }
 
     pub fn skip(&mut self) {
-        if let Some(current_track) = self.current_track() {
-            self.listens.push(Listen::new(
-                self.current_playing,
-                self.current_started,
-                current_track.len,
-                self.progress,
-            ));
+        let current_queue = &mut self.queues[self.current_queue];
+
+        current_queue.current_track += 1;
+
+        if let Some(next) = current_queue.cached_order.get(current_queue.current_track).cloned() {
+            self.play_track(next);
+            return;
         }
 
-        let next_track = self.next_track();
+        match current_queue.shuffle_mode {
+            ShuffleMode::PlaySimilar => {
+                let next = self.next_similar();
+                self.queues[self.current_queue].cached_order.push(next);
+                self.play_track(next);
+            }
+            _ => {
+                if self.queues.len() > self.current_queue + 1 {
+                    self.current_queue += 1;     
+                    // TODO: shuffle next queue if needed
+                    self.play_track(self.current_queue().track(0))
+                }
+            }
+        }
+    }
 
-        self.player.play_track(&self.all_tracks[next_track].file);
-        self.player.skip();
-
-        self.current_started = Instant::now();
-        self.current_playing = next_track;
+    pub fn set_queue_and_track(&mut self, queue: usize, track: usize) {
+        self.current_queue = queue;
+        self.queues[queue].current_track = track;
+        self.play_track(self.queues[queue].cached_order[track]);
     }
 
     // more so fill out the cached order
     pub fn shuffle_queue(&mut self) {
         // allow for override shuffle mode
-        match self.get_queue().shuffle_mode {
+        match self.current_queue().shuffle_mode {
             ShuffleMode::PlaySimilar => {
                 self.mut_queue().cached_order = Vec::new();
             }, // maybe just clear out listens/weights
             ShuffleMode::Random => {
-                let current_type = self.get_queue().queue_type.clone();
+                let current_type = self.current_queue().queue_type.clone();
                 let unshuffled = self.get_matching(current_type);      
 
                 self.mut_queue().cached_order = unshuffled;
@@ -215,7 +214,11 @@ impl QueueManager {
         self.all_tracks.iter().enumerate().filter(|(index, track)| track.matches(queue_type.clone())).map(|(index, track)| index).collect()
     }
 
-    pub fn get_queue(&self) -> &Queue {
+    pub fn get_queue(&self, idx: usize) -> &Queue {
+        &self.queues[idx]
+    }
+
+    pub fn current_queue(&self) -> &Queue {
         &self.queues[self.current_queue]
     } 
     
@@ -227,12 +230,14 @@ impl QueueManager {
 // Queue creation
 impl QueueManager {
     pub fn add_artist_queue(&mut self, artist: String) {
-        self.queues.push(Queue::new(QueueType::Artist(artist), ShuffleMode::None));
+        let tracks = self.get_tracks_where(|track| track.artist == artist);
+        self.queues.push(Queue::new(QueueType::Artist(artist), ShuffleMode::None, tracks));
         self.current_queue = self.queues.len() - 1;
     }
 
     pub fn add_album_queue(&mut self, album: String) {
-        self.queues.push(Queue::new(QueueType::Album(album), ShuffleMode::None));
+        let tracks = self.get_tracks_where(|track| track.album == album);
+        self.queues.push(Queue::new(QueueType::Album(album), ShuffleMode::None, tracks));
         self.current_queue = self.queues.len() - 1;
     }
 
@@ -244,6 +249,11 @@ impl QueueManager {
     pub fn add_current_album_queue(&mut self) {
         let album = self.current_track().cloned().unwrap_or_default().album;
         self.add_album_queue(album);
+    }
+
+    pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize> 
+    where F: Fn(&Track) -> bool {
+        self.all_tracks.iter().enumerate().filter(|(_, track)| condition(*track)).map(|(idx, _)| idx).collect() 
     }
 }
 
@@ -268,6 +278,10 @@ impl QueueManager {
 
     pub fn current_track(&self) -> Option<&Track> {
         self.all_tracks.get(self.current_playing)
+    }
+
+    pub fn get_track(&self, idx: usize) -> Option<&Track> {
+        self.all_tracks.get(idx)
     }
 
     pub fn current_track_title(&self) -> Option<&str> {
@@ -302,12 +316,12 @@ pub struct Queue {
 }
 
 impl Queue {
-    pub fn new(queue_type: QueueType, shuffle_mode: ShuffleMode) -> Self {
+    pub fn new(queue_type: QueueType, shuffle_mode: ShuffleMode, tracks: Vec<usize>) -> Self {
         Self {
             queue_type,
             current_track: 0,
             listens: Vec::new(),
-            cached_order: Vec::new(),
+            cached_order: tracks,
             shuffle_mode,
         }
     }
@@ -330,6 +344,25 @@ impl Queue {
             cached_order: Vec::new(),
             shuffle_mode: ShuffleMode::PlaySimilar,
         }
+    }
+
+    // Radio QueueType
+    pub fn all_pos(idx: usize) -> Self {
+        Queue {
+            queue_type: QueueType::AllTracks, 
+            current_track: 0,
+            listens: Vec::new(),
+            cached_order: vec![idx],
+            shuffle_mode: ShuffleMode::PlaySimilar,
+        }
+    }
+
+    pub fn current(&self) -> usize {
+        self.cached_order[self.current_track]
+    }
+
+    pub fn track(&self, idx: usize) -> usize {
+        self.cached_order[idx]
     }
 }
 
