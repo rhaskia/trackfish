@@ -46,27 +46,23 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
             h3 {
                 "{queue.read().current_track_title().unwrap_or_default()}"
             }
-            span {
-                class: "artist-album-span",
-                span { 
-                    class: "artistspecifier",
-                    for (idx, artist) in queue.read().current_track_artist().cloned().unwrap_or_default().into_iter().enumerate() {
-                        if idx > 0 {
-                            " & "
-                        }
-                        span { 
-                            onclick: move |_| queue.write().add_artist_queue(artist.to_string()),
-                            "{artist}"
-                        },
+            span { 
+                class: "artistspecifier",
+                for (idx, artist) in queue.read().current_track_artist().cloned().unwrap_or_default().into_iter().enumerate() {
+                    if idx > 0 {
+                        " & "
                     }
-                }
-                span { 
-                    class: "albumspecifier",
-                    onclick: move |e| queue.write().add_current_album_queue(),
-                    "{queue.read().current_track_album().unwrap_or_default()}" 
+                    span { 
+                        onclick: move |_| queue.write().add_artist_queue(artist.to_string()),
+                        "{artist}"
+                    },
                 }
             }
-            br {}
+            span { 
+                class: "albumspecifier",
+                onclick: move |e| queue.write().add_current_album_queue(),
+                "{queue.read().current_track_album().unwrap_or_default()}" 
+            }
             span {
                 class: "genresspecifier",
                 if let Some(genres) = queue.read().current_track_genres() {

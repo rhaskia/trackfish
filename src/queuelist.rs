@@ -3,13 +3,14 @@ use crate::queue::QueueManager;
 
 #[component]
 pub fn QueueList(queue: Signal<QueueManager>) -> Element {
-    let mut selected_queue = use_signal(|| 0);
+    let mut selected_queue = use_signal(|| queue.read().current_queue);
 
     rsx! {
         div {
             class: "queuelist",
             "{selected_queue()}"
             select {
+                value: selected_queue(),
                 onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
                 for i in 0..queue.read().queues.len() {
                     option {

@@ -9,6 +9,7 @@ pub fn AllTracks(queue: Signal<QueueManager>) -> Element {
             for i in 0..queue.read().all_tracks.len() {
                 div {
                     class: "trackitem",
+                    onclick: move |_| queue.write().add_all_queue(i),
                     img { src: "/trackimage/{i}" }
                     span { "{queue.read().all_tracks[i].title}" }
                 } 

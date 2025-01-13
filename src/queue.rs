@@ -238,10 +238,9 @@ impl QueueManager {
         self.current_queue = self.queues.len() - 1;
     }
 
-    /// Replace this
-    pub fn add_current_artist_queue(&mut self) {
-        let artist = self.current_track().cloned().unwrap_or_default().artists[0].clone();
-        self.add_artist_queue(artist);
+    pub fn add_all_queue(&mut self, track: usize) {
+        self.queues.push(Queue::all_pos(track));
+        self.current_queue = self.queues.len() - 1;
     }
 
     pub fn add_current_album_queue(&mut self) {
