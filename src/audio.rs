@@ -29,8 +29,13 @@ impl AudioPlayer {
         info!("Playing track: {file_path:?}");
         let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
+        let was_paused = self.sink.is_paused();
         self.current_song_len = source.total_duration().unwrap().as_secs_f64();
+        self.sink.clear();
         self.sink.append(source);
+        if !was_paused {
+            self.sink.play();
+        }
         info!("Track successfully played");
     }
 
@@ -58,11 +63,15 @@ impl AudioPlayer {
         self.sink.get_pos().as_secs_f64()
     }
 
+    pub fn track_ended(&self) -> bool {
+        self.sink.empty()
+    }
+
     pub fn song_length(&self) -> f64 {
         self.current_song_len
     }
 
     pub fn set_pos(&mut self, pos: f64) {
-        self.sink.try_seek(Duration::from_secs_f64(pos));
+        let _ = self.sink.try_seek(Duration::from_secs_f64(pos));
     }
 }

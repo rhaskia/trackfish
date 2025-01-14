@@ -50,7 +50,7 @@ impl QueueManager {
             genres: Vec::new(),
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
-            radio_temperature: 1.0,
+            radio_temperature: 0.1,
         };
 
         let mut track_info = Vec::new();
@@ -83,7 +83,6 @@ impl QueueManager {
 
         queue.track_info = track_info;
 
-        info!("track: {:?}", queue.current_track());
         if let Some(track) = queue.current_track().cloned() {
             queue.player.play_track(&track.file);
         }
@@ -105,7 +104,7 @@ impl QueueManager {
         self.current_started = Instant::now();
 
         self.player.play_track(&self.all_tracks[self.current_playing].file);
-        self.player.skip();
+        //self.player.skip();
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
@@ -126,11 +125,10 @@ impl QueueManager {
             weights[*i] = 0.0;
         }
 
-        // for i in 0..weights.len() {
-        //     if weights[i] < 0.01 {
-        //         weights[i] = 0.0;
-        //     }
-        // }
+        // TODO: negative weighting based on recent artist
+        // TODO: negative weighting for recent albums
+        // TODO: negative weighting for genres in songs skipped early (maybe)
+        // TODO: genre weighting using a subset of the previous radio songs
 
         weights = weights.clamp(0.0, 10.0);
 

@@ -75,7 +75,6 @@ pub fn load_track(file: String) -> Track {
     let title = tag.title().unwrap_or_default().to_string();
     
     let artists = if let Some(artists) = get_artists(&tag) {
-        info!("Multiple artists: {artists:?}");
         artists.iter().map(|artist| artist.to_string()).collect()
     } else {
         vec![tag.artist().unwrap_or_default().to_string()]

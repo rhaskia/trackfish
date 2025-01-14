@@ -31,7 +31,8 @@ pub fn TrackItem(queue: Signal<QueueManager>, selected_queue: Signal<usize>, idx
     rsx!{
         div {
             class: "trackitem",
-            class: if queue.read().get_queue(selected_queue()).current_track == idx { "current" },
+            class: if queue.read().get_queue(selected_queue()).current_track == idx
+                   && queue.read().current_queue == selected_queue() { "current" },
             onclick: move |_| queue.write().set_queue_and_track(selected_queue(), idx),
             img { src: "/trackimage/{queue.read().get_queue(selected_queue()).track(idx)}" },
             span {

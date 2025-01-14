@@ -22,15 +22,14 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
     };
     
     use_future(move || async move {
-        let mut to_add = 0.0;
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
             if !progress_held() {
-                *progress.write() += to_add;
-                queue.write().progress = progress();
-                to_add = 0.0;
+                *progress.write() = queue.read().player.progress_secs();
+                if queue.read().player.track_ended() {
+                    queue.write().skip();
+                }
             }
-            to_add += 0.25;
         }
     });
 

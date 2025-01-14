@@ -7,6 +7,7 @@ pub mod embed;
 
 mod all_tracks;
 mod queuelist;
+mod settings;
 mod trackview;
 
 use dioxus::prelude::*;
@@ -45,6 +46,7 @@ use dioxus::mobile::{use_asset_handler, AssetRequest};
 
 use audio::AudioPlayer;
 use track::Track;
+use settings::Settings;
 
 fn main() {
     if cfg!(target_os = "android") {
@@ -116,7 +118,9 @@ fn App() -> Element {
                 View::AllTracks => rsx!{ AllTracks { queue } },
                 View::Genres => rsx!{ GenreList { queue } },
                 View::Artists => rsx!{ ArtistList { queue } },
-                _ => rsx!{}
+                View::Albums => rsx!{ AlbumsList { queue } },
+                View::Settings => rsx!{ Settings { queue } },
+                View::Search => rsx!{},
             }
         }
 
@@ -125,10 +129,35 @@ fn App() -> Element {
 }
 
 #[component]
+pub fn AlbumsList(queue: Signal<QueueManager>) -> Element {
+    rsx! {
+        div {
+            class: "genrelist",
+            div {
+                class: "searchbar",
+                img { src: "assets/search.svg" }
+                input {}
+            },
+            for (artist, songs) in &queue.read().artists {
+                div {
+                    class: "thinitem",
+                    "{artist}"
+                }
+            }
+        }
+    }
+}
+
+#[component]
 pub fn ArtistList(queue: Signal<QueueManager>) -> Element {
     rsx! {
         div {
             class: "genrelist",
+            div {
+                class: "searchbar",
+                img { src: "assets/search.svg" }
+                input {}
+            },
             for (artist, songs) in &queue.read().artists {
                 div {
                     class: "thinitem",
