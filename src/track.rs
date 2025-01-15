@@ -13,6 +13,7 @@ pub struct Track {
     pub album: String,
     pub artists: Vec<String>,
     pub genre: Vec<String>,
+    pub mood: Option<Mood>,
     pub year: String,
     pub len: f64,
 }
@@ -28,6 +29,10 @@ impl Track {
             QueueType::Exclusion(_) => todo!(),
         }
     }
+
+    pub fn shared_artists(&self, other: &Self) -> usize {
+        self.artists.iter().filter(|e| other.artists.contains(e)).collect::<Vec<&String>>().len()
+    }
 }
 
 impl Default for Track {
@@ -39,6 +44,7 @@ impl Default for Track {
             artists: Default::default(),
             genre: Default::default(),
             year: Default::default(),
+            mood: Default::default(),
             len: 100.0
         }
     }
@@ -69,6 +75,49 @@ pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     None
 }
 
+#[derive(PartialEq, Clone, Debug)]
+struct Mood {
+    acoustic: bool,
+    aggressive: bool,
+    electronic: bool,
+    happy: bool,
+    party: bool,
+    relaxed: bool,
+    sad: bool,
+}
+
+
+pub fn get_mood(tag: &Tag) -> Option<Mood> {
+    for frame in tag.extended_texts() {
+        if frame.description == "ab:mood" {
+            let mut values = frame.value.split("\0").map(|e| e.to_string()).filter(|e| !e.is_empty());
+            let acoustic = values.next().unwrap() == "Acoustic";
+            let aggressive = values.next().unwrap() == "Aggressive";
+            let electronic = values.next().unwrap() == "Electronic";
+            let happy = values.next().unwrap() == "Happy";
+            let party = values.next().unwrap() == "Party";
+            let relaxed = values.next().unwrap() == "Relaxed";
+            let sad = values.next().unwrap() == "Sad";
+            return Some(Mood { acoustic, aggressive, electronic, happy, party, relaxed, sad });
+        }
+    }
+
+    None
+}
+
+pub fn get_genres(tag: &Tag) -> Vec<String> {
+    let mut genres: Vec<String> = tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
+
+    for frame in tag.extended_texts() {
+        if frame.description == "ab:genre" {
+            let mut ab_genres = frame.value.split("\0").map(|e| e.to_string()).collect();
+            genres.append(&mut ab_genres);
+        }
+    }
+
+    genres.into_iter().filter(|e| !e.is_empty()).collect()
+}
+
 pub fn load_track(file: String) -> Track {
     let tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
 
@@ -80,15 +129,17 @@ pub fn load_track(file: String) -> Track {
         vec![tag.artist().unwrap_or_default().to_string()]
     };
 
+    let mood = get_mood(&tag);
+
     let album = tag.album().unwrap_or_default().to_string();
-    let genre = tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
+    let genre = get_genres(&tag);
     let len = tag.duration().unwrap_or(1) as f64;
     let mut year = String::new();
     if let Some(tag_year) = tag.get("Date") {
         year = tag_year.to_string();
     }
 
-    Track { file, title, artists, album, genre, year, len }
+    Track { file, title, artists, album, genre, year, len, mood }
 }
 
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {

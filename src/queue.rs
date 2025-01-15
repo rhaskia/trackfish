@@ -24,7 +24,20 @@ pub struct QueueManager {
     pub queue_tracks: Vec<Vec<usize>>,
     pub player: AudioPlayer,
     pub encoder: AutoEncoder,
-    pub radio_temperature: f64,
+    pub radio: RadioSettings,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct RadioSettings {
+    temp: f32,
+    album_penalty: f32,
+    artist_penalty: f32,
+}
+
+impl RadioSettings {
+    pub fn new(temp: f32, album_penalty: f32, artist_penalty: f32) -> Self {
+        RadioSettings { temp, album_penalty, artist_penalty }
+    }
 }
 
 // Basic functionality
@@ -50,7 +63,7 @@ impl QueueManager {
             genres: Vec::new(),
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
-            radio_temperature: 0.1,
+            radio: RadioSettings::new(1.0, 0.5, 0.5),
         };
 
         let mut track_info = Vec::new();
@@ -114,10 +127,21 @@ impl QueueManager {
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
         for (dist, (i, _)) in dists.iter().enumerate() {
-            if self.all_tracks[*i].genre[0].is_empty() { 
+            if self.all_tracks[*i].genre.len() == 0 { 
                 continue;
             }
-            weights[*i] += 1.0 / (1.0 + (dist as f32 / 4.0 - 2.0).exp());
+            weights[*i] += 1.0 / (1.0 + (dist as f32 * self.radio.temp - 2.0).exp());
+        }
+
+        for i in 0..self.all_tracks.len() {
+            if similar(&self.all_tracks[self.current()].album, &self.all_tracks[i].album) {
+                weights *= self.radio.album_penalty;
+                info!("Tracks shared album");
+            }
+            if self.all_tracks[self.current()].shared_artists(&self.all_tracks[i]) > 0 {
+                weights *= self.radio.artist_penalty;
+                info!("Tracks shared artist");
+            }
         }
 
         for i in &self.current_queue().cached_order {

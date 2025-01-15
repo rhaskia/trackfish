@@ -7,7 +7,7 @@ edition = "2021"
 name = "music"
 
 [dependencies]
-dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus", features = ["desktop"] }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"
