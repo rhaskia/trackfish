@@ -7,8 +7,8 @@ pub fn QueueList(queue: Signal<QueueManager>) -> Element {
 
     rsx! {
         div {
-            class: "queuelist",
-            "{selected_queue()}"
+            id: "queuelist",
+            class: "tracklist",
             select {
                 value: selected_queue(),
                 onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
@@ -34,10 +34,19 @@ pub fn TrackItem(queue: Signal<QueueManager>, selected_queue: Signal<usize>, idx
             class: if queue.read().get_queue(selected_queue()).current_track == idx
                    && queue.read().current_queue == selected_queue() { "current" },
             onclick: move |_| queue.write().set_queue_and_track(selected_queue(), idx),
+            img { 
+                class: "trackbutton",
+                src: "/assets/draghandle.svg"
+            },
             img { src: "/trackimage/{queue.read().get_queue(selected_queue()).track(idx)}" },
             span {
                 "{queue.read().get_track(queue.read().get_queue(selected_queue()).track(idx)).unwrap().title}"
             }
+            div { flex_grow: 1 },
+            img {
+                class: "trackbutton",
+                src: "/assets/vert.svg"
+            },
         }
     }
 }

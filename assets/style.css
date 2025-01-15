@@ -81,6 +81,7 @@ body {
     aspect-ratio: 1;
     border-radius: 8px;
     margin: 10px 0;
+    box-shadow: 0px 5px 10px #00000073;
 }
 
 .songview h3 {
@@ -184,21 +185,15 @@ body {
     margin: auto 10px;
 }
 
-.queuelist {
+.tracklist {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
     overflow-y: scroll;
+    height: fit-content;
 }
 
-.alltrackslist, .genrelist {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    overflow-y: scroll;
-}
-
-.queuelist .current {
+.tracklist .current {
     border: 1px solid cornflowerblue;
     border-radius: 8px;
 }
@@ -217,4 +212,15 @@ input[type="range"]::-webkit-slider-thumb {
     height: 10px;
     background: darkgrey;
     border-radius: 10px;
+}
+
+select {
+    font-size: 15px;
+    margin: 5px;
+}
+
+.trackbutton {
+    width: 30px !important;
+    height: 30px !important
+    margin: 5px;
 }

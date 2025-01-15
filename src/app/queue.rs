@@ -1,11 +1,16 @@
-use crate::{track::{Track, TrackInfo, strip_unnessecary, similar}, audio::AudioPlayer, embed::AutoEncoder};
+use crate::{
+    audio::AudioPlayer,
+    embed::AutoEncoder,
+    track::{similar, strip_unnessecary, Mood, Track, TrackInfo},
+};
 use log::info;
 use ndarray::Array1;
+use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::{
-    time::Instant, fmt::{Display, Pointer},
+    fmt::{Display, Pointer},
+    time::Instant,
 };
-use rand::distributions::WeightedIndex;
 
 #[derive(PartialEq)]
 pub struct QueueManager {
@@ -44,9 +49,8 @@ impl RadioSettings {
 impl QueueManager {
     pub fn new(all_tracks: Vec<Track>) -> Self {
         let mut rng = thread_rng();
-        let current_playing = if all_tracks.len() > 0 {
-            rng.gen_range(0..all_tracks.len())
-        } else { 0 };
+        let current_playing =
+            if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
 
         let mut queue = QueueManager {
             all_tracks: all_tracks.clone(),
@@ -55,7 +59,10 @@ impl QueueManager {
             listens: Vec::new(),
             progress: 0.0,
             playing: true,
-            queues: vec![Queue::all_pos(current_playing)],
+            queues: vec![Queue::radio(
+                current_playing,
+                all_tracks.get(current_playing).cloned().unwrap_or_default().title,
+            )],
             queue_tracks: vec![],
             current_queue: 0,
             track_info: Vec::new(),
@@ -121,13 +128,31 @@ impl QueueManager {
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
-        let current = &self.track_info[self.current()];
+        let space = self.track_info[self.current_playing].genre_space.clone();
+        let current = self.mut_current_queue().mut_radio_genres();
+
+        if *current == Array1::<f32>::zeros(16) {
+            *current = space;
+        } else {
+            info!("Old Space: {current}");
+            *current = lerp(current, &space, 0.35);
+            info!("New Space: {current}");
+        }
+
+        let _ = current;
+        let current = self.current_queue().radio_genres();
+
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
-        let mut dists: Vec<(usize, f32)> = self.track_info.iter().map(|track| track.genres_dist(current)).enumerate().collect();
+        let mut dists: Vec<(usize, f32)> = self
+            .track_info
+            .iter()
+            .map(|track| track.genres_dist_from_vec(&current))
+            .enumerate()
+            .collect();
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
         for (dist, (i, _)) in dists.iter().enumerate() {
-            if self.all_tracks[*i].genre.len() == 0 { 
+            if self.all_tracks[*i].genre.len() == 0 {
                 continue;
             }
             weights[*i] += 1.0 / (1.0 + (dist as f32 * self.radio.temp - 2.0).exp());
@@ -161,7 +186,7 @@ impl QueueManager {
 
     pub fn next_similar(&mut self) -> usize {
         let weights = self.get_weights().to_vec();
-        let dist = WeightedIndex::new(weights.clone()).unwrap(); 
+        let dist = WeightedIndex::new(weights.clone()).unwrap();
         let mut rng = thread_rng();
 
         let next = dist.sample(&mut rng);
@@ -171,7 +196,9 @@ impl QueueManager {
     pub fn skipback(&mut self) {
         info!("Skipping {} through", self.player.progress_secs());
         if self.player.progress_secs() < 5.0 {
-            if self.queues[self.current_queue].current_track == 0 { return; }
+            if self.queues[self.current_queue].current_track == 0 {
+                return;
+            }
             let last = self.queues[self.current_queue].current_track - 1;
             self.queues[self.current_queue].current_track = last;
         }
@@ -189,15 +216,15 @@ impl QueueManager {
             return;
         }
 
-        match current_queue.shuffle_mode {
-            ShuffleMode::PlaySimilar => {
+        match current_queue.queue_type {
+            QueueType::Radio(_, _) => {
                 let next = self.next_similar();
                 self.queues[self.current_queue].cached_order.push(next);
                 self.play_track(next);
             }
             _ => {
                 if self.queues.len() > self.current_queue + 1 {
-                    self.current_queue += 1;     
+                    self.current_queue += 1;
                     // TODO: shuffle next queue if needed
                     self.play_track(self.current_queue().track(0))
                 }
@@ -215,23 +242,27 @@ impl QueueManager {
     pub fn shuffle_queue(&mut self) {
         // allow for override shuffle mode
         match self.current_queue().shuffle_mode {
-            ShuffleMode::PlaySimilar => {
-                self.mut_queue().cached_order = Vec::new();
-            }, // maybe just clear out listens/weights
             ShuffleMode::Random => {
                 let current_type = self.current_queue().queue_type.clone();
-                let unshuffled = self.get_matching(current_type);      
+                let unshuffled = self.get_matching(current_type);
 
-                self.mut_queue().cached_order = unshuffled;
-            },
-            ShuffleMode::None => {},
+                self.mut_current_queue().cached_order = unshuffled;
+            }
+            ShuffleMode::None => {}
         }
-    } 
+    }
 
     pub fn get_matching(&self, queue_type: QueueType) -> Vec<usize> {
-        if queue_type == QueueType::AllTracks { return (0..self.all_tracks.len()).collect(); }
+        if queue_type == QueueType::AllTracks {
+            return (0..self.all_tracks.len()).collect();
+        }
 
-        self.all_tracks.iter().enumerate().filter(|(index, track)| track.matches(queue_type.clone())).map(|(index, track)| index).collect()
+        self.all_tracks
+            .iter()
+            .enumerate()
+            .filter(|(index, track)| track.matches(queue_type.clone()))
+            .map(|(index, track)| index)
+            .collect()
     }
 
     pub fn get_queue(&self, idx: usize) -> &Queue {
@@ -240,11 +271,11 @@ impl QueueManager {
 
     pub fn current_queue(&self) -> &Queue {
         &self.queues[self.current_queue]
-    } 
-    
-    pub fn mut_queue(&mut self) -> &mut Queue {
+    }
+
+    pub fn mut_current_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
-    } 
+    }
 }
 
 // Queue creation
@@ -271,9 +302,16 @@ impl QueueManager {
         self.add_album_queue(album);
     }
 
-    pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize> 
-    where F: Fn(&Track) -> bool {
-        self.all_tracks.iter().enumerate().filter(|(_, track)| condition(*track)).map(|(idx, _)| idx).collect() 
+    pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize>
+    where
+        F: Fn(&Track) -> bool,
+    {
+        self.all_tracks
+            .iter()
+            .enumerate()
+            .filter(|(_, track)| condition(*track))
+            .map(|(idx, _)| idx)
+            .collect()
     }
 }
 
@@ -306,6 +344,10 @@ impl QueueManager {
 
     pub fn current_track_title(&self) -> Option<&str> {
         Some(&self.current_track()?.title)
+    }
+
+    pub fn current_track_mood(&self) -> Option<Mood> {
+        Some(self.current_track()?.mood.clone()?)
     }
 
     pub fn current_track_album(&self) -> Option<&str> {
@@ -346,7 +388,11 @@ impl Queue {
         }
     }
 
-    pub fn new_from_pos(queue_type: QueueType, shuffle_mode: ShuffleMode, current_track: usize) -> Self {
+    pub fn new_from_pos(
+        queue_type: QueueType,
+        shuffle_mode: ShuffleMode,
+        current_track: usize,
+    ) -> Self {
         Self {
             queue_type,
             current_track,
@@ -358,22 +404,31 @@ impl Queue {
 
     pub fn all() -> Self {
         Queue {
-            queue_type: QueueType::AllTracks, 
+            queue_type: QueueType::AllTracks,
             current_track: 0,
             listens: Vec::new(),
             cached_order: Vec::new(),
-            shuffle_mode: ShuffleMode::PlaySimilar,
+            shuffle_mode: ShuffleMode::Random,
         }
     }
 
-    // Radio QueueType
     pub fn all_pos(idx: usize) -> Self {
         Queue {
-            queue_type: QueueType::AllTracks, 
+            queue_type: QueueType::AllTracks,
             current_track: 0,
             listens: Vec::new(),
             cached_order: vec![idx],
-            shuffle_mode: ShuffleMode::PlaySimilar,
+            shuffle_mode: ShuffleMode::Random,
+        }
+    }
+
+    pub fn radio(idx: usize, name: String) -> Self {
+        Queue {
+            queue_type: QueueType::Radio(name, Array1::<f32>::zeros(16)),
+            current_track: 0,
+            listens: Vec::new(),
+            cached_order: vec![idx],
+            shuffle_mode: ShuffleMode::None,
         }
     }
 
@@ -384,11 +439,28 @@ impl Queue {
     pub fn track(&self, idx: usize) -> usize {
         self.cached_order[idx]
     }
+
+    pub fn radio_genres(&self) -> Array1<f32> {
+        match &self.queue_type {
+            QueueType::Radio(_, genres) => genres.clone(),
+            _ => panic!("Queue not of type Radio"),
+        }
+    }
+
+    pub fn mut_radio_genres(&mut self) -> &mut Array1<f32> {
+        match &mut self.queue_type {
+            QueueType::Radio(_, ref mut genres) => genres,
+            _ => panic!("Queue not of type Radio"),
+        }
+    }
+}
+
+fn lerp(a: &Array1<f32>, b: &Array1<f32>, t: f32) -> Array1<f32> {
+    (1.0 - t) * a + t * b
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ShuffleMode {
-    PlaySimilar,
     Random,
     None,
 }
@@ -396,6 +468,7 @@ pub enum ShuffleMode {
 #[derive(PartialEq, Clone)]
 pub enum QueueType {
     AllTracks,
+    Radio(String, Array1<f32>),
     Artist(String),
     Album(String),
     Genre(String),
@@ -407,6 +480,7 @@ impl Display for QueueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AllTracks => f.write_str("All Tracks"),
+            Self::Radio(name, _) => write!(f, "{name} Radio"),
             Self::Exclusion(excluded) => f.write_str(&format!("Excluding {excluded}")),
             Self::Artist(artist) => f.write_str(artist),
             Self::Album(album) => f.write_str(album),
@@ -416,7 +490,7 @@ impl Display for QueueType {
                     queue_type.fmt(f)?;
                 }
                 Ok(())
-            },
+            }
         }
     }
 }

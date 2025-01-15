@@ -1,9 +1,10 @@
 use crate::queue::QueueType;
-use log::info;
-use ndarray::Array1;
-use std::fs;
 use id3::Tag;
 use id3::TagLike;
+use log::info;
+use ndarray::Array1;
+use std::fmt;
+use std::fs;
 use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,7 +23,10 @@ impl Track {
     pub fn matches(&self, queue_type: QueueType) -> bool {
         match queue_type {
             QueueType::AllTracks => true,
-            QueueType::Artist(target_artist) => self.artists.iter().any(|artist| similar(artist, &target_artist)),
+            QueueType::Radio(_, _) => false,
+            QueueType::Artist(target_artist) => {
+                self.artists.iter().any(|artist| similar(artist, &target_artist))
+            }
             QueueType::Album(album) => similar(&album, &self.album),
             QueueType::Genre(_) => todo!(),
             QueueType::Union(_) => todo!(),
@@ -37,7 +41,7 @@ impl Track {
 
 impl Default for Track {
     fn default() -> Self {
-        Self { 
+        Self {
             file: String::new(),
             title: String::from("No Track Selected"),
             album: Default::default(),
@@ -45,7 +49,7 @@ impl Default for Track {
             genre: Default::default(),
             year: Default::default(),
             mood: Default::default(),
-            len: 100.0
+            len: 100.0,
         }
     }
 }
@@ -55,7 +59,10 @@ pub fn similar(str1: &str, str2: &str) -> bool {
 }
 
 pub fn strip_unnessecary(s: &str) -> String {
-    s.chars().filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation())).collect::<String>().to_lowercase()
+    s.chars()
+        .filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation()))
+        .collect::<String>()
+        .to_lowercase()
 }
 
 pub fn load_tracks(directory: &str) -> Vec<Track> {
@@ -68,7 +75,14 @@ pub fn load_tracks(directory: &str) -> Vec<Track> {
 pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     for frame in tag.extended_texts() {
         if frame.description == "ARTISTS" {
-            return Some(frame.value.split("\0").map(|artist| artist.to_string()).filter(|artist| !artist.is_empty()).collect());
+            return Some(
+                frame
+                    .value
+                    .split("\0")
+                    .map(|artist| artist.to_string())
+                    .filter(|artist| !artist.is_empty())
+                    .collect(),
+            );
         }
     }
 
@@ -76,7 +90,7 @@ pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-struct Mood {
+pub struct Mood {
     acoustic: bool,
     aggressive: bool,
     electronic: bool,
@@ -86,11 +100,38 @@ struct Mood {
     sad: bool,
 }
 
+impl fmt::Display for Mood {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let displays =
+            vec!["Acoustic", "Aggressive", "Electronic", "Happy", "Party", "Relaxed", "Sad"];
+        let keep = vec![
+            self.acoustic,
+            self.aggressive,
+            self.electronic,
+            self.happy,
+            self.party,
+            self.relaxed,
+            self.sad,
+        ];
+        write!(
+            f,
+            "{}",
+            displays
+                .into_iter()
+                .zip(keep)
+                .filter(|(_, keep)| *keep)
+                .map(|(txt, _)| txt)
+                .collect::<Vec<&str>>()
+                .join(", ")
+        )
+    }
+}
 
 pub fn get_mood(tag: &Tag) -> Option<Mood> {
     for frame in tag.extended_texts() {
         if frame.description == "ab:mood" {
-            let mut values = frame.value.split("\0").map(|e| e.to_string()).filter(|e| !e.is_empty());
+            let mut values =
+                frame.value.split("\0").map(|e| e.to_string()).filter(|e| !e.is_empty());
             let acoustic = values.next().unwrap() == "Acoustic";
             let aggressive = values.next().unwrap() == "Aggressive";
             let electronic = values.next().unwrap() == "Electronic";
@@ -106,7 +147,8 @@ pub fn get_mood(tag: &Tag) -> Option<Mood> {
 }
 
 pub fn get_genres(tag: &Tag) -> Vec<String> {
-    let mut genres: Vec<String> = tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
+    let mut genres: Vec<String> =
+        tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
 
     for frame in tag.extended_texts() {
         if frame.description == "ab:genre" {
@@ -122,7 +164,7 @@ pub fn load_track(file: String) -> Track {
     let tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
 
     let title = tag.title().unwrap_or_default().to_string();
-    
+
     let artists = if let Some(artists) = get_artists(&tag) {
         artists.iter().map(|artist| artist.to_string()).collect()
     } else {
@@ -170,6 +212,11 @@ pub struct TrackInfo {
 impl TrackInfo {
     pub fn genres_dist(&self, other: &TrackInfo) -> f32 {
         let diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
+        diff.sum().sqrt()
+    }
+
+    pub fn genres_dist_from_vec(&self, other: &Array1<f32>) -> f32 {
+        let diff = (self.genre_space.clone() - other.clone()).pow2();
         diff.sum().sqrt()
     }
 }

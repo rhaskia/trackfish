@@ -2,10 +2,10 @@ use crate::track::strip_unnessecary;
 use ndarray::{Array1, Array2, ArrayBase};
 use ndarray_npy::ReadNpyExt;
 
-const E_WEIGHTS: &[u8; 69440] = include_bytes!("../models/encoder_weights.npy");
-const E_BIASES: &[u8; 192] = include_bytes!("../models/encoder_biases.npy");
-const D_WEIGHTS: &[u8; 69440] = include_bytes!("../models/decoder_weights.npy");
-const D_BIASES: &[u8; 4460] = include_bytes!("../models/decoder_biases.npy");
+const E_WEIGHTS: &[u8; 69440] = include_bytes!("../../models/encoder_weights.npy");
+const E_BIASES: &[u8; 192] = include_bytes!("../../models/encoder_biases.npy");
+const D_WEIGHTS: &[u8; 69440] = include_bytes!("../../models/decoder_weights.npy");
+const D_BIASES: &[u8; 4460] = include_bytes!("../../models/decoder_biases.npy");
 
 #[derive(PartialEq)]
 pub struct AutoEncoder {

@@ -3,11 +3,8 @@ name = "music"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "music"
-
 [dependencies]
-dioxus = { git = "https://github.com/DioxusLabs/dioxus", features = ["desktop"] }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"
@@ -30,7 +27,7 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 
-[profile]
+[profile.dev]
 
 [profile.wasm-dev]
 inherits = "dev"

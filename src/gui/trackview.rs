@@ -72,6 +72,12 @@ pub fn TrackView(queue: Signal<QueueManager>) -> Element {
                     }
                 }
             }
+            span {
+                class: "genresspecifier",
+                if let Some(mood) = queue.read().current_track_mood() {
+                    "{mood}"
+                }
+            }
             div {
                 class: "progressrow",
                 span {
