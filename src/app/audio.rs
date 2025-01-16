@@ -5,9 +5,9 @@ use std::io::BufReader;
 use std::time::Duration;
 
 pub struct AudioPlayer {
-    stream: OutputStream,
-    stream_handle: OutputStreamHandle,
-    sink: Sink,
+    // stream: OtputStream,
+    // stream_handle: OutputStreamHandle,
+    // sink: Sink,
     current_song_len: f64,
 }
 
@@ -19,56 +19,61 @@ impl PartialEq for AudioPlayer {
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        let (stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
+        // let (stream, stream_handle) = OutputStream::try_default().unwrap();
+        // let sink = Sink::try_new(&stream_handle).unwrap();
 
-        AudioPlayer { stream, stream_handle, sink, current_song_len: 1.0 }
+        //AudioPlayer { stream, stream_handle, sink, current_song_len: 1.0 }
+        AudioPlayer { current_song_len: 1.0 }
     }
 
     pub fn play_track(&mut self, file_path: &str) {
         info!("Playing track: {file_path:?}");
-        let file = BufReader::new(File::open(file_path).unwrap());
-        let source = Decoder::new(file).unwrap();
-        let was_paused = self.sink.is_paused();
-        self.current_song_len = source.total_duration().unwrap().as_secs_f64();
-        self.sink.clear();
-        self.sink.append(source);
-        if !was_paused {
-            self.sink.play();
-        }
+        // let file = BufReader::new(File::open(file_path).unwrap());
+        // let source = Decoder::new(file).unwrap();
+        // let was_paused = self.sink.is_paused();
+        // self.current_song_len = source.total_duration().unwrap().as_secs_f64();
+        // self.sink.clear();
+        // self.sink.append(source);
+        // if !was_paused {
+        //     self.sink.play();
+        // }
         info!("Track successfully played");
     }
 
     pub fn skip(&mut self) {
-        self.sink.skip_one();
+        //self.sink.skip_one();
     }
 
     pub fn toggle_playing(&mut self) {
-        if self.sink.is_paused() {
-            self.sink.play();
-        } else {
-            self.sink.pause();
-        }
+        // if self.sink.is_paused() {
+        //     self.sink.play();
+        // } else {
+        //     self.sink.pause();
+        // }
     }
 
     pub fn play(&mut self) {
-        self.sink.play();
+        //self.sink.play();
     }
 
     pub fn playing(&self) -> bool {
-        !self.sink.is_paused()
+        //!self.sink.is_paused()
+        false
     }
 
     pub fn progress_percent(&self) -> f64 {
-        self.sink.get_pos().as_secs_f64() / self.current_song_len
+        //self.sink.get_pos().as_secs_f64() / self.current_song_len
+        0.0
     }
 
     pub fn progress_secs(&self) -> f64 {
-        self.sink.get_pos().as_secs_f64()
+        //self.sink.get_pos().as_secs_f64()
+        0.0
     }
 
     pub fn track_ended(&self) -> bool {
-        self.sink.empty()
+        //self.sink.empty()
+        false
     }
 
     pub fn song_length(&self) -> f64 {
@@ -76,6 +81,6 @@ impl AudioPlayer {
     }
 
     pub fn set_pos(&mut self, pos: f64) {
-        let _ = self.sink.try_seek(Duration::from_secs_f64(pos));
+        //let _ = self.sink.try_seek(Duration::from_secs_f64(pos));
     }
 }

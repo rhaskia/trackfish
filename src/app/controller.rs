@@ -62,9 +62,10 @@ impl ShuffleSettings {
 // Basic functionality
 impl MusicController {
     pub fn new(all_tracks: Vec<Track>) -> Self {
-        let mut rng = thread_rng();
-        let current_playing =
-            if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
+        // let mut rng = thread_rng();
+        // let current_playing =
+        //     if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
+        let current_playing = 0;
 
         let mut queue = MusicController {
             all_tracks: all_tracks.clone(),
@@ -72,7 +73,8 @@ impl MusicController {
             listens: Vec::new(),
             queues: vec![Queue::radio(
                 current_playing,
-                all_tracks.get(current_playing).cloned().unwrap_or_default().title,
+                String::from("Hi")
+                // all_tracks.get(current_playing).cloned().unwrap_or_default().title,
             )],
             current_queue: 0,
             track_info: Vec::new(),
@@ -84,39 +86,39 @@ impl MusicController {
             shuffle: ShuffleSettings::new(),
         };
 
-        let mut track_info = Vec::new();
-
-        for track in &all_tracks {
-            let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
-            let genre_space = queue.encoder.encode(genre_vec);
-
-            track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
-
-            for genre in track.genre.clone() {
-                if let Some(index) = queue.genres.iter().position(|(g, _)| similar(g, &genre)) {
-                    queue.genres[index].1 += 1;
-                } else {
-                    queue.genres.push((title_case(&genre), 1));
-                }
-            }
-
-            for artist in track.artists.clone() {
-                if let Some(index) = queue.artists.iter().position(|(a, _)| similar(a, &artist)) {
-                    queue.artists[index].1 += 1;
-                } else {
-                    queue.artists.push((artist, 1));
-                }
-            }
-        }
-
-        queue.genres.sort();
-        queue.artists.sort();
-
-        queue.track_info = track_info;
-
-        if let Some(track) = queue.current_track().cloned() {
-            queue.player.play_track(&track.file);
-        }
+        // let mut track_info = Vec::new();
+        //
+        // for track in &all_tracks {
+        //     let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
+        //     let genre_space = queue.encoder.encode(genre_vec);
+        //
+        //     track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
+        //
+        //     for genre in track.genre.clone() {
+        //         if let Some(index) = queue.genres.iter().position(|(g, _)| similar(g, &genre)) {
+        //             queue.genres[index].1 += 1;
+        //         } else {
+        //             queue.genres.push((title_case(&genre), 1));
+        //         }
+        //     }
+        //
+        //     for artist in track.artists.clone() {
+        //         if let Some(index) = queue.artists.iter().position(|(a, _)| similar(a, &artist)) {
+        //             queue.artists[index].1 += 1;
+        //         } else {
+        //             queue.artists.push((artist, 1));
+        //         }
+        //     }
+        // }
+        //
+        // queue.genres.sort();
+        // queue.artists.sort();
+        //
+        // queue.track_info = track_info;
+        //
+        // if let Some(track) = queue.current_track().cloned() {
+        //     queue.player.play_track(&track.file);
+        // }
 
         queue
     }
@@ -131,10 +133,10 @@ impl MusicController {
             ));
         }
 
-        self.current_started = Instant::now();
+        // self.current_started = Instant::now();
 
         self.player.play_track(&self.all_tracks[idx].file);
-        //self.player.skip();
+        self.player.skip();
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
@@ -178,7 +180,7 @@ impl MusicController {
             }
             if let Some(current_mood) = &self.all_tracks[current_idx].mood {
                 if let Some(mood) = &self.all_tracks[i].mood {
-                    weights *= (0.8 + mood.shared(current_mood) / 17.5)
+                    weights *= 0.8 + mood.shared(current_mood) / 17.5;
                 }
             }
         }
@@ -263,18 +265,6 @@ impl MusicController {
             .filter(|(index, track)| track.matches(queue_type.clone()))
             .map(|(index, track)| index)
             .collect()
-    }
-
-    pub fn get_queue(&self, idx: usize) -> &Queue {
-        &self.queues[idx]
-    }
-
-    pub fn current_queue(&self) -> &Queue {
-        &self.queues[self.current_queue]
-    }
-
-    pub fn mut_current_queue(&mut self) -> &mut Queue {
-        &mut self.queues[self.current_queue]
     }
 }
 
@@ -398,5 +388,17 @@ impl MusicController {
     pub fn next_up(&self) -> Option<Track> {
         let current_queue = &self.queues[self.current_queue];
         Some(self.all_tracks.get(*current_queue.cached_order.get(0)?)?.clone())
+    }
+
+    pub fn get_queue(&self, idx: usize) -> &Queue {
+        &self.queues[idx]
+    }
+
+    pub fn current_queue(&self) -> &Queue {
+        &self.queues[self.current_queue]
+    }
+
+    pub fn mut_current_queue(&mut self) -> &mut Queue {
+        &mut self.queues[self.current_queue]
     }
 }

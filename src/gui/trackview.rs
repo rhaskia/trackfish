@@ -21,17 +21,17 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
         info!("{:?}", controller.read().current_track());
     };
     
-    use_future(move || async move {
-        loop {
-            time::sleep(Duration::from_secs_f64(0.25)).await;
-            if !progress_held() {
-                *progress.write() = controller.read().player.progress_secs();
-                if controller.read().player.track_ended() {
-                    controller.write().skip();
-                }
-            }
-        }
-    });
+    // use_future(move || async move {
+    //     loop {
+    //         time::sleep(Duration::from_secs_f64(0.25)).await;
+    //         if !progress_held() {
+    //             *progress.write() = controller.read().player.progress_secs();
+    //             if controller.read().player.track_ended() {
+    //                 controller.write().skip();
+    //             }
+    //         }
+    //     }
+    // });
 
     rsx! {
         div {
@@ -111,23 +111,23 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                 button {
                     class: "skipprev-button",
                     class: "svg-button",
-                    onclick: skipback,
+                    //onclick: skipback,
                 }
                 button {
                     class: "svg-button",
-                    onclick: move |e| controller.write().toggle_playing(),
-                    background_image: if controller.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
+                    //onclick: move |e| controller.write().toggle_playing(),
+                    //background_image: if controller.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
                 }
                 button {
                     class: "skip-button",
                     class: "svg-button",
-                    onclick: skip,
+                    //onclick: skip,
                 }
                 button {
                     class: "shuffle-button",
                     class: "svg-button",
-                    class: if controller.read().shuffle.active { "shuffle-on" },
-                    onclick: move |_| controller.write().shuffle.toggle(),
+                    //class: if controller.read().shuffle.active { "shuffle-on" },
+                    //onclick: move |_| controller.write().shuffle.toggle(),
                 }
             }
         }

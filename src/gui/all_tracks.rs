@@ -6,6 +6,7 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
             class: "tracklist",
+            "Tracks",
             for i in 0..controller.read().all_tracks.len() {
                 div {
                     class: "trackitem",

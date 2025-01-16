@@ -6,8 +6,9 @@ const E_WEIGHTS: &[u8; 69440] = include_bytes!("../../models/encoder_weights.npy
 const E_BIASES: &[u8; 192] = include_bytes!("../../models/encoder_biases.npy");
 const D_WEIGHTS: &[u8; 69440] = include_bytes!("../../models/decoder_weights.npy");
 const D_BIASES: &[u8; 4460] = include_bytes!("../../models/decoder_biases.npy");
+const G_LIST: &'static str = include_str!("../../models/genrelist");
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 pub struct AutoEncoder {
     encoder_weights: Array2<f32>,
     encoder_biases: Array1<f32>,
@@ -23,7 +24,7 @@ impl AutoEncoder {
         let decoder_weights = Array2::<f32>::read_npy(&D_WEIGHTS[..])?;
         let decoder_biases = Array1::<f32>::read_npy(&D_BIASES[..])?;
 
-        let genre_index = std::fs::read_to_string("./models/genrelist")?.split("\n").map(|genre| genre.trim().to_string()).collect();
+        let genre_index = G_LIST.to_string().split("\n").map(|genre| genre.trim().to_string()).collect();
 
         Ok(AutoEncoder {
             genre_index,

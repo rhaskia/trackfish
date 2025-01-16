@@ -10,7 +10,7 @@ rand = "0.8.5"
 tokio = "1.41.1"
 http = "1.1.0"
 http-range = "0.1.5"
-dioxus-logger = "0.6.0"
+dioxus-logger = "0.6.1"
 crossbow = "0.2.3"
 rodio = "0.20"
 anyhow = "1.0.94"
@@ -27,7 +27,7 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 
-[profile.dev]
+[profile]
 
 [profile.wasm-dev]
 inherits = "dev"
@@ -48,3 +48,5 @@ build_targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux
 
 # [package.metadata.android]
 # build_targets = [ "armv7-linux-androideabi", "aarch64-linux-android" ]
+
+

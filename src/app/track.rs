@@ -55,11 +55,16 @@ impl Default for Track {
     }
 }
 
-pub fn load_tracks(directory: &str) -> Vec<Track> {
-    let files = get_song_files(directory).unwrap();
+pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
+    let files = get_song_files(directory)?;
     info!("Loaded {} tracks", files.len());
+    let mut tracks = Vec::new();
 
-    files.into_iter().map(|file| load_track(file)).collect()
+    for file in files {
+        tracks.push(load_track(file)?);
+    }
+
+    Ok(tracks)
 }
 
 pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
@@ -164,8 +169,8 @@ pub fn get_genres(tag: &Tag) -> Vec<String> {
     genres.into_iter().filter(|e| !e.is_empty()).collect()
 }
 
-pub fn load_track(file: String) -> Track {
-    let tag = Tag::read_from_path(file.clone()).expect(&format!("Track {file} has no id3 tag"));
+pub fn load_track(file: String) -> anyhow::Result<Track> {
+    let tag = Tag::read_from_path(file.clone())?;
 
     let title = tag.title().unwrap_or_default().to_string();
 
@@ -185,7 +190,7 @@ pub fn load_track(file: String) -> Track {
         year = tag_year.to_string();
     }
 
-    Track { file, title, artists, album, genre, year, len, mood }
+    Ok(Track { file, title, artists, album, genre, year, len, mood })
 }
 
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
