@@ -90,6 +90,20 @@ pub struct Mood {
     sad: bool,
 }
 
+impl Mood {
+    pub fn shared(&self, other: &Self) -> f32 {
+        let mut result = 0.0;
+        if self.acoustic == other.acoustic { result += 1.0; }
+        if self.aggressive == other.aggressive { result += 1.0; }
+        if self.electronic == other.electronic { result += 1.0; }
+        if self.happy == other.happy { result += 1.0; }
+        if self.party == other.party { result += 1.0; }
+        if self.relaxed == other.relaxed { result += 1.0; }
+        if self.sad == other.sad { result += 1.0; }
+        result
+    }
+}
+
 impl fmt::Display for Mood {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let displays =

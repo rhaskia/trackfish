@@ -22,8 +22,12 @@ body {
     flex-direction: column;
 }
 
-.like-button {
-    background-image: url("assets/like.svg");
+.shuffle-button {
+    background-image: url("assets/shuffle.svg");
+}
+
+.shuffle-on {
+    background-image: url("assets/shuffle_on.svg");
 }
 
 .dislike-button {
@@ -168,6 +172,7 @@ body {
     display: flex;
     justify-content: center;
     gap: 10px;
+    whitespace: nowrap;
 }
 
 .trackitem {

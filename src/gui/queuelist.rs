@@ -19,6 +19,9 @@ pub fn QueueList(controller: Signal<MusicController>) -> Element {
                     }
                 }
             }
+            div {
+                "{controller.read().current_queue().current()}/{controller.read().current_queue().len()}"
+            }
             for idx in 0..controller.read().get_queue(selected_queue()).cached_order.len() {
                 TrackItem { controller, selected_queue, idx } 
             } 

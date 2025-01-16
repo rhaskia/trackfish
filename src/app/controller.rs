@@ -21,7 +21,6 @@ pub struct MusicController {
     pub artists: Vec<(String, usize)>,
     pub genres: Vec<(String, usize)>,
     pub listens: Vec<Listen>,
-    current_playing: usize,
     current_started: Instant,
 
     pub current_queue: usize,
@@ -47,12 +46,16 @@ impl RadioSettings {
 
 #[derive(Clone, PartialEq)]
 pub struct ShuffleSettings {
-    active: bool,
+    pub active: bool,
 }
 
 impl ShuffleSettings {
     pub fn new() -> Self {
         Self { active: false }
+    }
+
+    pub fn toggle(&mut self) {
+        self.active = !self.active;
     }
 }
 
@@ -65,7 +68,6 @@ impl MusicController {
 
         let mut queue = MusicController {
             all_tracks: all_tracks.clone(),
-            current_playing,
             current_started: Instant::now(),
             listens: Vec::new(),
             queues: vec![Queue::radio(
@@ -78,7 +80,7 @@ impl MusicController {
             genres: Vec::new(),
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
-            radio: RadioSettings::new(1.0, 0.5, 0.5),
+            radio: RadioSettings::new(0.5, 0.7, 0.7),
             shuffle: ShuffleSettings::new(),
         };
 
@@ -122,22 +124,21 @@ impl MusicController {
     pub fn play_track(&mut self, idx: usize) {
         if let Some(current_track) = self.current_track() {
             self.listens.push(Listen::new(
-                self.current_playing,
+                self.current_track_idx(),
                 self.current_started,
                 current_track.len,
                 self.player.progress_secs(),
             ));
         }
 
-        self.current_playing = idx;
         self.current_started = Instant::now();
 
-        self.player.play_track(&self.all_tracks[self.current_playing].file);
+        self.player.play_track(&self.all_tracks[idx].file);
         //self.player.skip();
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
-        let space = self.track_info[self.current_playing].genre_space.clone();
+        let space = self.track_info[self.current_queue().current()].genre_space.clone();
         let current = self.mut_current_queue().mut_radio_genres();
 
         if *current == Array1::<f32>::zeros(16) {
@@ -168,13 +169,17 @@ impl MusicController {
         }
 
         for i in 0..self.all_tracks.len() {
-            if similar(&self.all_tracks[self.current()].album, &self.all_tracks[i].album) {
+            let current_idx = self.current_queue().current();
+            if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
                 weights *= self.radio.album_penalty;
-                info!("Tracks shared album");
             }
-            if self.all_tracks[self.current()].shared_artists(&self.all_tracks[i]) > 0 {
+            if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
                 weights *= self.radio.artist_penalty;
-                info!("Tracks shared artist");
+            }
+            if let Some(current_mood) = &self.all_tracks[current_idx].mood {
+                if let Some(mood) = &self.all_tracks[i].mood {
+                    weights *= (0.8 + mood.shared(current_mood) / 17.5)
+                }
             }
         }
 
@@ -183,10 +188,10 @@ impl MusicController {
             weights[*i] = 0.0;
         }
 
-        // TODO: negative weighting based on recent artist
-        // TODO: negative weighting for recent albums
         // TODO: negative weighting for genres in songs skipped early (maybe)
         // TODO: genre weighting using a subset of the previous radio songs
+        // TODO: mfcc closeness rating
+        // TODO: mood weighting
 
         weights = weights.clamp(0.0, 10.0);
 
@@ -293,8 +298,25 @@ impl MusicController {
             tracks = shuffle_with_first(tracks, track);
         }
 
+        let track_pos = tracks.iter().position(|e| *e == track).unwrap();
+
+        for i in 0..self.queues.len() {
+            if self.queues[i].queue_type == QueueType::AllTracks {
+                self.queues[i].cached_order = tracks;
+                self.queues[i].current_track = track_pos;
+                self.current_queue = i;
+                self.play_track(track);
+                self.play();
+                info!("{}, {}", self.queues[i].current(), track);
+                return;    
+            }
+        }
+
         self.queues.push(Queue::new(QueueType::AllTracks, tracks));
         self.current_queue = self.queues.len() - 1;
+        self.queues[self.current_queue].current_track = track_pos;
+        self.play_track(track);
+        self.play();
     }
 
     pub fn add_current_album_queue(&mut self) {
@@ -341,12 +363,12 @@ impl MusicController {
         self.player.playing()
     }
 
-    pub fn current(&self) -> usize {
-        self.current_playing
+    pub fn current_track_idx(&self) -> usize {
+        self.current_queue().current()
     }
 
     pub fn current_track(&self) -> Option<&Track> {
-        self.all_tracks.get(self.current_playing)
+        self.all_tracks.get(self.current_queue().current())
     }
 
     pub fn get_track(&self, idx: usize) -> Option<&Track> {

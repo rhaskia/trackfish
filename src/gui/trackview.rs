@@ -39,7 +39,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
             div {
                 class: "imageview",
                 img {
-                    src: "/trackimage/{controller.read().current()}"
+                    src: "/trackimage/{controller.read().current_track_idx()}"
                 }
             }
             h3 {
@@ -124,8 +124,10 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     onclick: skip,
                 }
                 button {
-                    class: "dislike-button",
+                    class: "shuffle-button",
                     class: "svg-button",
+                    class: if controller.read().shuffle.active { "shuffle-on" },
+                    onclick: move |_| controller.write().shuffle.toggle(),
                 }
             }
         }
