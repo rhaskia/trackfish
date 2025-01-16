@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
-use crate::QueueManager;
+use crate::MusicController;
 
 #[component]
-pub fn Settings(queue: Signal<QueueManager>) -> Element {
+pub fn Settings(controller: Signal<MusicController>) -> Element {
     rsx!{}
 }

@@ -49,7 +49,7 @@ const TRACKS: GlobalSignal<Vec<Track>> = GlobalSignal::new(|| Vec::new());
 
 #[component]
 fn App() -> Element {
-    let mut queue = use_signal(|| QueueManager::new(Vec::new()));
+    let mut controller = use_signal(|| MusicController::new(Vec::new()));
     let mut view = use_signal(|| View::Song);
 
     use_future(|| async {
@@ -58,13 +58,13 @@ fn App() -> Element {
 
     use_future(move || async move { 
         info!("Requested storage permissions: {:?}", crossbow::Permission::StorageWrite.request_async().await);
-        queue.set(QueueManager::new(load_tracks(DIR())));
-        info!("loaded all tracks into queue manager");
+        controller.set(MusicController::new(load_tracks(DIR())));
+        info!("loaded all tracks into music controller");
     });
 
     use_asset_handler("trackimage", move |request, responder| {
         let id = request.uri().path().replace("/trackimage/", "").parse().unwrap();
-        let path = if let Some(track) = queue.read().get_track(id) { 
+        let path = if let Some(track) = controller.read().get_track(id) { 
             track.file.clone()
         } else {
             return;
@@ -88,13 +88,13 @@ fn App() -> Element {
         div {
             class: "mainview",
             match &*view.read() {
-                View::Song => rsx!{ TrackView { queue } },
-                View::Queue => rsx!{ QueueList { queue } },
-                View::AllTracks => rsx!{ AllTracks { queue } },
-                View::Genres => rsx!{ GenreList { queue } },
-                View::Artists => rsx!{ ArtistList { queue } },
-                View::Albums => rsx!{ AlbumsList { queue } },
-                View::Settings => rsx!{ Settings { queue } },
+                View::Song => rsx!{ TrackView { controller } },
+                View::Queue => rsx!{ QueueList { controller } },
+                View::AllTracks => rsx!{ AllTracks { controller } },
+                View::Genres => rsx!{ GenreList { controller } },
+                View::Artists => rsx!{ ArtistList { controller } },
+                View::Albums => rsx!{ AlbumsList { controller } },
+                View::Settings => rsx!{ Settings { controller } },
                 View::Search => rsx!{},
             }
         }

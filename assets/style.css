@@ -1,6 +1,9 @@
 :root {
     font-family: "system-ui";
     --outline-color: #352e2e;
+    --accent: #4da6ff;
+    --fg: black;
+    --bg: white;
 }
 
 body {
@@ -48,7 +51,7 @@ body {
     flex-direction: column;
     flex: 1 1 0;
     width: calc(100% - 40px);
-    border-right: 1px solid grey;
+    border-right: 1px solid var(--accent);
 }
 
 .songview .buttonrow {
@@ -94,7 +97,7 @@ body {
 }
 
 .menubar {
-    border-top: 1px solid grey;
+    border-top: 1px solid var(--accent);
 }
 
 body {
@@ -155,9 +158,9 @@ body {
     border-top: 1px solid black;
     display: flex;
     justify-content: space-between;
-    width: calc(100% - 20px);
+    width: calc(100% - 30px);
     margin: 5px;
-    padding: 5px;
+    padding: 10px 5px;
     padding-top: 10px;
 }
 
@@ -185,6 +188,10 @@ body {
     margin: auto 10px;
 }
 
+.thinitem {
+    padding: 10px 5px;
+}
+
 .tracklist {
     display: flex;
     flex-direction: column;
@@ -194,13 +201,13 @@ body {
 }
 
 .tracklist .current {
-    border: 1px solid cornflowerblue;
+    border: 1px solid var(--accent);
     border-radius: 8px;
 }
 
 input[type="range"] {
     appearance: none;
-    background: darkgrey;
+    background: var(--accent);
     height: 5px;
     border-radius: 5px;
     margin: 10px;
@@ -210,7 +217,7 @@ input[type="range"]::-webkit-slider-thumb {
     width: 10px;
     appearance: none;
     height: 10px;
-    background: darkgrey;
+    background: var(--accent);
     border-radius: 10px;
 }
 
@@ -223,4 +230,25 @@ select {
     width: 30px !important;
     height: 30px !important
     margin: 5px;
+}
+
+.searchbar {
+    width: calc(100% - 20px);
+    border-bottom: 1px solid grey;
+    padding: 5px;
+    display: flex;
+}
+
+.searchbar img {
+    flex: 0;
+}
+
+.searchbar input {
+    flex: 1;
+}
+
+.artists {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
 }

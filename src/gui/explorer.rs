@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
-use crate::app::QueueManager;
+use crate::app::MusicController;
 
 #[component]
-pub fn AlbumsList(queue: Signal<QueueManager>) -> Element {
+pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     rsx! {
         div {
             id: "albumlist",
@@ -12,7 +12,7 @@ pub fn AlbumsList(queue: Signal<QueueManager>) -> Element {
                 img { src: "assets/search.svg" }
                 input {}
             },
-            for (artist, songs) in &queue.read().artists {
+            for (artist, songs) in &controller.read().artists {
                 div {
                     class: "thinitem",
                     "{artist}"
@@ -23,20 +23,34 @@ pub fn AlbumsList(queue: Signal<QueueManager>) -> Element {
 }
 
 #[component]
-pub fn ArtistList(queue: Signal<QueueManager>) -> Element {
+pub fn ArtistList(controller: Signal<MusicController>) -> Element {
+    let mut artists = use_signal(|| controller.read().artists.clone());
+
+    use_future(move || async move {
+        artists.write().sort_by(|(_, a), (_, b)| b.cmp(a));
+    });
+
     rsx! {
         div {
-            id: "artistlist",
-            class: "tracklist",
+            class: "artists",
             div {
                 class: "searchbar",
                 img { src: "assets/search.svg" }
                 input {}
             },
-            for (artist, songs) in &queue.read().artists {
-                div {
-                    class: "thinitem",
-                    "{artist}"
+            div {
+                id: "artistlist",
+                class: "tracklist",
+
+                for (artist, songs) in &*artists.read() {
+                    div {
+                        class: "thinitem",
+                        "{artist}"
+                        br {}
+                        small {
+                            "{songs} songs"
+                        }
+                    }
                 }
             }
         }
@@ -44,12 +58,12 @@ pub fn ArtistList(queue: Signal<QueueManager>) -> Element {
 }
 
 #[component]
-pub fn GenreList(queue: Signal<QueueManager>) -> Element {
+pub fn GenreList(controller: Signal<MusicController>) -> Element {
     rsx! {
         div {
             id: "genrelist",
             class: "tracklist",
-            for (genre, freq) in &queue.read().genres {
+            for (genre, freq) in &controller.read().genres {
                 if *freq > 1 {
                     div {
                         class: "thinitem",

@@ -1,4 +1,5 @@
 use crate::queue::QueueType;
+use crate::utils::similar;
 use id3::Tag;
 use id3::TagLike;
 use log::info;
@@ -52,17 +53,6 @@ impl Default for Track {
             len: 100.0,
         }
     }
-}
-
-pub fn similar(str1: &str, str2: &str) -> bool {
-    strip_unnessecary(str1) == strip_unnessecary(str2)
-}
-
-pub fn strip_unnessecary(s: &str) -> String {
-    s.chars()
-        .filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation()))
-        .collect::<String>()
-        .to_lowercase()
 }
 
 pub fn load_tracks(directory: &str) -> Vec<Track> {

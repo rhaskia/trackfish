@@ -1,17 +1,17 @@
 use dioxus::prelude::*;
-use crate::queue::QueueManager;
+use crate::app::MusicController;
 
 #[component]
-pub fn AllTracks(queue: Signal<QueueManager>) -> Element {
+pub fn AllTracks(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
             class: "tracklist",
-            for i in 0..queue.read().all_tracks.len() {
+            for i in 0..controller.read().all_tracks.len() {
                 div {
                     class: "trackitem",
-                    onclick: move |_| queue.write().add_all_queue(i),
+                    onclick: move |_| controller.write().add_all_queue(i),
                     img { src: "/trackimage/{i}" }
-                    span { "{queue.read().all_tracks[i].title}" }
+                    span { "{controller.read().all_tracks[i].title}" }
                     div { flex_grow: 1, }
                     img { src: "/assets/vert.svg" }
                 } 

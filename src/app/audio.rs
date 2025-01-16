@@ -51,6 +51,10 @@ impl AudioPlayer {
         }
     }
 
+    pub fn play(&mut self) {
+        self.sink.play();
+    }
+
     pub fn playing(&self) -> bool {
         !self.sink.is_paused()
     }
