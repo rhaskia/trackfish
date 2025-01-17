@@ -252,7 +252,7 @@ select {
     flex: 1;
 }
 
-.artists {
+.artists, .albums {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;

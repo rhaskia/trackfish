@@ -3,8 +3,11 @@ name = "music"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
-dioxus = { git = "https://github.com/DioxusLabs/dioxus" }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"
@@ -12,7 +15,6 @@ http = "1.1.0"
 http-range = "0.1.5"
 dioxus-logger = "0.6.1"
 crossbow = "0.2.3"
-rodio = "0.20"
 anyhow = "1.0.94"
 android_logger = "0.14.1"
 log = "0.4.22"
@@ -21,6 +23,7 @@ ndarray-npy = "0.9"
 tracing = "0.1.41"
 tracing-android = "0.2.0"
 tracing-log = "0.2.0"
+rodio = "0.20"
 
 [features]
 web = ["dioxus/web"]
