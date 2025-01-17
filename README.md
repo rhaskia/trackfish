@@ -9,3 +9,5 @@ Using tags on your mp3/wav/other files (which you may need to tag using picard/o
  - Basic Settings (Shuffle, Queue, etc)
  - Comprehensive Settings
  - More Weighting
+ - Theming
+ - More Queue Management
