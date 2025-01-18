@@ -1,12 +1,17 @@
 use crate::queue::QueueType;
 use crate::utils::similar;
+use id3::Frame;
 use id3::Tag;
 use id3::TagLike;
+use id3::frame::ExtendedText;
 use log::info;
 use ndarray::Array1;
 use std::fmt;
 use std::fs;
+use std::fs::File;
 use std::io;
+
+use super::embed::AutoEncoder;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
@@ -58,12 +63,13 @@ impl Default for Track {
 }
 
 pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
+    let encoder = AutoEncoder::new()?;
     let files = get_song_files(directory)?;
     info!("Loaded {} tracks", files.len());
     let mut tracks = Vec::new();
 
     for file in files {
-        tracks.push(load_track(file)?);
+        tracks.push(load_track(file, &encoder)?);
     }
 
     Ok(tracks)
@@ -171,8 +177,17 @@ pub fn get_genres(tag: &Tag) -> Vec<String> {
     genres.into_iter().filter(|e| !e.is_empty()).collect()
 }
 
-pub fn load_track(file: String) -> anyhow::Result<Track> {
-    let tag = Tag::read_from_path(file.clone())?;
+pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
+    for frame in tag.extended_texts() {
+        if frame.description == key {
+            return Some(frame.value.clone());
+        }
+    }
+    return None;
+}
+
+pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> {
+    let mut tag = Tag::read_from_path(file.clone())?;
 
     let title = tag.title().unwrap_or_default().to_string();
 
@@ -180,6 +195,16 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
         artists.iter().map(|artist| artist.to_string()).collect()
     } else {
         vec![tag.artist().unwrap_or_default().to_string()]
+    };
+
+    // Genre Space Tag
+    if let Some(g) = get_text(&tag, "Genre Space") {
+        info!("{:?}", g);
+    } else {
+        tag.add_frame(ExtendedText { description: "Genre Space".to_string(),  value: "hi".to_string() });
+        tag.write_to_file(File::open("E:/music/test.mp3").unwrap(), tag.version()).unwrap();
+        // info!("{file}");
+        // panic!("{file}");
     };
 
     let mood = get_mood(&tag);

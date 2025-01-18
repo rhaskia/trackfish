@@ -30,9 +30,9 @@ fn main() {
             Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
         );
     } else {
-        // LogTracer::init().expect("Failed to initialize LogTracer");
-        // 
-        // dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
+        LogTracer::init().expect("Failed to initialize LogTracer");
+
+        dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
     }
     
     std::panic::set_hook(Box::new(|panic_info| {
@@ -100,8 +100,7 @@ fn App() -> Element {
             Cursor::new(picture.data.clone())
         } else { responder.respond(r); return };
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async move {
+        tokio::task::spawn(async move {
             match get_stream_response(&mut file, &request).await {
                 Ok(response) => responder.respond(response),
                 Err(err) => eprintln!("Error: {}", err),
