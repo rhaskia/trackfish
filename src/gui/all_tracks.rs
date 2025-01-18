@@ -1,23 +1,26 @@
 use dioxus::prelude::*;
 use crate::app::MusicController;
+use crate::{View, VIEW};
 
 #[component]
 pub fn AllTracks(controller: Signal<MusicController>) -> Element {
     rsx!{
-        div {
-            class: "tracklist",
-            "Tracks",
+        div { class: "tracklist",
+            "Tracks"
             for i in 0..controller.read().all_tracks.len() {
                 div {
                     class: "trackitem",
                     id: "trackitem-{i}",
-                    onclick: move |_| controller.write().add_all_queue(i),
+                    onclick: move |_| {
+                        controller.write().add_all_queue(i);
+                        VIEW.write().current = View::Song;
+                    },
                     img { src: "/trackimage/{i}" }
                     span { "{controller.read().all_tracks[i].title}" }
-                    div { flex_grow: 1, }
+                    div { flex_grow: 1 }
                     img { src: "/assets/vert.svg" }
-                } 
+                }
             }
-        }    
+        }
     }
 }

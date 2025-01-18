@@ -9,10 +9,7 @@ use log::info;
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
-use std::{
-    fmt::Display,
-    time::Instant,
-};
+use std::time::Instant;
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -89,8 +86,9 @@ impl MusicController {
         let mut track_info = Vec::new();
 
         for track in &all_tracks {
-            let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
-            let genre_space = queue.encoder.encode(genre_vec);
+            // let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
+            // let genre_space = queue.encoder.encode(genre_vec);
+            let genre_space = Array1::ones(16);
 
             track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
 
@@ -269,8 +267,8 @@ impl MusicController {
         self.all_tracks
             .iter()
             .enumerate()
-            .filter(|(index, track)| track.matches(queue_type.clone()))
-            .map(|(index, track)| index)
+            .filter(|(_, track)| track.matches(queue_type.clone()))
+            .map(|(index, _)| index)
             .collect()
     }
 }
@@ -283,10 +281,31 @@ impl MusicController {
         self.current_queue = self.queues.len() - 1;
     }
 
-    pub fn add_album_queue(&mut self, album: String) {
-        let tracks = self.get_tracks_where(|track| track.album == album);
+    pub fn play_album_at(&mut self, album: String, track: usize) {
+        let mut tracks = self.get_tracks_where(|track| track.album == album);
+        if self.shuffle.active {
+            tracks = shuffle_with_first(tracks, track);
+        }
+
+        let track_idx = tracks.iter().position(|e| *e == track).unwrap();
+
+        for i in 0..self.queues.len() {
+            if self.queues[i].queue_type == QueueType::Album(album.clone()) {
+                self.queues[i].cached_order = tracks;
+                self.queues[i].current_track = track_idx;
+                self.current_queue = i;
+                self.play_track(track);
+                self.play();
+                info!("{}, {}", self.queues[i].current(), track);
+                return;    
+            }
+        }
+
         self.queues.push(Queue::new(QueueType::Album(album), tracks));
         self.current_queue = self.queues.len() - 1;
+        self.queues[self.current_queue].current_track = track_idx;
+        self.play_track(track);
+        self.play();
     }
 
     pub fn add_all_queue(&mut self, track: usize) {
@@ -295,12 +314,12 @@ impl MusicController {
             tracks = shuffle_with_first(tracks, track);
         }
 
-        let track_pos = tracks.iter().position(|e| *e == track).unwrap();
+        let track_idx = tracks.iter().position(|e| *e == track).unwrap();
 
         for i in 0..self.queues.len() {
             if self.queues[i].queue_type == QueueType::AllTracks {
                 self.queues[i].cached_order = tracks;
-                self.queues[i].current_track = track_pos;
+                self.queues[i].current_track = track_idx;
                 self.current_queue = i;
                 self.play_track(track);
                 self.play();
@@ -311,14 +330,9 @@ impl MusicController {
 
         self.queues.push(Queue::new(QueueType::AllTracks, tracks));
         self.current_queue = self.queues.len() - 1;
-        self.queues[self.current_queue].current_track = track_pos;
+        self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
         self.play();
-    }
-
-    pub fn add_current_album_queue(&mut self) {
-        let album = self.current_track().cloned().unwrap_or_default().album;
-        self.add_album_queue(album);
     }
 
     pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize>
@@ -390,6 +404,11 @@ impl MusicController {
 
     pub fn current_track_genres(&self) -> Option<&Vec<String>> {
         Some(&self.current_track()?.genre)
+    }
+
+    pub fn current_album_idx(&self) -> usize {
+        let album = &self.current_track().unwrap().album;
+        self.albums.iter().position(|e| e.0 == *album).unwrap()
     }
 
     pub fn next_up(&self) -> Option<Track> {

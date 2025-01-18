@@ -23,7 +23,7 @@ ndarray-npy = "0.9"
 tracing = "0.1.41"
 tracing-android = "0.2.0"
 tracing-log = "0.2.0"
-rodio = "0.20"
+rodio = { version = "0.20", features = ["cpal-shared-stdcxx"]}
 
 [features]
 web = ["dioxus/web"]

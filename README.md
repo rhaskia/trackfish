@@ -8,6 +8,8 @@ Using tags on your mp3/wav/other files (which you may need to tag using picard/o
  - Custom Music Folder
  - Basic Settings (Shuffle, Queue, etc)
  - Comprehensive Settings
+    - Exceptions for albums, artists from shuffle
+    - View Settings
  - More Weighting
  - Theming
  - More Queue Management

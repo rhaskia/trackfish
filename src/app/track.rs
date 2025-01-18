@@ -16,6 +16,7 @@ pub struct Track {
     pub artists: Vec<String>,
     pub genre: Vec<String>,
     pub mood: Option<Mood>,
+    pub trackno: usize,
     pub year: String,
     pub len: f64,
 }
@@ -50,6 +51,7 @@ impl Default for Track {
             genre: Default::default(),
             year: Default::default(),
             mood: Default::default(),
+            trackno: 1,
             len: 100.0,
         }
     }
@@ -185,12 +187,14 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
     let album = tag.album().unwrap_or_default().to_string();
     let genre = get_genres(&tag);
     let len = tag.duration().unwrap_or(1) as f64;
+    let trackno = tag.track().unwrap_or(1) as usize;
+
     let mut year = String::new();
     if let Some(tag_year) = tag.get("Date") {
         year = tag_year.to_string();
     }
 
-    Ok(Track { file, title, artists, album, genre, year, len, mood })
+    Ok(Track { file, title, artists, album, genre, year, len, mood, trackno })
 }
 
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {

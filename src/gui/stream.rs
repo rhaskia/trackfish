@@ -1,9 +1,6 @@
 use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
-use tokio::time;
-use tokio::time::Duration;
-use tokio::runtime::Runtime;
 use http::Response;
 
 #[cfg(not(target_os = "android"))]

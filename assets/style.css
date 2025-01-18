@@ -187,6 +187,8 @@ body {
     height: 40px;
     width: 40px;
     border-radius: 2px;
+    object-fit: cover; 
+    object-position: center center;
 }
 
 .trackitem span {
@@ -256,4 +258,25 @@ select {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
+}
+
+.albumview {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    overflow-y: scroll;
+}
+
+.albumviewheader {
+    display: flex;
+    flex-direction: row;
+    margin: 5px;
+    padding: 5px;
+}
+
+.albumviewheader h3 { 
+    margin: 0 auto;    
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

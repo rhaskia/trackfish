@@ -5,11 +5,8 @@ pub mod gui;
 
 use dioxus::prelude::*;
 use http::Response;
-use log::error;
-
 use log::info;
 use android_logger::Config;
-use ndarray::Array1;
 use tracing_log::LogTracer;
 use log::LevelFilter;
 use id3::Tag;
@@ -25,15 +22,17 @@ use dioxus::mobile::use_asset_handler;
 use app::*;
 use gui::*;
 
+const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
+
 fn main() {
     if cfg!(target_os = "android") {
         android_logger::init_once(
             Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
         );
     } else {
-        LogTracer::init().expect("Failed to initialize LogTracer");
-        
-        dioxus_logger::init(dioxus_logger::tracing::Level::INFO);
+        // LogTracer::init().expect("Failed to initialize LogTracer");
+        // 
+        // dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
     }
     
     std::panic::set_hook(Box::new(|panic_info| {
@@ -60,14 +59,13 @@ const DIR: GlobalSignal<&str> = GlobalSignal::new(|| {
 #[component]
 fn App() -> Element {
     let mut controller = use_signal(|| MusicController::new(Vec::new()));
-    let mut view = use_signal(|| View::Song);
 
     use_future(|| async {
-        eval(include_str!("../js/mediasession.js")).await;
+        eval(include_str!("../js/mediasession.js")).await.unwrap();
     });
 
     use_memo(move || {
-        info!("{:?}", view.read());
+        info!("{:?}", VIEW.read().current);
     });
 
     use_future(move || async move { 
@@ -102,7 +100,8 @@ fn App() -> Element {
             Cursor::new(picture.data.clone())
         } else { responder.respond(r); return };
 
-        tokio::task::spawn(async move {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async move {
             match get_stream_response(&mut file, &request).await {
                 Ok(response) => responder.respond(response),
                 Err(err) => eprintln!("Error: {}", err),
@@ -111,75 +110,86 @@ fn App() -> Element {
     });
 
     rsx! {
-        style {{ include_str!("../assets/style.css") }}
+        style { {include_str!("../assets/style.css")} }
 
-        div {
-            class: "mainview",
-            match &*view.read() {
-                View::Song => rsx!{ TrackView { controller } },
-                View::Queue => rsx!{ QueueList { controller } },
-                View::AllTracks => rsx!{ AllTracks { controller } },
-                View::Genres => rsx!{ GenreList { controller } },
-                View::Artists => rsx!{ ArtistList { controller } },
-                View::Albums => rsx!{ AlbumsList { controller } },
-                View::Settings => rsx!{ Settings { controller } },
-                _ => rsx!{},
-             }
+        div { class: "mainview",
+            match &VIEW.read().current {
+                View::Song => rsx! {
+                    TrackView { controller }
+                },
+                View::Queue => rsx! {
+                    QueueList { controller }
+                },
+                View::AllTracks => rsx! {
+                    AllTracks { controller }
+                },
+                View::Genres => rsx! {
+                    GenreList { controller }
+                },
+                View::Artists => rsx! {
+                    ArtistList { controller }
+                },
+                View::Albums => rsx! {
+                    AlbumsList { controller }
+                },
+                View::Settings => rsx! {
+                    Settings { controller }
+                },
+                _ => rsx! {},
+            }
         }
 
-        MenuBar { view }
+        MenuBar {}
     }
 }
 
 
 
 #[component]
-pub fn MenuBar(view: Signal<View>) -> Element {
+pub fn MenuBar() -> Element {
     rsx! {
-        div {
-            class: "buttonrow nav",
+        div { class: "buttonrow nav",
             button {
                 class: "songview-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Song),
+                onclick: move |_| VIEW.write().open(View::Song),
             }
             button {
                 class: "queue-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Queue),
+                onclick: move |_| VIEW.write().open(View::Queue),
             }
             button {
                 class: "alltracks-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::AllTracks),
+                onclick: move |_| VIEW.write().open(View::AllTracks),
             }
             button {
                 class: "album-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Albums),
+                onclick: move |_| VIEW.write().open(View::Albums),
             }
             button {
                 class: "artist-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Artists),
+                onclick: move |_| VIEW.write().open(View::Artists),
             }
             button {
                 class: "genres-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Genres),
+                onclick: move |_| VIEW.write().open(View::Genres),
             }
             button {
                 class: "search-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Search),
+                onclick: move |_| VIEW.write().open(View::Search),
             }
             button {
                 class: "settings-button",
                 class: "svg-button",
-                onclick: move |_| view.set(View::Settings),
+                onclick: move |_| VIEW.write().open(View::Settings),
             }
         }
-
     }
 }
 
@@ -193,4 +203,21 @@ pub enum View {
     Albums,
     Search,
     Settings,
+}
+
+pub struct ViewData {
+    pub current: View,
+    pub album: Option<usize>,
+    pub artist: Option<usize>,
+    pub genre: Option<usize>
+}
+
+impl ViewData {
+    pub fn new() -> Self {
+        Self { current: View::Song, album: None, artist: None, genre: None }
+    }
+
+    pub fn open(&mut self, view: View) {
+        self.current = view;
+    }
 }
