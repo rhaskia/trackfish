@@ -283,6 +283,20 @@ impl MusicController {
 
     pub fn play_album_at(&mut self, album: String, track: usize) {
         let mut tracks = self.get_tracks_where(|track| track.album == album);
+        self.add_queue_at(tracks, QueueType::Album(album.clone()), track);
+    }
+
+    pub fn play_genre_at(&mut self, genre: String, track: usize) {
+        let mut tracks = self.get_tracks_where(|track| track.has_genre(&genre));
+        self.add_queue_at(tracks, QueueType::Genre(genre.clone()), track);
+    }
+
+    pub fn play_artist_at(&mut self, artist: String, track: usize) {
+        let mut tracks = self.get_tracks_where(|track| track.has_artist(&artist));
+        self.add_queue_at(tracks, QueueType::Artist(artist.clone()), track);
+    }
+
+    pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
         if self.shuffle.active {
             tracks = shuffle_with_first(tracks, track);
         }
@@ -290,7 +304,7 @@ impl MusicController {
         let track_idx = tracks.iter().position(|e| *e == track).unwrap();
 
         for i in 0..self.queues.len() {
-            if self.queues[i].queue_type == QueueType::Album(album.clone()) {
+            if self.queues[i].queue_type == queue {
                 self.queues[i].cached_order = tracks;
                 self.queues[i].current_track = track_idx;
                 self.current_queue = i;
@@ -301,7 +315,7 @@ impl MusicController {
             }
         }
 
-        self.queues.push(Queue::new(QueueType::Album(album), tracks));
+        self.queues.push(Queue::new(queue, tracks));
         self.current_queue = self.queues.len() - 1;
         self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
@@ -310,29 +324,7 @@ impl MusicController {
 
     pub fn add_all_queue(&mut self, track: usize) {
         let mut tracks = (0..self.all_tracks.len()).collect();
-        if self.shuffle.active {
-            tracks = shuffle_with_first(tracks, track);
-        }
-
-        let track_idx = tracks.iter().position(|e| *e == track).unwrap();
-
-        for i in 0..self.queues.len() {
-            if self.queues[i].queue_type == QueueType::AllTracks {
-                self.queues[i].cached_order = tracks;
-                self.queues[i].current_track = track_idx;
-                self.current_queue = i;
-                self.play_track(track);
-                self.play();
-                info!("{}, {}", self.queues[i].current(), track);
-                return;    
-            }
-        }
-
-        self.queues.push(Queue::new(QueueType::AllTracks, tracks));
-        self.current_queue = self.queues.len() - 1;
-        self.queues[self.current_queue].current_track = track_idx;
-        self.play_track(track);
-        self.play();
+        self.add_queue_at(tracks, QueueType::AllTracks, track);
     }
 
     pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize>
@@ -349,7 +341,9 @@ impl MusicController {
 }
 
 pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
-    tracks.remove(start);
+    if let Some(idx) = tracks.iter().position(|e| *e == start) {
+        tracks.remove(idx);
+    }
 
     // Probably could use a nicer shuffle method later on
     let mut rng = thread_rng();

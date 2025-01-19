@@ -260,21 +260,21 @@ select {
     flex-direction: column;
 }
 
-.albumview {
+.tracksview {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
     overflow-y: scroll;
 }
 
-.albumviewheader {
+.tracksviewheader {
     display: flex;
     flex-direction: row;
     margin: 5px;
     padding: 5px;
 }
 
-.albumviewheader h3 { 
+.tracksviewheader h3 { 
     margin: 0 auto;    
     overflow: hidden;
     text-overflow: ellipsis;

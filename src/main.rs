@@ -61,7 +61,17 @@ fn App() -> Element {
     let mut controller = use_signal(|| MusicController::new(Vec::new()));
 
     use_future(|| async {
-        eval(include_str!("../js/mediasession.js")).await.unwrap();
+        match eval(include_str!("../js/mediasession.js")).await {
+            Ok(_) => {},
+            Err(err) => match err {
+                document::EvalError::Unsupported => todo!(),
+                document::EvalError::Finished => todo!(),
+                document::EvalError::InvalidJs(_) => todo!(),
+                document::EvalError::Communication(_) => todo!(),
+                document::EvalError::Serialization(_) => todo!(),
+                _ => {},
+            },
+        }
     });
 
     use_memo(move || {
@@ -192,7 +202,7 @@ pub fn MenuBar() -> Element {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum View {
     Song, 
     Queue,

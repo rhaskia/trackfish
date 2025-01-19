@@ -44,6 +44,18 @@ impl Track {
     pub fn shared_artists(&self, other: &Self) -> usize {
         self.artists.iter().filter(|e| other.artists.contains(e)).collect::<Vec<&String>>().len()
     }
+
+    pub fn shared_genres(&self, other: &Self) -> usize {
+        self.genre.iter().filter(|e| other.genre.contains(e)).collect::<Vec<&String>>().len()
+    }
+
+    pub fn has_genre(&self, genre: &str) -> bool {
+        self.genre.iter().position(|e| similar(e, genre)).is_some()
+    }
+
+    pub fn has_artist(&self, artist: &str) -> bool {
+        self.artists.iter().position(|e| similar(e, artist)).is_some()
+    }
 }
 
 impl Default for Track {
@@ -202,7 +214,7 @@ pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> 
         info!("{:?}", g);
     } else {
         tag.add_frame(ExtendedText { description: "Genre Space".to_string(),  value: "hi".to_string() });
-        tag.write_to_file(File::open("E:/music/test.mp3").unwrap(), tag.version()).unwrap();
+        tag.write_to_path(&file, tag.version()).unwrap();
         // info!("{file}");
         // panic!("{file}");
     };
