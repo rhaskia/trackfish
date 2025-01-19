@@ -282,17 +282,17 @@ impl MusicController {
     }
 
     pub fn play_album_at(&mut self, album: String, track: usize) {
-        let mut tracks = self.get_tracks_where(|track| track.album == album);
+        let tracks = self.get_tracks_where(|track| track.album == album);
         self.add_queue_at(tracks, QueueType::Album(album.clone()), track);
     }
 
     pub fn play_genre_at(&mut self, genre: String, track: usize) {
-        let mut tracks = self.get_tracks_where(|track| track.has_genre(&genre));
+        let tracks = self.get_tracks_where(|track| track.has_genre(&genre));
         self.add_queue_at(tracks, QueueType::Genre(genre.clone()), track);
     }
 
     pub fn play_artist_at(&mut self, artist: String, track: usize) {
-        let mut tracks = self.get_tracks_where(|track| track.has_artist(&artist));
+        let tracks = self.get_tracks_where(|track| track.has_artist(&artist));
         self.add_queue_at(tracks, QueueType::Artist(artist.clone()), track);
     }
 

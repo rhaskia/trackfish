@@ -1,19 +1,35 @@
 :root {
     font-family: "system-ui";
     --outline-color: #352e2e;
-    --accent: #4da6ff;
-    --fg: black;
-    --bg: white;
+    --accent: cornflowerblue;
+    --fg: white;
+    --weakfg: #ffffff77;
+    --bg: #1d2021;
 }
 
 body {
+    position: absolute;
+    z-index: -2;
+    width: 100vw;
     height: 100vh;
+    background: var(--bg);
+}
+
+span, p, small, h2, h3 {
+    color: var(--fg);
 }
 
 #main {
     height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
+    position: absolute;
+    z-index: 1;
+}
+
+svg {
+    filter: brightness(8);
 }
 
 .mainview {
@@ -30,8 +46,16 @@ body {
     background-image: url("assets/shuffle_on.svg");
 }
 
-.dislike-button {
-    background-image: url("assets/dislike.svg");
+.like-button {
+    background-image: url("assets/vert.svg");
+}
+
+.playpause {
+    background-image: url("assets/play.svg");
+}
+
+.pause {
+    background-image: url("assets/pause.svg") !important;
 }
 
 .skip-button {
@@ -47,6 +71,7 @@ body {
     aspect-ratio: 1;
     border: none;
     background-color: transparent;
+    filter: brightness(2);
 }
 
 .songview {
@@ -73,6 +98,7 @@ body {
 }
 
 .imageview {
+    margin-top: 30px;
     width: 100%;
     aspect-ratio: 1;
     display: flex;
@@ -114,6 +140,7 @@ body {
     width: 100%;
     display: flex;
     flex-direction: row;
+    margin: 10px 0;
 }
 
 .progressrow input {
@@ -159,7 +186,7 @@ body {
 }
 
 .nav {
-    border-top: 1px solid black;
+    border-top: 1px solid var(--weakfg);
     display: flex;
     justify-content: space-between;
     width: calc(100% - 30px);
@@ -172,7 +199,11 @@ body {
     display: flex;
     justify-content: center;
     gap: 10px;
-    whitespace: nowrap;
+    white-space: nowrap;
+}
+
+.thinitem small {
+    margin-left: 10px;
 }
 
 .trackitem {
@@ -181,6 +212,8 @@ body {
     flex-direction: row; 
     padding: 6px;
     margin: 4px;
+    border: 1px solid var(--bg);
+    width: calc(100% - 20px);
 }
 
 .trackitem img {
@@ -196,6 +229,7 @@ body {
 }
 
 .thinitem {
+    color: var(--fg);
     padding: 10px 5px;
 }
 
@@ -204,6 +238,7 @@ body {
     flex-direction: column;
     flex: 1 1 0;
     overflow-y: scroll;
+    overflow-x: hidden;
     height: fit-content;
 }
 
@@ -214,7 +249,7 @@ body {
 
 input[type="range"] {
     appearance: none;
-    background: var(--accent);
+    background: var(--weakfg);
     height: 5px;
     border-radius: 5px;
     margin: 10px;
@@ -224,7 +259,7 @@ input[type="range"]::-webkit-slider-thumb {
     width: 10px;
     appearance: none;
     height: 10px;
-    background: var(--accent);
+    background: var(--fg);
     border-radius: 10px;
 }
 
@@ -234,9 +269,13 @@ select {
 }
 
 .trackbutton {
+    height: 30px !important;
     width: 30px !important;
-    height: 30px !important
-    margin: 5px;
+    margin: auto;
+}
+
+.draghandle {
+    margin-right: 10px;
 }
 
 .searchbar {
@@ -252,6 +291,10 @@ select {
 
 .searchbar input {
     flex: 1;
+    background: var(--bg);
+    color: var(--fg);
+    border-radius: 6px;
+    border: 1px solid var(--weakfg);
 }
 
 .artists, .albums {
@@ -265,6 +308,7 @@ select {
     flex: 1 1 0;
     flex-direction: column;
     overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .tracksviewheader {
@@ -279,4 +323,39 @@ select {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.trackblur {
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    left: -10%;
+    top: -10%;
+    z-index: -1;
+    background-size: 300%;
+    background-position: center;
+    filter: blur(100px) brightness(0.6);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #00000033; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--weakfg); 
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fg);
+}
+
+select {
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
 }

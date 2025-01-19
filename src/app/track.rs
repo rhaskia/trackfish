@@ -1,6 +1,5 @@
 use crate::queue::QueueType;
 use crate::utils::similar;
-use id3::Frame;
 use id3::Tag;
 use id3::TagLike;
 use id3::frame::ExtendedText;
@@ -8,7 +7,6 @@ use log::info;
 use ndarray::Array1;
 use std::fmt;
 use std::fs;
-use std::fs::File;
 use std::io;
 
 use super::embed::AutoEncoder;
@@ -207,16 +205,6 @@ pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> 
         artists.iter().map(|artist| artist.to_string()).collect()
     } else {
         vec![tag.artist().unwrap_or_default().to_string()]
-    };
-
-    // Genre Space Tag
-    if let Some(g) = get_text(&tag, "Genre Space") {
-        info!("{:?}", g);
-    } else {
-        tag.add_frame(ExtendedText { description: "Genre Space".to_string(),  value: "hi".to_string() });
-        tag.write_to_path(&file, tag.version()).unwrap();
-        // info!("{file}");
-        // panic!("{file}");
     };
 
     let mood = get_mood(&tag);

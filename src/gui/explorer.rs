@@ -1,6 +1,6 @@
-use dioxus::prelude::*;
-use crate::app::{MusicController, utils::similar};
+use crate::app::{utils::similar, MusicController};
 use crate::{View, VIEW};
+use dioxus::prelude::*;
 
 #[component]
 pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
@@ -14,7 +14,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
         let idx = controller.read().albums.iter().position(|a| a.0 == name).unwrap_or_default();
         VIEW.write().album = Some(idx);
     };
-    
+
     rsx! {
         div { class: "albums",
             div {
@@ -48,13 +48,12 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
 #[component]
 pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
-    let idx = use_memo(move || match viewtype() { 
+    let idx = use_memo(move || match viewtype() {
         View::Albums => VIEW.read().album.clone().unwrap(),
         View::Artists => VIEW.read().artist.clone().unwrap(),
         View::Genres => VIEW.read().genre.clone().unwrap(),
         _ => unreachable!(),
     });
-
 
     let name = use_signal(|| match viewtype() {
         View::Albums => controller.read().albums[idx()].clone().0,
@@ -74,15 +73,18 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
 
     use_future(move || async move {
         if View::Albums == viewtype() {
-            tracks.write().sort_by(|a, b| 
-                controller.read().all_tracks[*a].trackno.cmp(&controller.read().all_tracks[*b].trackno));  
+            tracks.write().sort_by(|a, b| {
+                controller.read().all_tracks[*a]
+                    .trackno
+                    .cmp(&controller.read().all_tracks[*b].trackno)
+            });
         }
     });
 
-    rsx!{
+    rsx! {
         div { class: "tracksviewheader",
             img {
-                onclick: move |_| match viewtype() { 
+                onclick: move |_| match viewtype() {
                     View::Albums => VIEW.write().album = None,
                     View::Artists => VIEW.write().artist = None,
                     View::Genres => VIEW.write().genre = None,
@@ -177,11 +179,11 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
                 display: if VIEW.read().genre.is_some() { "none" },
                 for i in 0..genres.read().len() {
                     if genres.read()[i].1 > 1 {
-                        div { 
-                            class: "thinitem", 
+                        div {
+                            class: "thinitem",
                             onclick: move |_| set_genre(genres.read()[i].0.clone()),
                             "{genres.read()[i].0}",
-                            small { "{genres.read()[i].1}" }
+                            small { "{genres.read()[i].1} songs" }
                         }
                     }
                 }
@@ -193,3 +195,27 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
     }
 }
 
+#[component]
+pub fn Search(controller: Signal<MusicController>, tracks: Vec<usize>) -> Element {
+    let search = use_signal(String::new);
+    let matches = use_memo(move || {
+        tracks.iter()
+            .filter(|t| similar(&controller.read().all_tracks[**t].title, &search.read()))
+            .cloned()
+            .collect::<Vec<usize>>()
+    });
+
+    rsx! {
+        div {
+            "searchpopup",
+            div {
+                class: "searchpopupbar",
+                img { src: "assets/search.svg" }
+                input { value: search }
+            }
+            for track in matches() {
+                div { "{track}" }
+            }
+        }
+    }
+}

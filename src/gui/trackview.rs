@@ -36,9 +36,13 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
 
     rsx! {
         div { class: "songview",
+            div { class: "trackblur",
+                background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
+            }
             div { class: "imageview",
                 img { src: "/trackimage/{controller.read().current_track_idx()}" }
             }
+            div { flex: 1, }
             h3 { "{controller.read().current_track_title().unwrap_or_default()}" }
             span { class: "artistspecifier",
                 for (idx , artist) in controller
@@ -74,11 +78,6 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     }
                 }
             }
-            span { class: "genresspecifier",
-                if let Some(mood) = controller.read().current_track_mood() {
-                    "{mood}"
-                }
-            }
             div { class: "progressrow",
                 span { class: "songprogress",
                     "{format_seconds(controller.read().player.progress_secs())}"
@@ -106,9 +105,9 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     onclick: skipback,
                 }
                 button {
-                    class: "svg-button",
+                    class: "svg-button playpause",
                     onclick: move |_| controller.write().toggle_playing(),
-                    background_image: if controller.read().playing() { "url(assets/pause.svg)" } else { "url(assets/play.svg)" },
+                    class: if controller.read().playing() { "pause" },
                 }
                 button {
                     class: "skip-button",
@@ -122,6 +121,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     onclick: move |_| controller.write().shuffle.toggle(),
                 }
             }
+            div { flex_grow: 1 }
         }
     }
 }
