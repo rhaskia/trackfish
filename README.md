@@ -1,3 +1,5 @@
+![./exampleimage.png](./exampleimage.png)
+
 # Rust Music Player
 This is a music player, made for offline usage while not having to sacrifice online features.
 It works just as well as any other music player would (apart from a big lacking in settings/search right now), but the main feature of it is the radio system.
