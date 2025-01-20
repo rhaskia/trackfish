@@ -1,6 +1,31 @@
 [application]
+asset_dir = "assets"
+name = "TrackFish"
+
+[web.app]
+title = "TrackFish"
 
 [bundle]
+identifier = "com.example.Music"
+publisher = "Rhaskia"
+
+icon = [
+   "./assets/icon32.png",
+   "./assets/icon64.png",
+   "./assets/icon256.png",
+   "./assets/favicon.ico"
+]
+
+category = "Music"
 
 [bundle.android]
 permissions = ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+
+[bundle.windows]
+icon_path = "assets/icon256.png"
+tsp = true
+allow_downgrades = true
+
+[bundle.windows.webview_install_mode.DownloadBootstrapper]
+silent = true
+

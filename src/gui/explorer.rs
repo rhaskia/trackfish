@@ -201,27 +201,3 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
     }
 }
 
-#[component]
-pub fn TracksSearch(controller: Signal<MusicController>, tracks: Vec<usize>, is_searching: Signal<bool>) -> Element {
-    let search = use_signal(String::new);
-    let matches = use_memo(move || {
-        tracks.iter()
-            .filter(|t| similar(&controller.read().all_tracks[**t].title, &search.read()))
-            .cloned()
-            .collect::<Vec<usize>>()
-    });
-
-    rsx! {
-        div {
-            "searchpopup",
-            div {
-                class: "searchpopupbar",
-                img { src: "assets/search.svg" }
-                input { value: search }
-            }
-            for track in matches() {
-                div { "{track}" }
-            }
-        }
-    }
-}
