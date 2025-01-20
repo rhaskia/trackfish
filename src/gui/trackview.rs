@@ -4,6 +4,7 @@ use std::time::Duration;
 use tokio::time;
 use log::info;
 use crate::{View, VIEW};
+use crate::app::utils::similar;
 
 #[component]
 pub fn TrackView(controller: Signal<MusicController>) -> Element {
@@ -56,7 +57,11 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     if idx > 0 {
                         " & "
                     }
-                    span { onclick: move |_| controller.write().add_artist_queue(artist.to_string()),
+                    span { 
+                        onclick: move |_| {
+                            VIEW.write().open(View::Artists);
+                            VIEW.write().artist = controller.read().artists.iter().position(|a| similar(&a.0, &artist)); 
+                        },
                         "{artist}"
                     }
                 }
@@ -73,8 +78,14 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
             }
             span { class: "genresspecifier",
                 if let Some(genres) = controller.read().current_track_genres() {
-                    for genre in genres {
-                        span { "{genre}" }
+                    for genre in genres.iter().cloned() {
+                        span { 
+                            onclick: move |_| {
+                                VIEW.write().open(View::Genres);
+                                VIEW.write().genre = controller.read().genres.iter().position(|g| similar(&g.0, &genre)); 
+                            },
+                            "{genre}"
+                        }
                     }
                 }
             }
@@ -117,8 +128,8 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                 button {
                     class: "shuffle-button",
                     class: "svg-button",
-                    class: if controller.read().shuffle.active { "shuffle-on" },
-                    onclick: move |_| controller.write().shuffle.toggle(),
+                    class: if controller.read().settings.shuffle { "shuffle-on" },
+                    onclick: move |_| controller.write().settings.toggle_shuffle(),
                 }
             }
             div { flex_grow: 1 }

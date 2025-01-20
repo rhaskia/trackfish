@@ -3,7 +3,7 @@
 pub mod app;
 pub mod gui;
 
-use dioxus::prelude::*;
+use dioxus::{prelude::*, dioxus_core::SpawnIfAsync};
 use http::Response;
 use log::info;
 use android_logger::Config;
@@ -19,8 +19,8 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 
-use app::*;
 use gui::*;
+use app::{MusicController, audio::AudioPlayer, track::load_tracks};
 
 const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 
@@ -82,9 +82,13 @@ fn App() -> Element {
         let result = crossbow::Permission::StorageRead.request_async().await;
         info!("{result:?}");
 
-        let tracks = load_tracks(DIR());
+        let tracks = load_tracks(&controller.read().settings.directory);
         if let Ok(t) = tracks {
-            controller.set(MusicController::new(t));
+            if let Ok(mut c) = controller.try_write() {
+                *c = MusicController::new(t);
+            } else {
+                info!("Controller already borrowed");
+            }
             info!("loaded all tracks into music controller");
         } else {
             info!("{:?}", tracks);
@@ -98,8 +102,9 @@ fn App() -> Element {
             parsed
         } else { responder.respond(r); return };
 
-        let path = if let Some(track) = controller.read().get_track(id) { 
-            track.file.clone()
+        // Retry once free
+        let path = if let Ok(Some(track)) = controller.try_read().and_then(|c| Ok(c.get_track(id).cloned())) { 
+            track.file
         } else { responder.respond(r); return };
 
         let tag = if let Ok(t) = Tag::read_from_path(path) {
@@ -110,7 +115,7 @@ fn App() -> Element {
             Cursor::new(picture.data.clone())
         } else { responder.respond(r); return };
 
-        tokio::task::spawn(async move {
+        spawn(async move {
             match get_stream_response(&mut file, &request).await {
                 Ok(response) => responder.respond(response),
                 Err(err) => eprintln!("Error: {}", err),

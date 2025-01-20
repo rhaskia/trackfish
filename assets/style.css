@@ -283,18 +283,29 @@ select {
     border-bottom: 1px solid grey;
     padding: 5px;
     display: flex;
+    gap: 5px;
 }
 
 .searchbar img {
     flex: 0;
 }
 
-.searchbar input {
+.searchbar input, .searchpopupbar input {
     flex: 1;
     background: var(--bg);
     color: var(--fg);
     border-radius: 6px;
     border: 1px solid var(--weakfg);
+}
+
+.searchholder {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    position: absolute;
+    height: 90%;
+    width: 100%;
+    margin-top: 5%;
 }
 
 .artists, .albums {
@@ -358,4 +369,39 @@ select {
     border-radius: 6px;
     background: var(--bg);
     color: var(--fg);
+}
+
+.searchpopup {
+    width: 75%;
+    max-height: 100%;
+    padding: 10px;
+    margin: auto;
+    background: var(--bg);
+    border: 1px solid var(--weakfg);
+    border-radius: 6px;
+}
+
+.searchpopupbar {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+}
+
+.pseudoinput {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--weakfg);
+    padding: 10px;
+}
+
+.searchtracks {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: calc(100% - 20px);
+}
+
+.settingsview span {
+    width: 150px;
+    display: inline;
 }

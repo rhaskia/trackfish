@@ -1,5 +1,5 @@
-use crate::queue::QueueType;
-use crate::utils::similar;
+use super::queue::QueueType;
+use super::utils::similar;
 use id3::Tag;
 use id3::TagLike;
 use id3::frame::ExtendedText;

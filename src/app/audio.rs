@@ -75,4 +75,8 @@ impl AudioPlayer {
     pub fn set_pos(&mut self, pos: f64) {
         let _ = self.sink.try_seek(Duration::from_secs_f64(pos));
     }
+
+    pub fn set_volume(&mut self, volume: f32) {
+        self.sink.set_volume(volume)
+    }
 }

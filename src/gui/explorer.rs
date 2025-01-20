@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     let mut albums = use_signal(|| controller.read().albums.clone());
+    let mut is_searching = use_signal(|| false);
 
     use_future(move || async move {
         albums.write().sort_by(|(_, a), (_, b)| b.cmp(a));
@@ -16,9 +17,12 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     };
 
     rsx! {
-        div { class: "albums",
+        div { 
+            class: "albums",
+            onclick: move |_| is_searching.set(false),
             div {
                 class: "searchbar",
+                onclick: move |_| is_searching.set(true),
                 display: if VIEW.read().album.is_some() { "none" },
                 img { src: "assets/search.svg" }
                 input {}
@@ -42,6 +46,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
                 TracksView { controller, viewtype: View::Albums }
             }
         }
+
     }
 }
 
@@ -113,6 +118,7 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                 }
             }
         }
+
     }
 }
 
@@ -196,7 +202,7 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn Search(controller: Signal<MusicController>, tracks: Vec<usize>) -> Element {
+pub fn TracksSearch(controller: Signal<MusicController>, tracks: Vec<usize>, is_searching: Signal<bool>) -> Element {
     let search = use_signal(String::new);
     let matches = use_memo(move || {
         tracks.iter()

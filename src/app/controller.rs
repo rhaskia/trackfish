@@ -1,4 +1,4 @@
-use crate::{
+use super::{
     audio::AudioPlayer,
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
@@ -10,6 +10,7 @@ use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
+use super::settings::Settings;
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -25,36 +26,7 @@ pub struct MusicController {
     pub queues: Vec<Queue>,
     pub player: AudioPlayer,
     pub encoder: AutoEncoder,
-    pub radio: RadioSettings,
-    pub shuffle: ShuffleSettings,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct RadioSettings {
-    temp: f32,
-    album_penalty: f32,
-    artist_penalty: f32,
-}
-
-impl RadioSettings {
-    pub fn new(temp: f32, album_penalty: f32, artist_penalty: f32) -> Self {
-        RadioSettings { temp, album_penalty, artist_penalty }
-    }
-}
-
-#[derive(Clone, PartialEq)]
-pub struct ShuffleSettings {
-    pub active: bool,
-}
-
-impl ShuffleSettings {
-    pub fn new() -> Self {
-        Self { active: false }
-    }
-
-    pub fn toggle(&mut self) {
-        self.active = !self.active;
-    }
+    pub settings: Settings,
 }
 
 // Basic functionality
@@ -79,16 +51,14 @@ impl MusicController {
             albums: Vec::new(),
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
-            radio: RadioSettings::new(0.5, 0.7, 0.7),
-            shuffle: ShuffleSettings::new(),
+            settings: Settings::load(),
         };
 
         let mut track_info = Vec::new();
 
         for track in &all_tracks {
-            // let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
-            // let genre_space = queue.encoder.encode(genre_vec);
-            let genre_space = Array1::ones(16);
+            let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
+            let genre_space = queue.encoder.encode(genre_vec);
 
             track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
 
@@ -172,16 +142,16 @@ impl MusicController {
             if self.all_tracks[*i].genre.len() == 0 {
                 continue;
             }
-            weights[*i] += 1.0 / (1.0 + (dist as f32 * self.radio.temp - 2.0).exp());
+            weights[*i] += 1.0 / (1.0 + (dist as f32 * self.settings.radio_temp - 2.0).exp());
         }
 
         for i in 0..self.all_tracks.len() {
             let current_idx = self.current_queue().current();
             if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
-                weights *= self.radio.album_penalty;
+                weights *= self.settings.radio_album_penalty;
             }
             if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
-                weights *= self.radio.artist_penalty;
+                weights *= self.settings.radio_artist_penalty;
             }
             if let Some(current_mood) = &self.all_tracks[current_idx].mood {
                 if let Some(mood) = &self.all_tracks[i].mood {
@@ -297,7 +267,7 @@ impl MusicController {
     }
 
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
-        if self.shuffle.active {
+        if self.settings.shuffle {
             tracks = shuffle_with_first(tracks, track);
         }
 
@@ -352,6 +322,27 @@ pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
     tracks.insert(0, start);
 
     tracks
+}
+
+// Settings Management
+impl MusicController {
+    pub fn set_volume(&mut self, volume: f32) {
+        self.settings.volume = volume;
+        self.player.set_volume(volume);
+        self.settings.save();
+        info!("Set volume to {volume}");
+    }
+
+    pub fn set_directory(&mut self, new_dir: String) {
+        self.settings.directory = new_dir;
+        self.settings.save();
+        // Manage loading new tracks
+    }
+
+    pub fn set_temp(&mut self, temp: f32) {
+        self.settings.radio_temp = temp;
+        self.settings.save();
+    }
 }
 
 // Small functions
