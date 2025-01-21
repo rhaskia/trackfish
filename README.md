@@ -13,7 +13,7 @@ Firstly, [install rust](https://www.rust-lang.org/tools/install), and then use `
 
 Then, you can run `dx serve --platform PLATFORM`, where PLATFORM is either desktop, android, or iOS (although iOS may not have the correct permissions).
 
-To start with, the application uses the default platform music folder. To change this, go to settings, set directory and then restart the application.
+To start with, the application uses the default platform music folder. To change this, go to settings, set directory and then restart the application. The application will freeze up as it is loading the songs tags if you have a large music collection.
 
 # Features
 - Track view and playback
