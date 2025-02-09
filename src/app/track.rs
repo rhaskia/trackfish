@@ -8,6 +8,7 @@ use ndarray::Array1;
 use std::fmt;
 use std::fs;
 use std::io;
+use crate::database::init_db;
 
 use super::embed::AutoEncoder;
 
@@ -73,6 +74,8 @@ impl Default for Track {
 }
 
 pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
+    let cache = init_db()?;
+
     let encoder = AutoEncoder::new()?;
     let files = get_song_files(directory)?;
     info!("Loaded {} tracks", files.len());

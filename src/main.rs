@@ -2,6 +2,7 @@
 
 pub mod app;
 pub mod gui;
+pub mod database;
 
 use dioxus::{prelude::*, dioxus_core::SpawnIfAsync};
 use http::Response;
@@ -63,14 +64,7 @@ fn App() -> Element {
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
             Ok(_) => {},
-            Err(err) => match err {
-                document::EvalError::Unsupported => todo!(),
-                document::EvalError::Finished => todo!(),
-                document::EvalError::InvalidJs(_) => todo!(),
-                document::EvalError::Communication(_) => todo!(),
-                document::EvalError::Serialization(_) => todo!(),
-                _ => {},
-            },
+            Err(err) => log::error!("{err:?}"),
         }
     });
 
