@@ -18,7 +18,7 @@ pub struct Track {
     pub title: String,
     pub album: String,
     pub artists: Vec<String>,
-    pub genre: Vec<String>,
+    pub genres: Vec<String>,
     pub mood: Option<Mood>,
     pub trackno: usize,
     pub year: String,
