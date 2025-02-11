@@ -45,11 +45,11 @@ impl Track {
     }
 
     pub fn shared_genres(&self, other: &Self) -> usize {
-        self.genre.iter().filter(|e| other.genre.contains(e)).collect::<Vec<&String>>().len()
+        self.genres.iter().filter(|e| other.genres.contains(e)).collect::<Vec<&String>>().len()
     }
 
     pub fn has_genre(&self, genre: &str) -> bool {
-        self.genre.iter().position(|e| similar(e, genre)).is_some()
+        self.genres.iter().position(|e| similar(e, genre)).is_some()
     }
 
     pub fn has_artist(&self, artist: &str) -> bool {
@@ -64,7 +64,7 @@ impl Default for Track {
             title: String::from("No Track Selected"),
             album: Default::default(),
             artists: Default::default(),
-            genre: Default::default(),
+            genres: Default::default(),
             year: Default::default(),
             mood: Default::default(),
             trackno: 1,
@@ -118,15 +118,23 @@ pub struct Mood {
 
 impl Mood {
     pub fn shared(&self, other: &Self) -> f32 {
-        let mut result = 0.0;
-        if self.acoustic == other.acoustic { result += 1.0; }
-        if self.aggressive == other.aggressive { result += 1.0; }
-        if self.electronic == other.electronic { result += 1.0; }
-        if self.happy == other.happy { result += 1.0; }
-        if self.party == other.party { result += 1.0; }
-        if self.relaxed == other.relaxed { result += 1.0; }
-        if self.sad == other.sad { result += 1.0; }
-        result
+        self.to_vec().iter().zip(other.to_vec()).map(|(a, b)| if *a == b { 1.0 } else { 0.0 }).sum()
+    }
+
+    pub fn to_vec(&self) -> Vec<bool> {
+        vec![self.acoustic, self.aggressive, self.electronic, self.happy, self.party, self.relaxed, self.sad]
+    }
+
+    pub fn from_vec(vec: Vec<bool>) -> Self {
+        Self {
+            acoustic: vec[0],
+            aggressive: vec[1],
+            electronic: vec[2],
+            happy: vec[3],
+            party: vec[4],
+            relaxed: vec[5],
+            sad: vec[6],
+        }
     }
 }
 
@@ -213,7 +221,7 @@ pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> 
     let mood = get_mood(&tag);
 
     let album = tag.album().unwrap_or_default().to_string();
-    let genre = get_genres(&tag);
+    let genres = get_genres(&tag);
     let len = tag.duration().unwrap_or(1) as f64;
     let trackno = tag.track().unwrap_or(1) as usize;
 
@@ -222,11 +230,18 @@ pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> 
         year = tag_year.to_string();
     }
 
-    Ok(Track { file, title, artists, album, genre, year, len, mood, trackno })
+    Ok(Track { file, title, artists, album, genres, year, len, mood, trackno })
 }
 
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
-    let entries = fs::read_dir(directory)?;
+    // Can't seem to load paths with tildes in them
+    let expanded = if let Some(home) = dirs::home_dir() {
+        directory.replace("~", &home.display().to_string())
+    } else { 
+        directory.to_string()
+    };
+
+    let entries = fs::read_dir(expanded)?;
 
     let mp3_files: Vec<String> = entries
         .filter_map(|entry| {

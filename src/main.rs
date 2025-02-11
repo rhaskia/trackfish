@@ -23,7 +23,7 @@ use dioxus::mobile::use_asset_handler;
 use gui::*;
 use app::{MusicController, audio::AudioPlayer, track::load_tracks};
 
-const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
+pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 
 fn main() {
     if cfg!(target_os = "android") {

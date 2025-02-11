@@ -16,7 +16,19 @@ impl Default for Settings {
     fn default() -> Self {
         let directory = if cfg!(target_os = "android") {
             "/storage/emulated/0/Music".to_string()
-        } else { dirs::audio_dir().unwrap().display().to_string() };
+        } else { 
+            match dirs::audio_dir() {
+                Some(dir) => dir.display().to_string(),
+                None => {
+                    let dir = match std::env::consts::OS {
+                        "linux" => "~/Music",
+                        _ => ""
+                    };
+                    let _ = std::fs::create_dir(dir);
+                    dir.to_string()
+                }
+            }
+        };
         
         Self { 
             volume: 1.0,

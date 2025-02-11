@@ -1,15 +1,23 @@
 use std::fs;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{
+    params,
+    Connection,
+    Result,
+    ToSql,
+    OptionalExtension,
+    types::{ToSqlOutput, FromSql, Value, ValueRef, FromSqlResult, FromSqlError}
+};
+
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, DefaultHasher, Hasher};
+use std::hash::{Hash, Hasher};
 use std::path::Path;
-use crate::app::track::Track;
+use crate::app::track::{Track, Mood};
 use crate::app::settings::Settings;
 
 pub fn hash_filename(name: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     name.hash(&mut hasher);
-    hasher.finish();
+    hasher.finish()
 }
 
 pub fn init_db() -> Result<Connection> {
@@ -38,17 +46,22 @@ pub fn init_db() -> Result<Connection> {
     Ok(conn)
 }
 
-fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<CachedItem>> {
+fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
     let file_hash = hash_filename(filename);
     let mut stmt = conn.prepare("SELECT * FROM cache WHERE file_hash = ?1")?;
     
     let result = stmt.query_row(params![file_hash], |row| {
+        let artists_raw: String = row.get(4)?;
+        let artists = artists_raw.split(";").map(|s| s.to_string()).collect();
+        let genres_raw: String = row.get(5)?;
+        let genres = genres_raw.split(";").map(|s| s.to_string()).collect();
+
         Ok(Track {
             file: row.get(1)?,
             title: row.get(2)?,
             album: row.get(3)?,
-            artists: row.get(4)?,
-            genre: row.get(5)?,
+            artists,
+            genres,
             mood: row.get(6)?,
             trackno: row.get(7)?,
             year: row.get(8)?,
@@ -60,7 +73,7 @@ fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<CachedItem
 }
 
 fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
-    let file_hash = hash_filename(&item.filename);
+    let file_hash = hash_filename(&item.file);
     conn.execute(
         "INSERT INTO cache (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
             ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
@@ -69,11 +82,37 @@ fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
             filename = excluded.filename,
             size = excluded.size,
             metadata = excluded.metadata",
-        params![file_hash, item.file, item.title, item.album, item.artists, items.genres, item.mood, item.trackno, item.year, item.len],
+        params![
+            file_hash,
+            item.file,
+            item.title,
+            item.album,
+            item.artists.join(";"),
+            item.genres.join(";"),
+            item.mood,
+            item.trackno,
+            item.year,
+            item.len
+        ],
     )?;
     Ok(())
 }
 
 impl ToSql for Mood {
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>, rusqlite::Error> {
+        let text: Vec<&str> = self.to_vec().into_iter().map(|b| if b { "Y" } else { "N" }).collect();
+        Ok(ToSqlOutput::Owned(Value::Text(text.join("").to_string())))
+    }
+}
 
+impl FromSql for Mood {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let text = if let ValueRef::Text(text) = value { text } else {
+            return FromSqlResult::Err(FromSqlError::InvalidType);
+        };
+
+        let bools = text.iter().map(|c| if *c == b'Y' { true } else { false }).collect();
+
+        FromSqlResult::Ok(Self::from_vec(bools))
+    }
 }
