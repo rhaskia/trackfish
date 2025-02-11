@@ -78,12 +78,15 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
 
     let encoder = AutoEncoder::new()?;
     let files = get_song_files(directory)?;
+    let started = std::time::SystemTime::now();
     info!("Loaded {} tracks", files.len());
     let mut tracks = Vec::new();
 
     for file in files {
         tracks.push(load_track(file, &encoder)?);
     }
+
+    info!("Track information loaded in {:?}", started.elapsed());
 
     Ok(tracks)
 }

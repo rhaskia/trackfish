@@ -56,6 +56,8 @@ impl MusicController {
 
         let mut track_info = Vec::new();
 
+        let started = std::time::SystemTime::now();
+
         for track in &all_tracks {
             let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
             let genre_space = queue.encoder.encode(genre_vec);
@@ -88,6 +90,8 @@ impl MusicController {
         queue.genres.sort();
         queue.albums.sort();
         queue.artists.sort();
+
+        info!("Calculated weights in {:?}", started.elapsed());
 
         queue.track_info = track_info;
 
