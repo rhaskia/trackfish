@@ -7,6 +7,42 @@
     --bg: #1d2021;
 }
 
+@media (orientation: landscape) {
+    .songview {
+        flex-direction: row !important;
+        height: calc(100% - 40px);
+    }
+
+    .imageview {
+        height: calc(100% - 40px);
+        aspect-ratio: 1;
+    }
+    
+    .songoptions {
+        display: flex;
+        flex: 1 1 0;
+        padding: 20px;
+        justify-content: flex-end;
+    }
+}
+
+@media (orientation: portrait) {
+    .imageview {
+        height: 100%;
+        aspect-ratio: 1;
+    }
+
+    .songview {
+        width: calc(100% - 40px);
+    }
+
+    .songoptions {
+        display: flex;
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
 body {
     position: absolute;
     z-index: -2;
@@ -79,8 +115,12 @@ svg {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
-    width: calc(100% - 40px);
     border-right: 1px solid var(--accent);
+}
+
+.songoptions {
+    display: flex;
+    flex-direction: column;
 }
 
 .songview .buttonrow {
@@ -99,7 +139,6 @@ svg {
 
 .imageview {
     margin-top: 30px;
-    width: 100%;
     aspect-ratio: 1;
     display: flex;
     justify-content: center;
