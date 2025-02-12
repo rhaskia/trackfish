@@ -74,6 +74,7 @@ impl Default for Track {
 }
 
 pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
+    info!("Loading tracks from {directory}");
     let cache = init_db()?;
 
     let encoder = AutoEncoder::new()?;
@@ -85,7 +86,6 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     for file in files {
         match get_from_cache(&cache, &file)? {
             Some(track) => {
-                info!("loaded {file} from cache");
                 tracks.push(track);
             }
             None => {

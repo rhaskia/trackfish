@@ -39,9 +39,9 @@ pub fn init_db() -> Result<Connection> {
                 album TEXT NOT NULL,
                 artists TEXT NOT NULL,
                 genres TEXT NOT NULL,
-                year TEXT NOT NULL,
                 mood TEXT,
                 trackno INTEGER NOT NULL,
+                year TEXT NOT NULL,
                 len REAL NOT NULL
             )",
             [],

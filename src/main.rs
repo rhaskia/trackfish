@@ -6,7 +6,7 @@ pub mod database;
 
 use dioxus::{prelude::*, dioxus_core::SpawnIfAsync};
 use http::Response;
-use log::info;
+use log::{error, info};
 use android_logger::Config;
 use tracing_log::LogTracer;
 use log::LevelFilter;
@@ -112,7 +112,7 @@ fn App() -> Element {
         spawn(async move {
             match get_stream_response(&mut file, &request).await {
                 Ok(response) => responder.respond(response),
-                Err(err) => eprintln!("Error: {}", err),
+                Err(err) => error!("Error: {:?}", err),
             }
         });
     });
@@ -121,6 +121,9 @@ fn App() -> Element {
         style { {include_str!("../assets/style.css")} }
 
         div { class: "mainview",
+            tabindex: 0,
+            autofocus: true,
+            onkeydown: |e| info!("{e:?}"),
             match &VIEW.read().current {
                 View::Song => rsx! {
                     TrackView { controller }

@@ -97,6 +97,7 @@ impl MusicController {
 
         if let Some(track) = queue.current_track().cloned() {
             queue.player.play_track(&track.file);
+            queue.toggle_playing();
             info!("Started track {track:?}");
         }
 

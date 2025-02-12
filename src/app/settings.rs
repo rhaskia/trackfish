@@ -46,17 +46,25 @@ impl Settings {
         if cfg!(target_os = "android") { 
             PathBuf::from_str("/data/data/com.example.Music/").unwrap()
         } else {
-            dirs::config_dir().unwrap()
+            dirs::config_dir().unwrap().join("trackfish/")
         }
     }
 
     pub fn load() -> Self {
         let file = std::fs::read_to_string(Self::dir().join("settings.toml")).unwrap_or_default();
-        toml::from_str(&file).unwrap_or_default()
+        match toml::from_str(&file) {
+            Ok(config) => config,
+            Err(_) => {
+                let config = Self::default();
+                config.save();
+                config
+            }
+        }
     }
 
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
+        std::fs::create_dir(Self::dir());
         std::fs::write(Self::dir().join("settings.toml"), file);
     }
 
