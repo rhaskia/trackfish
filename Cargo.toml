@@ -28,6 +28,8 @@ toml = "0.8.19"
 serde = { version = "1", features = ["derive"]}
 dirs = "6.0.0"
 rusqlite = { version = "0.33", features = ["bundled", "array"] }
+sha2 = "0.10.8"
+base64 = "0.22.1"
 
 [features]
 web = ["dioxus/web"]

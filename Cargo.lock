@@ -5117,6 +5117,7 @@ version = "0.1.0"
 dependencies = [
  "android_logger",
  "anyhow",
+ "base64",
  "crossbow",
  "dioxus",
  "dioxus-logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5131,6 +5132,7 @@ dependencies = [
  "rodio",
  "rusqlite",
  "serde",
+ "sha2",
  "tokio",
  "toml",
  "tracing",

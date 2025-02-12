@@ -8,7 +8,7 @@ use ndarray::Array1;
 use std::fmt;
 use std::fs;
 use std::io;
-use crate::database::init_db;
+use crate::database::{init_db, get_from_cache, save_to_cache};
 
 use super::embed::AutoEncoder;
 
@@ -83,7 +83,17 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     let mut tracks = Vec::new();
 
     for file in files {
-        tracks.push(load_track(file, &encoder)?);
+        match get_from_cache(&cache, &file)? {
+            Some(track) => {
+                info!("loaded {file} from cache");
+                tracks.push(track);
+            }
+            None => {
+                let track = load_track(file, &encoder)?;
+                save_to_cache(&cache, &track)?;
+                tracks.push(track);
+            }
+        }
     }
 
     info!("Track information loaded in {:?}", started.elapsed());
@@ -108,7 +118,7 @@ pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     None
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub struct Mood {
     acoustic: bool,
     aggressive: bool,
@@ -129,6 +139,7 @@ impl Mood {
     }
 
     pub fn from_vec(vec: Vec<bool>) -> Self {
+        if vec.is_empty() { return Self::default(); }
         Self {
             acoustic: vec[0],
             aggressive: vec[1],

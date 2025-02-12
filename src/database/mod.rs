@@ -1,4 +1,5 @@
 use std::fs;
+use log::info;
 use rusqlite::{
     params,
     Connection,
@@ -13,11 +14,15 @@ use std::hash::{Hash, Hasher};
 use std::path::Path;
 use crate::app::track::{Track, Mood};
 use crate::app::settings::Settings;
+use sha2::{Sha256, Digest};
+use base64::{engine::general_purpose, Engine};
 
-pub fn hash_filename(name: &str) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    name.hash(&mut hasher);
-    hasher.finish()
+pub fn hash_filename(name: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(name);
+    let hash = hasher.finalize();
+
+    general_purpose::STANDARD.encode(hash)
 }
 
 pub fn init_db() -> Result<Connection> {
@@ -46,7 +51,7 @@ pub fn init_db() -> Result<Connection> {
     Ok(conn)
 }
 
-fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
+pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
     let file_hash = hash_filename(filename);
     let mut stmt = conn.prepare("SELECT * FROM cache WHERE file_hash = ?1")?;
     
@@ -55,6 +60,11 @@ fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
         let artists = artists_raw.split(";").map(|s| s.to_string()).collect();
         let genres_raw: String = row.get(5)?;
         let genres = genres_raw.split(";").map(|s| s.to_string()).collect();
+        let mood_raw: Option<String> = row.get(6)?;
+        let mood = match mood_raw {
+            Some(text) => Some(string_to_mood(&text)),
+            None => None,
+        };
 
         Ok(Track {
             file: row.get(1)?,
@@ -62,7 +72,7 @@ fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
             album: row.get(3)?,
             artists,
             genres,
-            mood: row.get(6)?,
+            mood,
             trackno: row.get(7)?,
             year: row.get(8)?,
             len: row.get(9)?,
@@ -72,16 +82,16 @@ fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
     Ok(result)
 }
 
-fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
+pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
     let file_hash = hash_filename(&item.file);
     conn.execute(
         "INSERT INTO cache (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
             ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
-        )
-        ON CONFLICT(file_hash) DO UPDATE SET 
-            filename = excluded.filename,
-            size = excluded.size,
-            metadata = excluded.metadata",
+        )",
+        // ON CONFLICT(file_hash) DO UPDATE SET 
+        //     filename = excluded.filename,
+        //     size = excluded.size,
+        //     metadata = excluded.metadata",
         params![
             file_hash,
             item.file,
@@ -115,4 +125,9 @@ impl FromSql for Mood {
 
         FromSqlResult::Ok(Self::from_vec(bools))
     }
+}
+
+fn string_to_mood(s: &str) -> Mood {
+    let bools = s.as_bytes().iter().map(|c| if *c == b'Y' { true } else { false }).collect();
+    Mood::from_vec(bools)
 }
