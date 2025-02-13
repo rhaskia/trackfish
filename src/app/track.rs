@@ -77,7 +77,6 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     info!("Loading tracks from {directory}");
     let cache = init_db()?;
 
-    let encoder = AutoEncoder::new()?;
     let files = get_song_files(directory)?;
     let started = std::time::SystemTime::now();
     info!("Loaded {} tracks", files.len());
@@ -89,7 +88,7 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
                 tracks.push(track);
             }
             None => {
-                let track = load_track(file, &encoder)?;
+                let track = load_track(file)?;
                 save_to_cache(&cache, &track)?;
                 tracks.push(track);
             }
@@ -221,7 +220,7 @@ pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
     return None;
 }
 
-pub fn load_track(file: String, encoder: &AutoEncoder) -> anyhow::Result<Track> {
+pub fn load_track(file: String) -> anyhow::Result<Track> {
     let mut tag = Tag::read_from_path(file.clone())?;
 
     let title = tag.title().unwrap_or_default().to_string();

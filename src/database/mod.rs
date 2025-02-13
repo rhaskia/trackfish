@@ -16,6 +16,7 @@ use crate::app::track::{Track, Mood};
 use crate::app::settings::Settings;
 use sha2::{Sha256, Digest};
 use base64::{engine::general_purpose, Engine};
+use ndarray::Array1;
 
 pub fn hash_filename(name: &str) -> String {
     let mut hasher = Sha256::new();
@@ -32,7 +33,7 @@ pub fn init_db() -> Result<Connection> {
 
     if !db_exists {
         conn.execute(
-            "CREATE TABLE cache (
+            "CREATE TABLE tracks (
                 file_hash TEXT PRIMARY KEY,
                 file_path TEXT NOT NULL,
                 title TEXT NOT NULL,
@@ -46,6 +47,12 @@ pub fn init_db() -> Result<Connection> {
             )",
             [],
         )?;
+
+        conn.execute(
+            "CREATE TABLE weights (
+                file_hash TEXT PRIMARY KEY,
+                weights BLOB
+            )", [])?;
     }
 
     Ok(conn)
@@ -53,7 +60,7 @@ pub fn init_db() -> Result<Connection> {
 
 pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
     let file_hash = hash_filename(filename);
-    let mut stmt = conn.prepare("SELECT * FROM cache WHERE file_hash = ?1")?;
+    let mut stmt = conn.prepare("SELECT * FROM tracks WHERE file_hash = ?1")?;
     
     let result = stmt.query_row(params![file_hash], |row| {
         let artists_raw: String = row.get(4)?;
@@ -82,10 +89,47 @@ pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>
     Ok(result)
 }
 
+pub fn save_weight(conn: &Connection, track: &str, weights: &Array1<f32>) -> Result<()> {
+    let file_hash = hash_filename(track);
+    let blob_weights: Vec<u8> = weights.iter().map(|f| f.to_le_bytes()).flatten().collect();
+    conn.execute(
+        "INSERT INTO weights (file_hash, weights) VALUES (?1, ?2)",
+        params![file_hash, blob_weights])?;
+
+    Ok(())
+}
+
+pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
+    let started = std::time::SystemTime::now();
+    let file_hash = hash_filename(track);
+    let mut stmt = conn.prepare("SELECT * FROM weights WHERE file_hash = ?1")?;
+    
+    let result: Vec<u8> = stmt.query_row(params![file_hash], |row| {
+        Ok(row.get(1)?)
+    })?;
+
+    info!("weight queried after {:?}", started.elapsed());
+    let started = std::time::SystemTime::now();
+
+    let mut weights = vec![];
+    let mut raw = [0; 4];
+    for i in (0..(result.len()/4)) {
+        raw.copy_from_slice(&result[i*4..i*4+4]);
+        weights.push(f32::from_le_bytes(raw));
+    }
+
+    info!("weight parsed after {:?}", started.elapsed());
+    let started = std::time::SystemTime::now();
+    let array = Array1::from_vec(weights);
+    info!("weight parsed after {:?}", started.elapsed());
+
+    Ok(array)
+}
+
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
     let file_hash = hash_filename(&item.file);
     conn.execute(
-        "INSERT INTO cache (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
+        "INSERT INTO tracks (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
             ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
         )",
         // ON CONFLICT(file_hash) DO UPDATE SET 

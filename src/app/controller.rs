@@ -11,6 +11,7 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
+use crate::database::{init_db, cached_weight, save_weight};
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -57,10 +58,18 @@ impl MusicController {
         let mut track_info = Vec::new();
 
         let started = std::time::SystemTime::now();
+        let cache = init_db().unwrap();
 
         for track in &all_tracks {
-            let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
-            let genre_space = queue.encoder.encode(genre_vec);
+            let genre_space = match cached_weight(&cache, &track.file) {
+                Ok(weight) => weight,
+                Err(_) => {
+                    let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
+                    let weight = queue.encoder.encode(genre_vec);
+                    save_weight(&cache, &track.file, &weight).unwrap();
+                    weight
+                }
+            };
 
             track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
 
