@@ -16,7 +16,19 @@ impl Default for Settings {
     fn default() -> Self {
         let directory = if cfg!(target_os = "android") {
             "/storage/emulated/0/Music".to_string()
-        } else { dirs::audio_dir().unwrap().display().to_string() };
+        } else { 
+            match dirs::audio_dir() {
+                Some(dir) => dir.display().to_string(),
+                None => {
+                    let dir = match std::env::consts::OS {
+                        "linux" => "~/Music",
+                        _ => ""
+                    };
+                    let _ = std::fs::create_dir(dir);
+                    dir.to_string()
+                }
+            }
+        };
         
         Self { 
             volume: 1.0,
@@ -34,17 +46,25 @@ impl Settings {
         if cfg!(target_os = "android") { 
             PathBuf::from_str("/data/data/com.example.Music/").unwrap()
         } else {
-            dirs::config_dir().unwrap()
+            dirs::config_dir().unwrap().join("trackfish/")
         }
     }
 
     pub fn load() -> Self {
         let file = std::fs::read_to_string(Self::dir().join("settings.toml")).unwrap_or_default();
-        toml::from_str(&file).unwrap_or_default()
+        match toml::from_str(&file) {
+            Ok(config) => config,
+            Err(_) => {
+                let config = Self::default();
+                config.save();
+                config
+            }
+        }
     }
 
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
+        std::fs::create_dir(Self::dir());
         std::fs::write(Self::dir().join("settings.toml"), file);
     }
 

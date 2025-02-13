@@ -2,10 +2,11 @@
 
 pub mod app;
 pub mod gui;
+pub mod database;
 
 use dioxus::{prelude::*, dioxus_core::SpawnIfAsync};
 use http::Response;
-use log::info;
+use log::{error, info};
 use android_logger::Config;
 use tracing_log::LogTracer;
 use log::LevelFilter;
@@ -22,7 +23,7 @@ use dioxus::mobile::use_asset_handler;
 use gui::*;
 use app::{MusicController, audio::AudioPlayer, track::load_tracks};
 
-const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
+pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 
 fn main() {
     if cfg!(target_os = "android") {
@@ -63,14 +64,7 @@ fn App() -> Element {
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
             Ok(_) => {},
-            Err(err) => match err {
-                document::EvalError::Unsupported => todo!(),
-                document::EvalError::Finished => todo!(),
-                document::EvalError::InvalidJs(_) => todo!(),
-                document::EvalError::Communication(_) => todo!(),
-                document::EvalError::Serialization(_) => todo!(),
-                _ => {},
-            },
+            Err(err) => log::error!("{err:?}"),
         }
     });
 
@@ -118,7 +112,7 @@ fn App() -> Element {
         spawn(async move {
             match get_stream_response(&mut file, &request).await {
                 Ok(response) => responder.respond(response),
-                Err(err) => eprintln!("Error: {}", err),
+                Err(err) => error!("Error: {:?}", err),
             }
         });
     });
@@ -127,6 +121,9 @@ fn App() -> Element {
         style { {include_str!("../assets/style.css")} }
 
         div { class: "mainview",
+            tabindex: 0,
+            autofocus: true,
+            onkeydown: |e| info!("{e:?}"),
             match &VIEW.read().current {
                 View::Song => rsx! {
                     TrackView { controller }

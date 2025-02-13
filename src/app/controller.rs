@@ -11,6 +11,7 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
+use crate::database::{init_db, cached_weight, save_weight};
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -56,13 +57,23 @@ impl MusicController {
 
         let mut track_info = Vec::new();
 
+        let started = std::time::SystemTime::now();
+        let cache = init_db().unwrap();
+
         for track in &all_tracks {
-            let genre_vec = queue.encoder.genres_to_vec(track.genre.clone());
-            let genre_space = queue.encoder.encode(genre_vec);
+            let genre_space = match cached_weight(&cache, &track.file) {
+                Ok(weight) => weight,
+                Err(_) => {
+                    let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
+                    let weight = queue.encoder.encode(genre_vec);
+                    save_weight(&cache, &track.file, &weight).unwrap();
+                    weight
+                }
+            };
 
             track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
 
-            for genre in track.genre.clone() {
+            for genre in track.genres.clone() {
                 if let Some(index) = queue.genres.iter().position(|(g, _)| similar(g, &genre)) {
                     queue.genres[index].1 += 1;
                 } else {
@@ -89,10 +100,13 @@ impl MusicController {
         queue.albums.sort();
         queue.artists.sort();
 
+        info!("Calculated weights in {:?}", started.elapsed());
+
         queue.track_info = track_info;
 
         if let Some(track) = queue.current_track().cloned() {
             queue.player.play_track(&track.file);
+            queue.toggle_playing();
             info!("Started track {track:?}");
         }
 
@@ -139,7 +153,7 @@ impl MusicController {
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
         for (dist, (i, _)) in dists.iter().enumerate() {
-            if self.all_tracks[*i].genre.len() == 0 {
+            if self.all_tracks[*i].genres.len() == 0 {
                 continue;
             }
             weights[*i] += 1.0 / (1.0 + (dist as f32 * self.settings.radio_temp - 2.0).exp());
@@ -176,6 +190,7 @@ impl MusicController {
     }
 
     pub fn next_similar(&mut self) -> usize {
+        log::info!("next");
         let weights = self.get_weights().to_vec();
         let dist = WeightedIndex::new(weights.clone()).unwrap();
         let mut rng = thread_rng();
@@ -198,6 +213,11 @@ impl MusicController {
     }
 
     pub fn skip(&mut self) {
+        if self.all_tracks.is_empty() {
+            log::info!("No track to skip to");
+            return;
+        }
+
         let current_queue = &mut self.queues[self.current_queue];
 
         current_queue.current_track += 1;
@@ -388,7 +408,7 @@ impl MusicController {
     }
 
     pub fn current_track_genres(&self) -> Option<&Vec<String>> {
-        Some(&self.current_track()?.genre)
+        Some(&self.current_track()?.genres)
     }
 
     pub fn current_album_idx(&self) -> usize {

@@ -1673,6 +1673,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "fallible-iterator"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
+
+[[package]]
+name = "fallible-streaming-iterator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1712,6 +1724,12 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+
+[[package]]
+name = "foldhash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
 
 [[package]]
 name = "foreign-types"
@@ -2242,6 +2260,18 @@ name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
+dependencies = [
+ "foldhash",
+]
+
+[[package]]
+name = "hashlink"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7382cf6263419f2d8df38c55d7da83da5c18aef87fc7a7fc1fb1e344edfe14c1"
+dependencies = [
+ "hashbrown 0.15.2",
+]
 
 [[package]]
 name = "heck"
@@ -2786,6 +2816,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsqlite3-sys"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad8935b44e7c13394a179a438e0cebba0fe08fe01b54f152e29a93b5cf993fd4"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
+
+[[package]]
 name = "libxdo"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3025,32 +3066,6 @@ dependencies = [
  "png",
  "thiserror 1.0.69",
  "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "music"
-version = "0.1.0"
-dependencies = [
- "android_logger",
- "anyhow",
- "crossbow",
- "dioxus",
- "dioxus-logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "dirs 6.0.0",
- "http",
- "http-range",
- "id3",
- "log",
- "ndarray",
- "ndarray-npy",
- "rand 0.8.5",
- "rodio",
- "serde",
- "tokio",
- "toml",
- "tracing",
- "tracing-android",
- "tracing-log",
 ]
 
 [[package]]
@@ -4165,6 +4180,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusqlite"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c6d5e5acb6f6129fe3f7ba0a7fc77bca1942cb568535e18e7bc40262baf3110"
+dependencies = [
+ "bitflags 2.6.0",
+ "fallible-iterator",
+ "fallible-streaming-iterator",
+ "hashlink",
+ "libsqlite3-sys",
+ "smallvec",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5083,6 +5112,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "trackfish"
+version = "0.1.0"
+dependencies = [
+ "android_logger",
+ "anyhow",
+ "base64",
+ "crossbow",
+ "dioxus",
+ "dioxus-logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dirs 6.0.0",
+ "http",
+ "http-range",
+ "id3",
+ "log",
+ "ndarray",
+ "ndarray-npy",
+ "rand 0.8.5",
+ "rodio",
+ "rusqlite",
+ "serde",
+ "sha2",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-android",
+ "tracing-log",
+]
+
+[[package]]
 name = "tray-icon"
 version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5220,6 +5278,12 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "version-compare"
