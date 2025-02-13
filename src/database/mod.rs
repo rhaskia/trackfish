@@ -44,8 +44,7 @@ pub fn init_db() -> Result<Connection> {
                 trackno INTEGER NOT NULL,
                 year TEXT NOT NULL,
                 len REAL NOT NULL
-            )
-            ",
+            )",
             [],
         )?;
 
