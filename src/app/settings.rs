@@ -33,7 +33,7 @@ impl Default for Settings {
         Self { 
             volume: 1.0,
             directory,
-            radio_temp: 0.5,
+            radio_temp: 0.1,
             radio_album_penalty: 0.7,
             radio_artist_penalty: 0.7,
             shuffle: false
