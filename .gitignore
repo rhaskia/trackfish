@@ -10,3 +10,8 @@ build
 weights.txt
 predicted_genres.txt
 data
+lastfm/A
+lastfm/B
+lastfm/__pycache__
+lastfm/similars.json
+lastfm/ids.txt
