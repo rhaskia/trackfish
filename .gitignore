@@ -15,3 +15,5 @@ lastfm/B
 lastfm/__pycache__
 lastfm/similars.json
 lastfm/ids.txt
+lastfm/fasttext_categories.model
+lastfm/fasttext_categories.model.wv.vectors_ngrams.npy

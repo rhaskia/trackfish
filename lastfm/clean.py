@@ -29,5 +29,5 @@ for track in with_similars:
 print(len(tracks))
 
 f = open("similars.json", 'w')
-f.write(json.dumps(with_similars))
+f.write(json.dumps(tracks))
 
