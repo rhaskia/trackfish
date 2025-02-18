@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 from tkinter import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 
 def clean(str1):
     no_whitespace = ''.join(str1.split()).lower()
@@ -78,7 +80,14 @@ def callback(a, b, c):
     print(value)
     new_value = ", ".join(to_genre(value))
     w.config(text=new_value)
+    update_graph(value)
     return True
+
+def update_graph(value):
+    for rect, new_val in zip(bar_rects, value):
+        rect.set_height(new_val)
+    ax.set_ylim(min(value) - 0.1, max(value) + 0.1)  # Auto-scale
+    canvas.draw()
 
 sv.trace_add("write", callback)
 
@@ -86,6 +95,14 @@ Label(m, text='Calculation').grid(row=0)
 e1 = Entry(m, textvariable=sv)
 e1.grid(row=0, column=1)
 
+fig, ax = plt.subplots(figsize=(5, 3))
+bar_rects = ax.bar(range(16), np.zeros(16))  # Empty bar graph
+ax.set_ylim(-1, 1)  # Set y-axis range
+ax.set_xticks(range(16))
+ax.set_title("Genre Vector Representation")
 
+# Embed in Tkinter window
+canvas = FigureCanvasTkAgg(fig, master=m)
+canvas.get_tk_widget().grid(row=2, column=0, columnspan=2)
 
 m.mainloop()

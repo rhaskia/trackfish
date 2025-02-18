@@ -108,7 +108,6 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
         Ok(row.get(1)?)
     })?;
 
-    info!("weight queried after {:?}", started.elapsed());
     let started = std::time::SystemTime::now();
 
     let mut weights = vec![];
@@ -118,10 +117,8 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
         weights.push(f32::from_le_bytes(raw));
     }
 
-    info!("weight parsed after {:?}", started.elapsed());
     let started = std::time::SystemTime::now();
     let array = Array1::from_vec(weights);
-    info!("weight parsed after {:?}", started.elapsed());
 
     Ok(array)
 }

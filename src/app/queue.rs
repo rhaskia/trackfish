@@ -60,7 +60,7 @@ impl Queue {
     }
 
     pub fn current(&self) -> usize {
-        *self.cached_order.get(self.current_track).unwrap_or(&0)
+        self.cached_order[self.current_track]
     }
 
     pub fn track(&self, idx: usize) -> usize {

@@ -129,14 +129,17 @@ impl MusicController {
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
+        info!("{}", self.current_queue().current());
         let space = self.track_info[self.current_queue().current()].genre_space.clone();
         let current = self.mut_current_queue().mut_radio_genres();
+
 
         if *current == Array1::<f32>::zeros(16) {
             *current = space;
         } else {
             info!("Old Space: {current}");
-            *current = lerp(current, &space, 0.35);
+            info!("{space:?}");
+            *current = lerp(current, &space, 0.7);
             info!("New Space: {current}");
         }
 
@@ -213,6 +216,7 @@ impl MusicController {
     }
 
     pub fn skip(&mut self) {
+        info!("hi 2");
         if self.all_tracks.is_empty() {
             log::info!("No track to skip to");
             return;
@@ -220,9 +224,9 @@ impl MusicController {
 
         let current_queue = &mut self.queues[self.current_queue];
 
-        current_queue.current_track += 1;
-
-        if let Some(next) = current_queue.cached_order.get(current_queue.current_track).cloned() {
+        // next song exists in queue
+        if let Some(next) = current_queue.cached_order.get(current_queue.current_track + 1).cloned() {
+            current_queue.current_track += 1;
             self.play_track(next);
             return;
         }
@@ -230,6 +234,7 @@ impl MusicController {
         match current_queue.queue_type {
             QueueType::Radio(_, _) => {
                 let next = self.next_similar();
+                self.queues[self.current_queue].current_track += 1;
                 self.queues[self.current_queue].cached_order.push(next);
                 self.play_track(next);
             }
