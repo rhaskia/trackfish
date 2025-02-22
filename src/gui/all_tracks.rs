@@ -3,18 +3,34 @@ use crate::app::MusicController;
 use crate::app::utils::strip_unnessecary;
 use crate::{View, VIEW};
 use crate::app::utils::similar;
+use std::time::Duration;
+
+fn display_time(total: u64) -> String {
+    let seconds = total % 60;
+    let minutes = (total % 3600 - seconds) / 60;
+    let hours = (total - minutes) / 3600;
+
+    format!("{hours}:{minutes:02}:{seconds:02}")
+}
 
 #[component]
 pub fn AllTracks(controller: Signal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
     let tracks = use_signal(|| (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
+    let total_time: Signal<u64> = use_signal(|| controller.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
 
     rsx!{
         div {
             class: "searchbar",
             onclick: move |_| is_searching.set(true),
-            img { src: "assets/search.svg" }
+            img { src: "assets/icons/search.svg" }
             div { class: "pseudoinput" }
+        }
+        div {
+            color: "white",
+            padding: "10px",
+            "{tracks.read().len()} songs / "
+            "{display_time(total_time())} total duration"
         }
         div { class: "tracklist",
             for i in 0..controller.read().all_tracks.len() {
@@ -28,7 +44,7 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
                     img { src: "/trackimage/{i}" }
                     span { "{controller.read().all_tracks[i].title}" }
                     div { flex_grow: 1 }
-                    img { src: "/assets/vert.svg" }
+                    img { src: "/assets/icons/vert.svg" }
                 }
             }
         }
@@ -63,7 +79,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
                 class: "searchpopup",
                 div {
                     class: "searchpopupbar",
-                    img { src: "assets/search.svg" }
+                    img { src: "assets/icons/search.svg" }
                     input {
                         value: search,
                         autofocus: true,
@@ -76,6 +92,12 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
                     for track in matches() {
                         div {
                             class: "trackitem",
+                            onclick: move |_| { 
+                                document::eval(&format!(
+                                    "document.getElementById('trackitem-{}').scrollIntoView();",
+                                    track
+                                ));
+                            },
                             img { src: "/trackimage/{track}" }
                             span { "{controller.read().all_tracks[track].title}" }
                         }

@@ -10,10 +10,10 @@ identifier = "com.example.Music"
 publisher = "Rhaskia"
 
 icon = [
-   "./assets/icon32.png",
-   "./assets/icon64.png",
-   "./assets/icon256.png",
-   "./assets/favicon.ico"
+   "./assets/icons/icon32.png",
+   "./assets/icons/icon64.png",
+   "./assets/icons/icon256.png",
+   "./assets/icons/favicon.ico"
 ]
 
 category = "Music"
@@ -22,7 +22,7 @@ category = "Music"
 permissions = ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
 
 [bundle.windows]
-icon_path = "assets/icon256.png"
+icon_path = "assets/icons/icon256.png"
 tsp = true
 allow_downgrades = true
 

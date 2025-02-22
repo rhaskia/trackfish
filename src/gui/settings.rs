@@ -6,24 +6,30 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
             class: "settingsview",
-            span { "Music Directory" }
-            input { 
-                onchange: move |e| controller.write().set_directory(e.value()),
+            div {
+                span { "Music Directory" }
+                br { }
+                span { "Volume" } 
+                br { }
+                span { "Radio Temperature" } 
             }
-            br { }
-            span { "Volume" } 
-            input {
-                r#type: "range",
-                value: "100.0",
-                oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap() / 100.0)
-            }
-            br { }
-            span { "Radio Temperature" } 
-            input {
-                r#type: "range",
-                max: "20.0",
-                value: "10.0",
-                oninput: move |e| controller.write().set_temp(e.parsed::<f32>().unwrap() / 10.0)
+            div {
+                display: "flex",
+                flex_direction: "column",
+                input { 
+                    onchange: move |e| controller.write().set_directory(e.value()),
+                }
+                input {
+                    r#type: "range",
+                    value: "100.0",
+                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap() / 100.0)
+                }
+                input {
+                    r#type: "range",
+                    max: "20.0",
+                    value: "10.0",
+                    oninput: move |e| controller.write().set_temp(e.parsed::<f32>().unwrap() / 10.0)
+                }
             }
         }
     }

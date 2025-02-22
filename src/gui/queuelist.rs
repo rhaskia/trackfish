@@ -37,13 +37,13 @@ pub fn TrackItem(controller: Signal<MusicController>, selected_queue: Signal<usi
                 controller.write().set_queue_and_track(selected_queue(), idx);
                 VIEW.write().current = View::Song;
             },
-            img { class: "trackbutton draghandle", src: "/assets/draghandle.svg" }
+            img { class: "trackbutton draghandle", src: "/assets/icons/draghandle.svg" }
             img { src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}" }
             span {
                 "{controller.read().get_track(controller.read().get_queue(selected_queue()).track(idx)).unwrap().title}"
             }
             div { flex_grow: 1 }
-            img { class: "trackbutton", src: "/assets/vert.svg" }
+            img { class: "trackbutton", src: "/assets/icons/vert.svg" }
         }
     }
 }

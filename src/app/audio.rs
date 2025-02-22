@@ -30,7 +30,7 @@ impl AudioPlayer {
         let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
         let was_paused = self.sink.is_paused();
-        self.current_song_len = source.total_duration().unwrap().as_secs_f64();
+        self.current_song_len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
         self.sink.clear();
         self.sink.append(source);
         if !was_paused {

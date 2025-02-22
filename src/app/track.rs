@@ -8,7 +8,11 @@ use ndarray::Array1;
 use std::fmt;
 use std::fs;
 use std::io;
+use std::path::PathBuf;
+use std::time::Duration;
 use crate::database::{init_db, get_from_cache, save_to_cache};
+use rodio::{Decoder, Source};
+use std::io::BufReader;
 
 use super::embed::AutoEncoder;
 
@@ -222,6 +226,7 @@ pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
 
 pub fn load_track(file: String) -> anyhow::Result<Track> {
     let mut tag = Tag::read_from_path(file.clone())?;
+    let source = Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
 
     let title = tag.title().unwrap_or_default().to_string();
 
@@ -235,7 +240,7 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
 
     let album = tag.album().unwrap_or_default().to_string();
     let genres = get_genres(&tag);
-    let len = tag.duration().unwrap_or(1) as f64;
+    let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
     let trackno = tag.track().unwrap_or(1) as usize;
 
     let mut year = String::new();
@@ -254,20 +259,39 @@ fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
         directory.to_string()
     };
 
-    let entries = fs::read_dir(expanded)?;
+    let files = recursive_read_dir(&expanded)?;
 
-    let mp3_files: Vec<String> = entries
-        .filter_map(|entry| {
-            let path = entry.ok()?.path();
-            if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("mp3") {
-                path.to_str().map(|s| s.to_string())
-            } else {
-                None
+    Ok(files)
+}
+
+fn recursive_read_dir(dir: &str) -> Result<Vec<String>, io::Error> {
+    let mut files = Vec::new();
+
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        let filename = path.to_str().unwrap().to_string();
+
+        match path.is_file() {
+            true => {
+                if path_is_audio(path) {
+                    files.push(filename.into());
+                } 
             }
-        })
-        .collect();
+            false => {
+                let mut dir_files = recursive_read_dir(&filename)?;
+                files.append(&mut dir_files);
+            }
+        }
+    }
 
-    Ok(mp3_files)
+    Ok(files)
+}
+
+fn path_is_audio(path: PathBuf) -> bool {
+    match path.extension().unwrap_or_default().to_str().unwrap_or_default() {
+        "mp3" | "opus" | "wav" | "flac" | "ogg" => true,
+        _ => false,
+    }
 }
 
 #[derive(Debug, PartialEq)]

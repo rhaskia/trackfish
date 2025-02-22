@@ -74,32 +74,36 @@ svg {
     flex-direction: column;
 }
 
+.mainview:focus {
+    outline: none;
+}
+
 .shuffle-button {
-    background-image: url("assets/shuffle.svg");
+    background-image: url("icons/shuffle.svg");
 }
 
 .shuffle-on {
-    background-image: url("assets/shuffleon.svg");
+    background-image: url("icons/shuffleon.svg");
 }
 
 .like-button {
-    background-image: url("assets/vert.svg");
+    background-image: url("icons/vert.svg");
 }
 
 .playpause {
-    background-image: url("assets/play.svg");
+    background-image: url("icons/play.svg");
 }
 
 .pause {
-    background-image: url("assets/pause.svg") !important;
+    background-image: url("icons/pause.svg") !important;
 }
 
 .skip-button {
-    background-image: url("assets/skip.svg");
+    background-image: url("icons/skip.svg");
 }
  
 .skipprev-button {
-    background-image: url("assets/skipprevious.svg");
+    background-image: url("icons/skipprevious.svg");
 }
 
 .svg-button {
@@ -187,35 +191,35 @@ body {
 }
 
 .songview-button {
-    background-image: url("assets/song.svg");
+    background-image: url("icons/song.svg");
 }
 
 .queue-button {
-    background-image: url("assets/queue.svg");
+    background-image: url("icons/queue.svg");
 }
 
 .alltracks-button {
-    background-image: url("assets/folder.svg");
+    background-image: url("icons/folder.svg");
 }
 
 .album-button {
-    background-image: url("assets/album.svg");
+    background-image: url("icons/album.svg");
 }
 
 .artist-button {
-    background-image: url("assets/artist.svg");
+    background-image: url("icons/artist.svg");
 }
 
 .genres-button {
-    background-image: url("assets/genres.svg");
+    background-image: url("icons/genres.svg");
 }
 
 .search-button {
-    background-image: url("assets/search.svg")
+    background-image: url("icons/search.svg")
 }
 
 .settings-button {
-    background-image: url("assets/settings.svg")
+    background-image: url("icons/settings.svg")
 }
 
 .nav .svg-button svg {
@@ -279,6 +283,7 @@ body {
     overflow-y: scroll;
     overflow-x: hidden;
     height: fit-content;
+    scroll-behavior: smooth;
 }
 
 .tracklist .current {
@@ -443,4 +448,10 @@ select {
 .settingsview span {
     width: 150px;
     display: inline;
+}
+
+.settingsview {
+    display: flex;
+    padding: 10px;
+    flex-direction: row;
 }

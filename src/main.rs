@@ -4,7 +4,7 @@ pub mod app;
 pub mod gui;
 pub mod database;
 
-use dioxus::{prelude::*, dioxus_core::SpawnIfAsync};
+use dioxus::{prelude::*, dioxus_core::{SpawnIfAsync, LaunchConfig}, mobile::WindowBuilder};
 use http::Response;
 use log::{error, info};
 use android_logger::Config;
@@ -26,16 +26,7 @@ use app::{MusicController, audio::AudioPlayer, track::load_tracks};
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 
 fn main() {
-    if cfg!(target_os = "android") {
-        android_logger::init_once(
-            Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
-        );
-    } else {
-        LogTracer::init().expect("Failed to initialize LogTracer");
-
-        dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
-    }
-    
+    // Hook panics into the logger to see them on android
     std::panic::set_hook(Box::new(|panic_info| {
         if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             info!("panic occurred: {s:?} at {:?}", panic_info.location());
@@ -46,16 +37,23 @@ fn main() {
         }
     }));
 
-    launch(App);
-}
-
-const DIR: GlobalSignal<&str> = GlobalSignal::new(|| {
     if cfg!(target_os = "android") {
-        "/storage/emulated/0/Music/"
+        android_logger::init_once(
+            Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
+        );
+        
+        launch(App);
     } else {
-        "E:/Music/"
+        LogTracer::init().expect("Failed to initialize LogTracer");
+
+        dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
+
+        let window = WindowBuilder::new().with_always_on_top(false);
+        let config = dioxus::desktop::Config::new().with_window(window);
+        LaunchBuilder::new().with_cfg(config).launch(App);
     }
-});
+
+}
 
 #[component]
 fn App() -> Element {
@@ -118,7 +116,8 @@ fn App() -> Element {
     });
 
     rsx! {
-        style { {include_str!("../assets/style.css")} }
+        //style { {include_str!("../assets/style.css")} }
+        document::Link { href: "assets/style.css", rel: "stylesheet" }
 
         div { class: "mainview",
             tabindex: 0,

@@ -24,7 +24,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
                 class: "searchbar",
                 onclick: move |_| is_searching.set(true),
                 display: if VIEW.read().album.is_some() { "none" },
-                img { src: "assets/search.svg" }
+                img { src: "assets/icons/search.svg" }
                 input {}
             }
             div {
@@ -95,10 +95,10 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                     View::Genres => VIEW.write().genre = None,
                     _ => unreachable!(),
                 },
-                src: "assets/back.svg",
+                src: "assets/icons/back.svg",
             }
             h3 { "{name()}" }
-            img { src: "assets/shuffle.svg" }
+            img { src: "assets/icons/shuffle.svg" }
         }
         div { class: "tracksview",
             for track in tracks() {
@@ -139,7 +139,7 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
         div { class: "artists",
             div { class: "searchbar",
                 display: if VIEW.read().artist.is_some() { "none" },
-                img { src: "assets/search.svg" }
+                img { src: "assets/icons/search.svg" }
                 input {}
             }
             div { id: "artistlist", class: "tracklist",
@@ -178,7 +178,7 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
         div { class: "artists",
             div { class: "searchbar",
                 display: if VIEW.read().genre.is_some() { "none" },
-                img { src: "assets/search.svg" }
+                img { src: "assets/icons/search.svg" }
                 input {}
             }
             div { id: "genrelist", class: "tracklist",
