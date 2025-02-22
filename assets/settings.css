@@ -1,0 +1,15 @@
+.settingsview span {
+    width: 150px;
+    display: inline;
+}
+
+.settingsview {
+    display: flex;
+    padding: 10px;
+    flex-direction: row;
+}
+
+.settingsview span {
+    width: 150px;
+    display: inline;
+}

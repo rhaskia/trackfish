@@ -7,7 +7,8 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     let mut albums = use_signal(|| controller.read().albums.clone());
     let mut is_searching = use_signal(|| false);
 
-    use_future(move || async move {
+    use_effect(move || {
+        albums.set(controller.read().albums.clone());
         albums.write().sort_by(|(_, a), (_, b)| b.cmp(a));
     });
 
@@ -19,6 +20,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     rsx! {
         div { 
             class: "albums",
+            display: if VIEW.read().current != View::Albums { "none" },
             onclick: move |_| is_searching.set(false),
             div {
                 class: "searchbar",
@@ -125,8 +127,8 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
 #[component]
 pub fn ArtistList(controller: Signal<MusicController>) -> Element {
     let mut artists = use_signal(|| controller.read().artists.clone());
-
-    use_future(move || async move {
+    use_effect(move || {
+        artists.set(controller.read().artists.clone());
         artists.write().sort_by(|(_, a), (_, b)| b.cmp(a));
     });
 
@@ -137,6 +139,7 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
 
     rsx! {
         div { class: "artists",
+            display: if VIEW.read().current != View::Artists { "none" },
             div { class: "searchbar",
                 display: if VIEW.read().artist.is_some() { "none" },
                 img { src: "assets/icons/search.svg" }
@@ -165,7 +168,8 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
 pub fn GenreList(controller: Signal<MusicController>) -> Element {
     let mut genres = use_signal(|| controller.read().genres.clone());
 
-    use_future(move || async move {
+    use_effect(move || {
+        genres.set(controller.read().genres.clone());
         genres.write().sort_by(|(_, a), (_, b)| b.cmp(a));
     });
 
@@ -176,6 +180,7 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
 
     rsx! {
         div { class: "artists",
+            display: if VIEW.read().current != View::Genres { "none" },
             div { class: "searchbar",
                 display: if VIEW.read().genre.is_some() { "none" },
                 img { src: "assets/icons/search.svg" }

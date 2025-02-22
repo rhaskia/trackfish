@@ -1,0 +1,45 @@
+.songview-button {
+    background-image: url("icons/song.svg");
+}
+
+.queue-button {
+    background-image: url("icons/queue.svg");
+}
+
+.alltracks-button {
+    background-image: url("icons/folder.svg");
+}
+
+.album-button {
+    background-image: url("icons/album.svg");
+}
+
+.artist-button {
+    background-image: url("icons/artist.svg");
+}
+
+.genres-button {
+    background-image: url("icons/genres.svg");
+}
+
+.search-button {
+    background-image: url("icons/search.svg")
+}
+
+.settings-button {
+    background-image: url("icons/settings.svg")
+}
+
+.menubar {
+    border-top: 1px solid var(--accent);
+}
+
+.nav {
+    border-top: 1px solid var(--weakfg);
+    display: flex;
+    justify-content: space-between;
+    width: calc(100% - 30px);
+    margin: 5px;
+    padding: 10px 5px;
+    padding-top: 10px;
+}

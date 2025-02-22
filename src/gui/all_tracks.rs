@@ -21,35 +21,40 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
 
     rsx!{
         div {
-            class: "searchbar",
-            onclick: move |_| is_searching.set(true),
-            img { src: "assets/icons/search.svg" }
-            div { class: "pseudoinput" }
-        }
-        div {
-            color: "white",
-            padding: "10px",
-            "{tracks.read().len()} songs / "
-            "{display_time(total_time())} total duration"
-        }
-        div { class: "tracklist",
-            for i in 0..controller.read().all_tracks.len() {
-                div {
-                    class: "trackitem",
-                    id: "trackitem-{i}",
-                    onclick: move |_| {
-                        controller.write().add_all_queue(i);
-                        VIEW.write().current = View::Song;
-                    },
-                    img { src: "/trackimage/{i}" }
-                    span { "{controller.read().all_tracks[i].title}" }
-                    div { flex_grow: 1 }
-                    img { src: "/assets/icons/vert.svg" }
+            class: "alltracksview",
+            display: if VIEW.read().current != View::AllTracks { "none" },
+            document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
+            div {
+                class: "searchbar",
+                onclick: move |_| is_searching.set(true),
+                img { src: "assets/icons/search.svg" }
+                div { class: "pseudoinput" }
+            }
+            div {
+                color: "white",
+                padding: "10px",
+                "{tracks.read().len()} songs / "
+                "{display_time(total_time())} total duration"
+            }
+            div { class: "tracklist",
+                for i in 0..controller.read().all_tracks.len() {
+                    div {
+                        class: "trackitem",
+                        id: "trackitem-{i}",
+                        onclick: move |_| {
+                            controller.write().add_all_queue(i);
+                            VIEW.write().current = View::Song;
+                        },
+                        img { src: "/trackimage/{i}" }
+                        span { "{controller.read().all_tracks[i].title}" }
+                        div { flex_grow: 1 }
+                        img { src: "/assets/icons/vert.svg" }
+                    }
                 }
             }
-        }
-        if is_searching() {
-            TracksSearch { controller, tracks, is_searching }
+            if is_searching() {
+                TracksSearch { controller, tracks, is_searching }
+            }
         }
     }
 }

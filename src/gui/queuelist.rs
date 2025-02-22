@@ -8,6 +8,8 @@ pub fn QueueList(controller: Signal<MusicController>) -> Element {
 
     rsx! {
         div { id: "queuelist", class: "tracklist",
+            display: if VIEW.read().current != View::Queue { "none" },
+
             select { onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
                 for i in 0..controller.read().queues.len() {
                     option { value: "{i}", selected: i == selected_queue(),
@@ -28,20 +30,29 @@ pub fn QueueList(controller: Signal<MusicController>) -> Element {
 
 #[component]
 pub fn TrackItem(controller: Signal<MusicController>, selected_queue: Signal<usize>, idx: usize) -> Element {
+    let title = use_memo(move || {
+        match controller.read().get_track(controller.read().get_queue(selected_queue()).track(idx)) {
+            Some(track) => track.title.clone(),
+            None => String::new(),
+        }
+    });
+
+    let is_current = use_memo(move || {
+        controller.read().get_queue(selected_queue()).current_track == idx &&
+        controller.read().current_queue == selected_queue()
+    });
+
     rsx!{
         div {
             class: "trackitem",
-            class: if controller.read().get_queue(selected_queue()).current_track == idx
-    && controller.read().current_queue == selected_queue() { "current" },
+            class: if is_current() { "current" },
             onclick: move |_| {
                 controller.write().set_queue_and_track(selected_queue(), idx);
                 VIEW.write().current = View::Song;
             },
             img { class: "trackbutton draghandle", src: "/assets/icons/draghandle.svg" }
             img { src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}" }
-            span {
-                "{controller.read().get_track(controller.read().get_queue(selected_queue()).track(idx)).unwrap().title}"
-            }
+            span { "{title}" }
             div { flex_grow: 1 }
             img { class: "trackbutton", src: "/assets/icons/vert.svg" }
         }

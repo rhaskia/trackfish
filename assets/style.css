@@ -7,42 +7,6 @@
     --bg: #1d2021;
 }
 
-@media (orientation: landscape) {
-    .songview {
-        flex-direction: row !important;
-        height: calc(100% - 40px);
-    }
-
-    .imageview {
-        height: calc(100% - 40px);
-        aspect-ratio: 1;
-    }
-    
-    .songoptions {
-        display: flex;
-        flex: 1 1 0;
-        padding: 20px;
-        justify-content: flex-end;
-    }
-}
-
-@media (orientation: portrait) {
-    .imageview {
-        height: 100%;
-        aspect-ratio: 1;
-    }
-
-    .songview {
-        width: calc(100% - 40px);
-    }
-
-    .songoptions {
-        display: flex;
-        flex: 1 1 0;
-        justify-content: center;
-    }
-}
-
 body {
     position: absolute;
     z-index: -2;
@@ -51,7 +15,7 @@ body {
     background: var(--bg);
 }
 
-span, p, small, h2, h3 {
+span, p, small, h1, h2, h3 {
     color: var(--fg);
 }
 
@@ -78,59 +42,12 @@ svg {
     outline: none;
 }
 
-.shuffle-button {
-    background-image: url("icons/shuffle.svg");
-}
-
-.shuffle-on {
-    background-image: url("icons/shuffleon.svg");
-}
-
-.like-button {
-    background-image: url("icons/vert.svg");
-}
-
-.playpause {
-    background-image: url("icons/play.svg");
-}
-
-.pause {
-    background-image: url("icons/pause.svg") !important;
-}
-
-.skip-button {
-    background-image: url("icons/skip.svg");
-}
- 
-.skipprev-button {
-    background-image: url("icons/skipprevious.svg");
-}
-
 .svg-button {
     width: 24px;
     aspect-ratio: 1;
     border: none;
     background-color: transparent;
     filter: brightness(2);
-}
-
-.songview {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    border-right: 1px solid var(--accent);
-}
-
-.songoptions {
-    display: flex;
-    flex-direction: column;
-}
-
-.songview .buttonrow {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
 }
 
 .listensview {
@@ -141,85 +58,10 @@ svg {
     overflow-y: scroll;
 }
 
-.imageview {
-    margin-top: 30px;
-    aspect-ratio: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.imageview img {
-    object-fit: cover; 
-    object-position: center center;
-    overflow: hidden;
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 8px;
-    margin: 10px 0;
-    box-shadow: 0px 5px 10px #00000073;
-}
-
-.songview h3 {
-    text-align: center;
-    margin: 0;
-}
- 
-.songview span {
-    text-align: center;
-}
-
-.menubar {
-    border-top: 1px solid var(--accent);
-}
-
 body {
     margin: 0;
     overflow: hidden;
     border-top: 1px solid var(--outline-color);
-}
-
-.progressrow {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    margin: 10px 0;
-}
-
-.progressrow input {
-    flex: 1 1 0;
-}
-
-.songview-button {
-    background-image: url("icons/song.svg");
-}
-
-.queue-button {
-    background-image: url("icons/queue.svg");
-}
-
-.alltracks-button {
-    background-image: url("icons/folder.svg");
-}
-
-.album-button {
-    background-image: url("icons/album.svg");
-}
-
-.artist-button {
-    background-image: url("icons/artist.svg");
-}
-
-.genres-button {
-    background-image: url("icons/genres.svg");
-}
-
-.search-button {
-    background-image: url("icons/search.svg")
-}
-
-.settings-button {
-    background-image: url("icons/settings.svg")
 }
 
 .nav .svg-button svg {
@@ -228,68 +70,6 @@ body {
     background-size: 200% 200%;
 }
 
-.nav {
-    border-top: 1px solid var(--weakfg);
-    display: flex;
-    justify-content: space-between;
-    width: calc(100% - 30px);
-    margin: 5px;
-    padding: 10px 5px;
-    padding-top: 10px;
-}
-
-.genresspecifier {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    white-space: nowrap;
-}
-
-.thinitem small {
-    margin-left: 10px;
-}
-
-.trackitem {
-    height: 40px;
-    display: flex;
-    flex-direction: row; 
-    padding: 6px;
-    margin: 4px;
-    border: 1px solid var(--bg);
-    width: calc(100% - 20px);
-}
-
-.trackitem img {
-    height: 40px;
-    width: 40px;
-    border-radius: 2px;
-    object-fit: cover; 
-    object-position: center center;
-}
-
-.trackitem span {
-    margin: auto 10px;
-}
-
-.thinitem {
-    color: var(--fg);
-    padding: 10px 5px;
-}
-
-.tracklist {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    height: fit-content;
-    scroll-behavior: smooth;
-}
-
-.tracklist .current {
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-}
 
 input[type="range"] {
     appearance: none;
@@ -312,84 +92,8 @@ select {
     margin: 5px;
 }
 
-.trackbutton {
-    height: 30px !important;
-    width: 30px !important;
-    margin: auto;
-}
-
 .draghandle {
     margin-right: 10px;
-}
-
-.searchbar {
-    width: calc(100% - 20px);
-    border-bottom: 1px solid grey;
-    padding: 5px;
-    display: flex;
-    gap: 5px;
-}
-
-.searchbar img {
-    flex: 0;
-}
-
-.searchbar input, .searchpopupbar input {
-    flex: 1;
-    background: var(--bg);
-    color: var(--fg);
-    border-radius: 6px;
-    border: 1px solid var(--weakfg);
-}
-
-.searchholder {
-    display: flex;
-    flex-direction: column;
-    align-content: center;
-    position: absolute;
-    height: 90%;
-    width: 100%;
-    margin-top: 5%;
-}
-
-.artists, .albums {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-}
-
-.tracksview {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    overflow-y: scroll;
-    overflow-x: hidden;
-}
-
-.tracksviewheader {
-    display: flex;
-    flex-direction: row;
-    margin: 5px;
-    padding: 5px;
-}
-
-.tracksviewheader h3 { 
-    margin: 0 auto;    
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.trackblur {
-    position: absolute;
-    width: 120%;
-    height: 120%;
-    left: -10%;
-    top: -10%;
-    z-index: -1;
-    background-size: 300%;
-    background-position: center;
-    filter: blur(100px) brightness(0.6);
 }
 
 ::-webkit-scrollbar {
@@ -415,43 +119,3 @@ select {
     color: var(--fg);
 }
 
-.searchpopup {
-    width: 75%;
-    max-height: 100%;
-    padding: 10px;
-    margin: auto;
-    background: var(--bg);
-    border: 1px solid var(--weakfg);
-    border-radius: 6px;
-}
-
-.searchpopupbar {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 5px;
-    padding-bottom: 5px;
-}
-
-.pseudoinput {
-    width: 100%;
-    border-radius: 6px;
-    border: 1px solid var(--weakfg);
-    padding: 10px;
-}
-
-.searchtracks {
-    overflow-x: hidden;
-    overflow-y: scroll;
-    max-height: calc(100% - 20px);
-}
-
-.settingsview span {
-    width: 150px;
-    display: inline;
-}
-
-.settingsview {
-    display: flex;
-    padding: 10px;
-    flex-direction: row;
-}

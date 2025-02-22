@@ -1,0 +1,155 @@
+@media (orientation: landscape) {
+    .trackview {
+        flex-direction: row !important;
+        height: calc(100% - 40px);
+    }
+
+    .imageview {
+        height: calc(100% - 40px);
+        aspect-ratio: 1;
+    }
+    
+    .songoptions {
+        display: flex;
+        flex: 1 1 0;
+        padding: 20px;
+        justify-content: flex-end;
+    }
+}
+
+@media (orientation: portrait) {
+    .trackview {
+        width: calc(100% - 40px);
+    }
+
+    .imageview {
+        height: 100%;
+        aspect-ratio: 1;
+    }
+
+    .trackoptions {
+        display: flex;
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
+.trackview {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    border-right: 1px solid var(--accent);
+}
+
+.trackoptions {
+    display: flex;
+    flex-direction: column;
+}
+
+.trackview .buttonrow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.imageview img {
+    object-fit: cover; 
+    object-position: center center;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    margin: 10px 0;
+    box-shadow: 0px 5px 10px #00000073;
+}
+
+.imageview {
+    margin-top: 30px;
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.trackview h3 {
+    text-align: center;
+    margin: 0;
+}
+ 
+.trackview span {
+    text-align: center;
+}
+
+.trackblur {
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    left: -10%;
+    top: -10%;
+    z-index: -1;
+    background-size: 300%;
+    background-position: center;
+    filter: blur(100px) brightness(0.6);
+}
+
+.genresspecifier {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.artistspecifier {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.albumspecifier {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+/* Track Interactions */
+.progressrow {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    margin: 10px 0;
+}
+
+.progressrow input {
+    flex: 1 1 0;
+}
+
+.shuffle-button {
+    background-image: url("icons/shuffle.svg");
+}
+
+.shuffle-on {
+    background-image: url("icons/shuffleon.svg");
+}
+
+.like-button {
+    background-image: url("icons/vert.svg");
+}
+
+.playpause {
+    background-image: url("icons/play.svg");
+}
+
+.pause {
+    background-image: url("icons/pause.svg") !important;
+}
+
+.skip-button {
+    background-image: url("icons/skip.svg");
+}
+ 
+.skipprev-button {
+    background-image: url("icons/skipprevious.svg");
+}

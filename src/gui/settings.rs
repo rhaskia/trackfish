@@ -1,10 +1,12 @@
 use dioxus::prelude::*;
 use crate::MusicController;
+use crate::{View, VIEW};
 
 #[component]
 pub fn Settings(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
+            display: if VIEW.read().current != View::Settings { "none" },
             class: "settingsview",
             div {
                 span { "Music Directory" }

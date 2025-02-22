@@ -118,35 +118,19 @@ fn App() -> Element {
     rsx! {
         //style { {include_str!("../assets/style.css")} }
         document::Link { href: "assets/style.css", rel: "stylesheet" }
+        document::Link { href: "assets/explorer.css", rel: "stylesheet" }
 
         div { class: "mainview",
             tabindex: 0,
             autofocus: true,
             onkeydown: |e| info!("{e:?}"),
-            match &VIEW.read().current {
-                View::Song => rsx! {
-                    TrackView { controller }
-                },
-                View::Queue => rsx! {
-                    QueueList { controller }
-                },
-                View::AllTracks => rsx! {
-                    AllTracks { controller }
-                },
-                View::Genres => rsx! {
-                    GenreList { controller }
-                },
-                View::Artists => rsx! {
-                    ArtistList { controller }
-                },
-                View::Albums => rsx! {
-                    AlbumsList { controller }
-                },
-                View::Settings => rsx! {
-                    Settings { controller }
-                },
-                _ => rsx! {},
-            }
+            TrackView { controller }
+            QueueList { controller }
+            AllTracks { controller }
+            GenreList { controller }
+            ArtistList { controller }
+            AlbumsList { controller }
+            Settings { controller }
         }
 
         MenuBar {}
@@ -159,6 +143,7 @@ fn App() -> Element {
 pub fn MenuBar() -> Element {
     rsx! {
         div { class: "buttonrow nav",
+            document::Link { href: "assets/menubar.css", rel: "stylesheet" }
             button {
                 class: "songview-button",
                 class: "svg-button",

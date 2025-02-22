@@ -36,7 +36,9 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
     });
 
     rsx! {
-        div { class: "songview",
+        div { class: "trackview",
+            display: if VIEW.read().current != View::Song { "none" },
+            document::Link { href: "assets/trackview.css", rel: "stylesheet" }
             div { class: "trackblur",
                 background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
             }
