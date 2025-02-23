@@ -103,8 +103,7 @@
 .artistspecifier {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    white-space: nowrap;
+    white-space: pre;
 }
 
 .albumspecifier {

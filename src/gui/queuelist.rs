@@ -4,7 +4,11 @@ use crate::app::MusicController;
 
 #[component]
 pub fn QueueList(controller: Signal<MusicController>) -> Element {
-    let mut selected_queue = use_signal(|| controller.read().current_queue);
+    let mut selected_queue = use_signal(|| 0);
+
+    use_effect(move || {
+        selected_queue.set(controller.read().current_queue);
+    });
 
     rsx! {
         div { id: "queuelist", class: "tracklist",

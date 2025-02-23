@@ -99,7 +99,11 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                 },
                 src: "assets/icons/back.svg",
             }
-            h3 { "{name()}" }
+            h3 { 
+                if name().is_empty() {
+                    "Unknown {viewtype():?}"
+                } else { "name()" }
+            }
             img { src: "assets/icons/shuffle.svg" }
         }
         div { class: "tracksview",
@@ -193,7 +197,11 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
                         div {
                             class: "thinitem",
                             onclick: move |_| set_genre(genres.read()[i].0.clone()),
-                            "{genres.read()[i].0}",
+                            if genres.read()[i].0.is_empty() {
+                                "Unknown Genres"
+                            } else {
+                                "{genres.read()[i].0}",
+                            }
                             small { "{genres.read()[i].1} songs" }
                         }
                     }
