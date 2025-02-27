@@ -4,12 +4,13 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
-    let mut albums = use_signal(|| controller.read().albums.clone());
+    let mut albums = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        albums.set(controller.read().albums.clone());
-        albums.write().sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut albums_unsorted = controller.read().albums.clone();
+        albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        albums.set(albums_unsorted);
     });
 
     let mut set_album = move |name| {
@@ -130,10 +131,12 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
 
 #[component]
 pub fn ArtistList(controller: Signal<MusicController>) -> Element {
-    let mut artists = use_signal(|| controller.read().artists.clone());
+    let mut artists = use_signal(|| Vec::new());
+
     use_effect(move || {
-        artists.set(controller.read().artists.clone());
-        artists.write().sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut artists_unsorted =controller.read().artists.clone();
+        artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        artists.set(artists_unsorted);
     });
 
     let mut set_artist = move |name| {
@@ -170,11 +173,12 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
 
 #[component]
 pub fn GenreList(controller: Signal<MusicController>) -> Element {
-    let mut genres = use_signal(|| controller.read().genres.clone());
+    let mut genres = use_signal(|| Vec::new());
 
     use_effect(move || {
-        genres.set(controller.read().genres.clone());
-        genres.write().sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut genres_unsorted = controller.read().genres.clone();
+        genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        genres.set(genres_unsorted);
     });
 
     let mut set_genre = move |name| {

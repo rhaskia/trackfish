@@ -15,6 +15,7 @@ use std::io::Cursor;
 
 use crate::document::eval;
 
+
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
@@ -116,14 +117,17 @@ fn App() -> Element {
     });
 
     rsx! {
-        //style { {include_str!("../assets/style.css")} }
         document::Link { href: "assets/style.css", rel: "stylesheet" }
         document::Link { href: "assets/explorer.css", rel: "stylesheet" }
 
         div { class: "mainview",
             tabindex: 0,
             autofocus: true,
-            onkeydown: |e| info!("{e:?}"),
+            onkeydown: move |e| match key_to_action(e) {
+                Some(Action::Skip) => controller.write().skip(),
+                Some(Action::PauseToggle) => controller.write().toggle_playing(),
+                _ => {},
+            },
             TrackView { controller }
             QueueList { controller }
             AllTracks { controller }

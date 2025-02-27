@@ -46,7 +46,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                 img { src: "/trackimage/{controller.read().current_track_idx()}" }
             }
             div {
-                class: "songoptions",
+                class: "trackoptions",
                 h3 { "{controller.read().current_track_title().unwrap_or_default()}" }
                 span { class: "artistspecifier",
                     for (idx , artist) in controller
