@@ -22,6 +22,8 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
         div { 
             class: "albums",
             display: if VIEW.read().current != View::Albums { "none" },
+            autofocus: true,
+            onkeydown: move |e| log::info!("{e:?}"),
             onclick: move |_| is_searching.set(false),
             div {
                 class: "searchbar",

@@ -1,5 +1,3 @@
-//#![feature(trivial_bounds)]
-
 pub mod app;
 pub mod gui;
 pub mod database;
@@ -12,9 +10,9 @@ use tracing_log::LogTracer;
 use log::LevelFilter;
 use id3::Tag;
 use std::io::Cursor;
+use std::ops::{AddAssign, SubAssign};
 
 use crate::document::eval;
-
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
@@ -53,7 +51,6 @@ fn main() {
         let config = dioxus::desktop::Config::new().with_window(window);
         LaunchBuilder::new().with_cfg(config).launch(App);
     }
-
 }
 
 #[component]
@@ -118,15 +115,23 @@ fn App() -> Element {
 
     rsx! {
         document::Link { href: "assets/style.css", rel: "stylesheet" }
+
+        document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
         document::Link { href: "assets/explorer.css", rel: "stylesheet" }
+        document::Link { href: "assets/menubar.css", rel: "stylesheet" }
+        document::Link { href: "assets/settings.css", rel: "stylesheet" }
+        document::Link { href: "assets/trackview.css", rel: "stylesheet" }
 
         div { class: "mainview",
             tabindex: 0,
             autofocus: true,
-            onkeydown: move |e| match key_to_action(e) {
-                Some(Action::Skip) => controller.write().skip(),
-                Some(Action::PauseToggle) => controller.write().toggle_playing(),
-                _ => {},
+            onkeydown: move |e| match e.data().key() {
+                Key::Character(c) => match c.as_str() {
+                    "L" => VIEW.write().current.shift_down(),
+                    "H" => VIEW.write().current.shift_up(),
+                    _ => {}
+                },
+                _ => {}
             },
             TrackView { controller }
             QueueList { controller }
@@ -141,13 +146,10 @@ fn App() -> Element {
     }
 }
 
-
-
 #[component]
 pub fn MenuBar() -> Element {
     rsx! {
         div { class: "buttonrow nav",
-            document::Link { href: "assets/menubar.css", rel: "stylesheet" }
             button {
                 class: "songview-button",
                 class: "svg-button",
@@ -194,14 +196,43 @@ pub fn MenuBar() -> Element {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum View {
-    Song, 
-    Queue,
-    AllTracks,
-    Artists,
-    Genres,
-    Albums,
-    Search,
-    Settings,
+    Song = 0, 
+    Queue = 1,
+    AllTracks = 2,
+    Artists = 3,
+    Genres = 4,
+    Albums = 5,
+    Search = 6,
+    Settings = 7,
+}
+
+impl View {
+    fn shift_up(&mut self) {
+        *self = Self::from_usize(self.clone() as usize + 1);
+    } 
+
+    fn shift_down(&mut self) {
+        // No overflows
+        if *self == Self::Song { 
+            *self = Self::Settings;
+            return;
+        }
+        *self = Self::from_usize(self.clone() as usize - 1);
+    } 
+
+    fn from_usize(n: usize) -> Self {
+        match n {
+            0 => Self::Song,
+            1 => Self::Queue,
+            2 => Self::AllTracks,
+            3 => Self::Artists,
+            4 => Self::Genres,
+            5 => Self::Albums,
+            6 => Self::Search,
+            7 => Self::Settings,
+            _ => Self::Song,
+        }
+    }
 }
 
 pub struct ViewData {

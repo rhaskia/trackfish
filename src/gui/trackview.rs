@@ -5,6 +5,7 @@ use tokio::time;
 use log::info;
 use crate::{View, VIEW};
 use crate::app::utils::similar;
+use super::input::{key_to_action, Action};
 
 #[component]
 pub fn TrackView(controller: Signal<MusicController>) -> Element {
@@ -37,8 +38,13 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
 
     rsx! {
         div { class: "trackview",
+            onkeydown: move |e| match key_to_action(e) {
+                Some(Action::Skip) => controller.write().skip(),
+                Some(Action::SkipPrevious) => controller.write().skipback(),
+                Some(Action::PauseToggle) => controller.write().toggle_playing(),
+                _ => {},
+            },
             display: if VIEW.read().current != View::Song { "none" },
-            document::Link { href: "assets/trackview.css", rel: "stylesheet" }
             div { class: "trackblur",
                 background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
             }

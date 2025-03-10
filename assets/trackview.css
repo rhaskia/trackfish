@@ -1,4 +1,5 @@
-@media (orientation: landscape) {
+/* roughly landscape */
+@media (min-aspect-ratio: 1.2) {
     .trackview {
         flex-direction: row !important;
         height: calc(100% - 40px);
@@ -15,15 +16,22 @@
         padding: 20px;
         justify-content: flex-end;
     }
+
+    .imageview img {
+        width: 100%;
+        aspect-ratio: 1;
+    }
 }
 
-@media (orientation: portrait) {
+@media (max-aspect-ratio: 1.2) {
     .trackview {
         width: calc(100% - 40px);
     }
 
     .imageview {
-        height: 100%;
+        width: calc(100% - 40px);
+        max-height: 50vh;
+        overflow: hidden;
         aspect-ratio: 1;
     }
 
@@ -31,6 +39,12 @@
         display: flex;
         flex: 1 1 0;
         justify-content: center;
+        min-height: 200px;
+    }
+    
+    .imageview img {
+        height: 100%;
+        aspect-ratio: 1;
     }
 }
 
@@ -45,6 +59,7 @@
 .trackoptions {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .trackview .buttonrow {
@@ -57,8 +72,6 @@
     object-fit: cover; 
     object-position: center center;
     overflow: hidden;
-    width: 100%;
-    aspect-ratio: 1;
     border-radius: 8px;
     margin: 10px 0;
     box-shadow: 0px 5px 10px #00000073;

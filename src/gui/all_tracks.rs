@@ -23,7 +23,6 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
         div {
             class: "alltracksview",
             display: if VIEW.read().current != View::AllTracks { "none" },
-            document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
             div {
                 class: "searchbar",
                 onclick: move |_| is_searching.set(true),
