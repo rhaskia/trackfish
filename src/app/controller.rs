@@ -11,15 +11,17 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
-use crate::database::{init_db, cached_weight, save_weight};
+use crate::database::{init_db, cached_weight, save_weight, hash_filename};
+use rusqlite::{params, Rows};
+use std::collections::HashMap;
 
 #[derive(PartialEq)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
-    pub track_info: Vec<TrackInfo>,
-    pub artists: Vec<(String, usize)>,
-    pub genres: Vec<(String, usize)>,
-    pub albums: Vec<(String, usize)>,
+    pub track_info: Vec<Array1<f32>>,
+    pub artists: HashMap<String, usize>,
+    pub genres: HashMap<String, usize>,
+    pub albums: HashMap<String, usize>,
     pub listens: Vec<Listen>,
     current_started: Instant,
 
@@ -60,45 +62,52 @@ impl MusicController {
         let started = std::time::SystemTime::now();
         let cache = init_db().unwrap();
 
-        for track in &all_tracks {
-            let genre_space = match cached_weight(&cache, &track.file) {
-                Ok(weight) => weight,
-                Err(_) => {
-                    let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
-                    let weight = queue.encoder.encode(genre_vec);
-                    save_weight(&cache, &track.file, &weight).unwrap();
-                    weight
-                }
-            };
+        let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
+        let mut result: Rows = stmt.query(params!()).unwrap();
+        let mut weights: HashMap<String, Array1<f32>> = HashMap::new();
+        while let Ok(Some(row)) = result.next() {
+            let hash: String = row.get(0).unwrap();
+            let result: Vec<u8> = row.get(1).unwrap();
 
-            track_info.push(TrackInfo { genres: Vec::new(), artist: 0, bpm: 100, genre_space });
+            let mut value = vec![];
+            let mut raw = [0; 4];
+            for i in (0..(result.len()/4)) {
+                raw.copy_from_slice(&result[i*4..i*4+4]);
+                value.push(f32::from_le_bytes(raw));
+            }
+            weights.insert(hash, Array1::from_vec(value));
+        }
+
+        info!("Calculated weights in {:?}", started.elapsed());
+
+        for track in &all_tracks {
+            let started = std::time::SystemTime::now();
+            let file_hash = hash_filename(&track.file);
+            if weights.contains_key(&file_hash) {
+                track_info.push(Array1::from(weights[&file_hash].clone()));
+            } else {
+                let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
+                let weight = queue.encoder.encode(genre_vec);
+                save_weight(&cache, &track.file, &weight).unwrap();
+                track_info.push(weight);
+            }
 
             for genre in track.genres.clone() {
-                if let Some(index) = queue.genres.iter().position(|(g, _)| similar(g, &genre)) {
-                    queue.genres[index].1 += 1;
-                } else {
-                    queue.genres.push((title_case(&genre), 1));
-                }
+                queue.genres.entry(track.genre.clone()).or_insert(0) += 1;
             }
 
             for artist in track.artists.clone() {
-                if let Some(index) = queue.artists.iter().position(|(a, _)| similar(a, &artist)) {
-                    queue.artists[index].1 += 1;
-                } else {
-                    queue.artists.push((artist, 1));
-                }
+                queue.artists.entry(track.artist.clone()).or_insert(0) += 1;
             }
 
-            if let Some(index) = queue.albums.iter().position(|(a, _)| similar(a, &track.album)) {
-                queue.albums[index].1 += 1;
-            } else {
-                queue.albums.push((track.album.clone(), 1));
-            }
+            queue.albums.entry(track.album.clone()).or_insert(0) += 1;
         }
+        
+        info!("Calculated weights in {:?}", started.elapsed());
 
-        queue.genres.sort();
-        queue.albums.sort();
-        queue.artists.sort();
+        // queue.genres.sort();
+        // queue.albums.sort();
+        // queue.artists.sort();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -130,9 +139,8 @@ impl MusicController {
 
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
-        let space = self.track_info[self.current_queue().current()].genre_space.clone();
+        let space = self.track_info[self.current_queue().current()].clone();
         let current = self.mut_current_queue().mut_radio_genres();
-
 
         if *current == Array1::<f32>::zeros(16) {
             *current = space;
@@ -150,7 +158,7 @@ impl MusicController {
         let mut dists: Vec<(usize, f32)> = self
             .track_info
             .iter()
-            .map(|track| track.genres_dist_from_vec(&current))
+            .map(|track| genres_dist_from_vec(&track, &current))
             .enumerate()
             .collect();
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
@@ -437,4 +445,9 @@ impl MusicController {
     pub fn mut_current_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
     }
+}
+
+pub fn genres_dist_from_vec(lhs: &Array1<f32>, other: &Array1<f32>) -> f32 {
+    let diff = (lhs.clone() - other.clone()).pow2();
+    diff.sum().sqrt()
 }

@@ -1,6 +1,7 @@
 use crate::app::{utils::similar, MusicController};
 use crate::{View, VIEW};
 use dioxus::prelude::*;
+use std::time::Instant;
 
 #[component]
 pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
@@ -8,9 +9,11 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut albums_unsorted = controller.read().albums.clone();
-        albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        let started = Instant::now();
+        let mut albums_unsorted = controller.read().albums.keys().clone();
+        //albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         albums.set(albums_unsorted);
+        println!("sorted in {:?}", started.elapsed());
     });
 
     let mut set_album = move |name| {
@@ -136,8 +139,8 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
     let mut artists = use_signal(|| Vec::new());
 
     use_effect(move || {
-        let mut artists_unsorted =controller.read().artists.clone();
-        artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut artists_unsorted = controller.read().artists.keys().clone();
+        //artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         artists.set(artists_unsorted);
     });
 
@@ -178,8 +181,8 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
     let mut genres = use_signal(|| Vec::new());
 
     use_effect(move || {
-        let mut genres_unsorted = controller.read().genres.clone();
-        genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut genres_unsorted = controller.read().genres.keys().clone();
+        //genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         genres.set(genres_unsorted);
     });
 

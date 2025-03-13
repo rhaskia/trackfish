@@ -307,9 +307,4 @@ impl TrackInfo {
         let diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
         diff.sum().sqrt()
     }
-
-    pub fn genres_dist_from_vec(&self, other: &Array1<f32>) -> f32 {
-        let diff = (self.genre_space.clone() - other.clone()).pow2();
-        diff.sum().sqrt()
-    }
 }
