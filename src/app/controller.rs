@@ -49,9 +49,9 @@ impl MusicController {
             )],
             current_queue: 0,
             track_info: Vec::new(),
-            artists: Vec::new(),
-            genres: Vec::new(),
-            albums: Vec::new(),
+            artists: HashMap::new(),
+            genres: HashMap::new(),
+            albums: HashMap::new(),
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
@@ -93,14 +93,14 @@ impl MusicController {
             }
 
             for genre in track.genres.clone() {
-                queue.genres.entry(track.genre.clone()).or_insert(0) += 1;
+                *queue.genres.entry(genre.clone()).or_insert(0) += 1;
             }
 
             for artist in track.artists.clone() {
-                queue.artists.entry(track.artist.clone()).or_insert(0) += 1;
+                *queue.artists.entry(artist.clone()).or_insert(0) += 1;
             }
 
-            queue.albums.entry(track.album.clone()).or_insert(0) += 1;
+            *queue.albums.entry(track.album.clone()).or_insert(0) += 1;
         }
         
         info!("Calculated weights in {:?}", started.elapsed());
@@ -426,7 +426,7 @@ impl MusicController {
 
     pub fn current_album_idx(&self) -> usize {
         let album = &self.current_track().unwrap().album;
-        self.albums.iter().position(|e| e.0 == *album).unwrap()
+        self.albums.iter().position(|e| *e.0 == *album).unwrap()
     }
 
     pub fn next_up(&self) -> Option<Track> {

@@ -22,9 +22,10 @@ def extract_chroma(audio_file, n_chroma=12):
     chroma_mean = np.mean(chroma, axis=1)
     return chroma_mean
 
-def compare_audio_files(file1, file2, feature_type='both'):
+def compare_audio_files(file1, file2, feature_type='mfcc'):
     if feature_type == 'mfcc':
         feature1 = extract_mfcc(file1)
+        print(feature1)
         feature2 = extract_mfcc(file2)
     if feature_type == 'chroma':
         feature1 = extract_chroma(file1)
@@ -53,9 +54,9 @@ def compare_directory_to_index(audio_files, index, feature_type='chroma'):
     
     return similarity_dict
 
-directory = 'E:/Music' 
+directory = '/mnt/sdcard/music/' 
 audio_files = [f for f in os.listdir(directory) if f.endswith('.mp3') or f.endswith('.wav')]
-song = ""
+song = "/mnt/sdcard/"
 index = audio_files.index(song)  
 print(index)
 

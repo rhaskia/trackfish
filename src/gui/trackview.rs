@@ -69,7 +69,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                         span { 
                             onclick: move |_| {
                                 VIEW.write().open(View::Artists);
-                                VIEW.write().artist = controller.read().artists.iter().position(|a| similar(&a.0, &artist)); 
+                                VIEW.write().artist = Some(artist.clone()); 
                             },
                             "{artist}"
                         }
@@ -78,8 +78,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                 span {
                     class: "albumspecifier",
                     onclick: move |_| {
-                        let album_idx = controller.read().current_album_idx();
-                        VIEW.write().album = Some(album_idx);
+                        VIEW.write().album = Some(controller.read().current_track_album().unwrap_or_default().to_string());
                         VIEW.write().open(View::Albums);
                     },
                     // TODO: open Album View for current album
@@ -91,7 +90,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                             span { 
                                 onclick: move |_| {
                                     VIEW.write().open(View::Genres);
-                                    VIEW.write().genre = controller.read().genres.iter().position(|g| similar(&g.0, &genre)); 
+                                    VIEW.write().genre = Some(genre.clone()); 
                                 },
                                 "{genre}"
                             }

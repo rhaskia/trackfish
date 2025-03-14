@@ -11,6 +11,7 @@ use log::LevelFilter;
 use id3::Tag;
 use std::io::Cursor;
 use std::ops::{AddAssign, SubAssign};
+use std::time::Instant;
 
 use crate::document::eval;
 
@@ -69,6 +70,7 @@ fn App() -> Element {
     });
 
     use_future(move || async move { 
+        let started = Instant::now();
         let result = crossbow::Permission::StorageRead.request_async().await;
         info!("{result:?}");
 
@@ -79,7 +81,7 @@ fn App() -> Element {
             } else {
                 info!("Controller already borrowed");
             }
-            info!("loaded all tracks into music controller");
+            info!("Loaded tracks in {:?}", started.elapsed());
         } else {
             info!("{:?}", tracks);
         }
@@ -135,10 +137,10 @@ fn App() -> Element {
             },
             TrackView { controller }
             QueueList { controller }
-            AllTracks { controller }
-            GenreList { controller }
-            ArtistList { controller }
-            AlbumsList { controller }
+            // AllTracks { controller }
+            // GenreList { controller }
+            // ArtistList { controller }
+            // AlbumsList { controller }
             Settings { controller }
         }
 
@@ -237,9 +239,9 @@ impl View {
 
 pub struct ViewData {
     pub current: View,
-    pub album: Option<usize>,
-    pub artist: Option<usize>,
-    pub genre: Option<usize>
+    pub album: Option<String>,
+    pub artist: Option<String>,
+    pub genre: Option<String>
 }
 
 impl ViewData {
