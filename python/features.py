@@ -54,15 +54,20 @@ def compare_directory_to_index(audio_files, index, feature_type='chroma'):
     
     return similarity_dict
 
-directory = '/mnt/sdcard/music/' 
+directory = '/mnt/e/Music/' 
 audio_files = [f for f in os.listdir(directory) if f.endswith('.mp3') or f.endswith('.wav')]
-song = "/mnt/sdcard/"
+song = "Lemon [H5ZPCcnLXt4].mp3"
 index = audio_files.index(song)  
+# Compute the chroma feature
+chroma = extract_chroma(directory + song)
+
+# Normalize each chroma frame to sum to 1
+chroma_normalized = chroma / chroma.sum(axis=0, keepdims=True)
+print("chroma", chroma_normalized)
 print(index)
 
 similarities = list(compare_directory_to_index(audio_files, index, feature_type="chroma").items())
 similarities = [[row[0], row[1][0], row[1][1]] for row in list(enumerate(similarities))]
-print(similarities)
 similarities = sorted(
     similarities, 
     key=lambda x: x[2]
