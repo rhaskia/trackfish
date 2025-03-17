@@ -10,7 +10,8 @@ fn std_dev(arr: Vec<f32>, mean: f32) -> f32 {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let file = File::open("E:\\Music\\Lemon [H5ZPCcnLXt4].mp3")?;
+    // let file = File::open("E:\\Music\\Lemon [H5ZPCcnLXt4].mp3")?;
+    let file = File::open("/mnt/sdcard/music/i [tt2-GsPA9kk].mp3")?;
     let source = Decoder::new(BufReader::new(file))?;
 
     let channels = source.channels();
@@ -32,14 +33,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let frame_size = 1024;
     let mfcc_len = 13;
 
-    let result = calculate_mfcc(&mut mono_samples, sample_rate).unwrap();
-    let mean = result.iter().sum::<f32>() / mfcc_len as f32;
-    let std = std_dev(result.clone(), mean);
-    let result = result.iter().map(|n| (n - mean) / std).collect::<Vec<f32>>();
-    println!("{result:?}");
+    // let result = calculate_mfcc(&mut mono_samples, sample_rate);
+    // let mean = result.iter().sum::<f32>() / mfcc_len as f32;
+    // let std = std_dev(result.clone(), mean);
+    // let result = result.iter().map(|n| (n - mean) / std).collect::<Vec<f32>>();
+    // println!("{result:?}");
 
-    let result = extract_chroma(&mono_samples, sample_rate as usize);
-    println!("{result:?}");
+    let chroma_vectors = extract_chroma(&mono_samples, sample_rate as usize);
+    // let mean = result.iter().sum::<f32>() / 12 as f32;
+    // let std = std_dev(result.clone(), mean);
+    // let result = result.iter().map(|n| (n - mean) / std).collect::<Vec<f32>>();
+    
+    let mut mean_chroma: Vec<f32> = vec![0.0; 12];
+
+    for i in 0..num_coefficients {
+        for j in 0..chroma_vectors.len() {
+            mean_chroma[i] += chroma_vectors[j][i];
+        }
+
+        mean_chroma[i] /= chroma_vectors.len() as f32;
+    }
+    println!("{mean_chroma:?}");
+    // Test on some octave scale and graph the output
+
 
     Ok(())
 }
@@ -47,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 use rustfft::{FftPlanner, num_complex::Complex};
 use std::f32::consts::PI;
 
-fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<f32> {
+fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<Vec<f32>> {
     let frame_size = 2048;
     let num_coefficients = 12;
     let hop_size = 512;
@@ -64,9 +80,13 @@ fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<f32> {
 
         let mut chroma = [0.0; 12];
         for (k, bin) in buffer.iter().enumerate() {
-            let frequency = k as f32 * sample_rate as f32 / frame_size as f32;
+            let frequency = k as f32 * (sample_rate as f32 / (frame_size * 2) as f32);
+            // println!("{}, {}, {}", k, bin.norm(), frequency);
+            //if k > 1023 { break; }
             if frequency > 0.0 {
-                let pitch_class = (12.0 * (frequency / 440.0).log2()).rem_euclid(12.0);
+                //let pitch_class = (12.0 * (frequency / 440.0).log2()).rem_euclid(12.0);
+                let pitch_class = (12.0 * (frequency / 440.0).log2());
+                // println!("{pitch_class}");
                 let index = pitch_class.round() as usize % 12;
                 chroma[index] += bin.norm();
             }
@@ -81,18 +101,8 @@ fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<f32> {
 
         chroma_vectors.push(chroma);
     }
-    
-    let mut mean_chroma: Vec<f32> = vec![0.0; num_coefficients];
 
-    for i in 0..num_coefficients {
-        for j in 0..chroma_vectors.len() {
-            mean_chroma[i] += chroma_vectors[j][i];
-        }
-
-        mean_chroma[i] /= chroma_vectors.len() as f32;
-    }
-
-    mean_chroma
+    chroma_vectors
 }
 
 fn calculate_mfcc(buffer: &mut Vec<f32>, sample_rate: u32) -> Vec<f32> {

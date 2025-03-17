@@ -284,6 +284,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99ef2dfeaceccd0b8a6d72203409acc927d9eebc8180c5756099549c9f8f20a8"
 dependencies = [
  "cc",
+ "pkg-config",
 ]
 
 [[package]]
@@ -1651,6 +1652,15 @@ checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "estratto"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "135e95a5719050974cadf617b61251f975004f07ce0cde9b6d782e40559c6331"
+dependencies = [
+ "rustfft",
 ]
 
 [[package]]
@@ -5171,6 +5181,7 @@ dependencies = [
  "dioxus",
  "dioxus-logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 6.0.0",
+ "estratto",
  "http",
  "http-range",
  "id3",
