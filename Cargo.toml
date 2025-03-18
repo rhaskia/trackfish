@@ -33,6 +33,7 @@ base64 = "0.22.1"
 aubio = { version = "0.2.1", features = ["pkg-config"]}
 rustfft = "6.2.0"
 estratto = "0.0.1"
+plotters = "0.3.7"
 
 [features]
 web = ["dioxus/web"]
