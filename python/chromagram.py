@@ -7,7 +7,7 @@ chroma_fb = librosa.filters.chroma(sr=44100, n_fft = 2048)
 print(chroma_fb.shape)
 np.save("chroma.npy", chroma_fb)
 
-y, sr = librosa.load("/home/rhaskia/Downloads/octave.wav", sr=None)  # Preserve original sample rate
+y, sr = librosa.load("E:\\Downloads\\octave.wav", sr=None)  # Preserve original sample rate
 
 chromagram = librosa.feature.chroma_stft(y=y, sr=sr)
 
