@@ -60,8 +60,8 @@ fn linear_resample(audio_data: &Vec<f32>, input_rate: usize, output_rate: usize)
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let file = File::open("E:\\Music\\Lemon [H5ZPCcnLXt4].mp3");
-    let (samples, sample_rate) = load_samples("E:\\Downloads\\octave.wav");
-    // let samples = linear_resample(&samples, sample_rate as usize, 44100);
+    let (samples, sample_rate) = load_samples("/home/rhaskia/Downloads/octave.wav");
+    //let samples = linear_resample(&samples, sample_rate as usize, 44100);
     println!("{}", samples.len());
 
     let frame_size = 1024;
@@ -77,7 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let mean = result.iter().sum::<f32>() / 12 as f32;
     // let std = std_dev(result.clone(), mean);
     // let result = result.iter().map(|n| (n - mean) / std).collect::<Vec<f32>>();
-    let chroma_vectors: Vec<Vec<f32>> = chroma_vectors.into_iter().map(|v| { let mut v = v; v.rotate_right(2); v }).collect();
+    // let chroma_vectors: Vec<Vec<f32>> = chroma_vectors.into_iter().map(|v| { let mut v = v; v.rotate_right(0); v }).collect();
 
     let mut mean_chroma: Vec<f32> = vec![0.0; 12];
 
@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .margin(5)
         .top_x_label_area_size(40)
         .y_label_area_size(40)
-        .build_cartesian_2d(0i32..len as i32, 0i32..13i32)?;
+        .build_cartesian_2d(0i32..len as i32, 0i32..12i32)?;
 
     chart
         .configure_mesh()
@@ -127,6 +127,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
     )?;
 
+    // let pitches = vec![("B", 40), ("A", 70), ("L", 100)];
+    let pitches = vec![("B", 65), ("A", 190), ("G", 305), ("F", 420), ("E", 485), ("D", 605), ("C", 720)];
+    let style = TextStyle::from(("sans-serif", 20).into_font());
+
+    for (pitch, height) in pitches {
+        root.draw_text(
+            pitch,
+            &style,
+            (20, height),
+        );
+    }
+
     root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
     println!("Result has been saved to {}", OUT_FILE_NAME);
 
@@ -134,7 +146,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn val_to_hsl(v: f32) -> HSLColor {
-    let v = v * 5.0;
+    let v = (v * 6.0) - 0.1;
     let hue = if v > 0.5 {
         0.0
     } else {
@@ -160,9 +172,9 @@ use std::f32::consts::PI;
 const E_WEIGHTS: &[u8; 49328] = include_bytes!("../chroma.npy");
 
 fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<Vec<f32>> {
-    let frame_size = 4096;
+    let frame_size = 2048;
     let num_coefficients = 12;
-    let hop_size = 1024;
+    let hop_size = 2048;
     let mut chroma_vectors = Vec::new();
     let chroma_weights = Array2::<f32>::read_npy(&E_WEIGHTS[..]).unwrap();
     let chroma_weights = chroma_weights.t();
@@ -171,15 +183,24 @@ fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<Vec<f32>> {
     let fft = fft_planner.plan_fft_forward(frame_size);
 
     for frame in audio_data.chunks(hop_size) {
-        let mut buffer: Vec<Complex<f32>> = frame.iter().map(|&x| Complex { re: x, im: 0.0 }).collect();
-        buffer.resize(frame_size, Complex { re: 0.0, im: 0.0 });
         let hann_window: Vec<f32> = (0..frame_size)
             .map(|n| 0.5 * (1.0 - (2.0 * std::f32::consts::PI * n as f32 / (frame_size as f32)).cos()))
             .collect();
 
-        // for (i, sample) in buffer.iter_mut().enumerate() {
-        //     sample.re *= hann_window[i];
-        // }
+        let hamming_window: Vec<f32> = (0..frame_size)
+            .map(|n| 0.54 - 0.46 * (2.0 * std::f32::consts::PI * n as f32 / (frame_size as f32)).cos())
+            .collect();
+
+        let mut buffer: Vec<Complex<f32>> = frame.iter()
+            .enumerate()
+            .map(|(i, &x)| Complex { re: x * hamming_window[i], im: 0.0 })
+            .collect();
+
+        for i in 800..buffer.len() {
+            //buffer[i] = Complex { re: 0.0, im: 0.0 };
+        }
+
+        buffer.resize(frame_size, Complex { re: 0.0, im: 0.0 });
 
         fft.process(&mut buffer);
 

@@ -3,11 +3,12 @@ import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 
-chroma_fb = librosa.filters.chroma(sr=44100, n_fft = 2048)
-print(chroma_fb.shape)
+y, sr = librosa.load("/home/rhaskia/Downloads/octave.wav", sr=None)  # Preserve original sample rate
+tuning = librosa.estimate_tuning(y=y, sr=sr, n_fft=2048)
+print(tuning)
+chroma_fb = librosa.filters.chroma(sr=44100, n_fft = 2048, tuning = tuning)
 np.save("chroma.npy", chroma_fb)
-
-y, sr = librosa.load("E:\\Downloads\\octave.wav", sr=None)  # Preserve original sample rate
+print(chroma_fb.shape)
 
 chromagram = librosa.feature.chroma_stft(y=y, sr=sr)
 
