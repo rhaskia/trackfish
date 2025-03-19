@@ -1,6 +1,7 @@
 pub mod app;
 pub mod gui;
 pub mod database;
+pub mod analysis;
 
 use dioxus::{prelude::*, dioxus_core::{SpawnIfAsync, LaunchConfig}, mobile::WindowBuilder};
 use http::Response;

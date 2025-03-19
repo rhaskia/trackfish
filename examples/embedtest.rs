@@ -1,6 +1,5 @@
 use ndarray::ArrayBase;
 
-
 fn main() {
     let encoder = music::embed::AutoEncoder::new().unwrap();
     let mut input = vec![0.0; 1083];

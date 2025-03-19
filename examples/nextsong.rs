@@ -1,5 +1,5 @@
-use music::queue::QueueManager;
-use music::track::load_tracks;
+use trackfish::queue::QueueManager;
+use trackfish::track::load_tracks;
 
 fn main() {
     let mut queue = QueueManager::new(load_tracks("E:/music"));
