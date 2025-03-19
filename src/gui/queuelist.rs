@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::{View, VIEW};
+use super::{View, VIEW};
 use crate::app::MusicController;
 
 #[component]

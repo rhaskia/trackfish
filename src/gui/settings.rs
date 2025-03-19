@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
-use crate::MusicController;
-use crate::{View, VIEW};
+use crate::app::MusicController;
+use super::{View, VIEW};
 
 #[component]
 pub fn Settings(controller: Signal<MusicController>) -> Element {

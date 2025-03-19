@@ -6,7 +6,7 @@ use std::f32::consts::PI;
 
 const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../chroma.npy");
 
-pub fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<Vec<f32>> {
+pub fn extract_chroma(audio_data: &[f32]) -> Vec<Vec<f32>> {
     let frame_size = 2048;
     let num_coefficients = 12;
     let hop_size = 2048;
@@ -31,19 +31,12 @@ pub fn extract_chroma(audio_data: &[f32], sample_rate: usize) -> Vec<Vec<f32>> {
             .map(|(i, &x)| Complex { re: x * hamming_window[i], im: 0.0 })
             .collect();
 
-        for i in 800..buffer.len() {
-            //buffer[i] = Complex { re: 0.0, im: 0.0 };
-        }
-
         buffer.resize(frame_size, Complex { re: 0.0, im: 0.0 });
 
         fft.process(&mut buffer);
 
-        let mut chroma = [0.0; 12];
-
         let range = buffer[0..1025].into_iter().map(|x| x.norm()).collect::<Vec<f32>>();
-        let mut buf = Array1::from_vec(range).insert_axis(ndarray::Axis(0));
-        //buf += 1.0;
+        let buf = Array1::from_vec(range).insert_axis(ndarray::Axis(0));
         let mut chroma = buf.dot(&chroma_weights);
 
         let norm: f32 = chroma.sum();

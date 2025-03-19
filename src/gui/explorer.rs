@@ -1,5 +1,5 @@
 use crate::app::{utils::similar, MusicController};
-use crate::{View, VIEW};
+use super::{View, VIEW};
 use dioxus::prelude::*;
 use std::time::Instant;
 

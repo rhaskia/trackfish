@@ -108,8 +108,6 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
         Ok(row.get(1)?)
     })?;
 
-    let started = std::time::SystemTime::now();
-
     let mut weights = vec![];
     let mut raw = [0; 4];
     for i in (0..(result.len()/4)) {
@@ -117,7 +115,6 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
         weights.push(f32::from_le_bytes(raw));
     }
 
-    let started = std::time::SystemTime::now();
     let array = Array1::from_vec(weights);
 
     Ok(array)

@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::app::MusicController;
 use crate::app::utils::strip_unnessecary;
-use crate::{View, VIEW};
+use super::{View, VIEW};
 use crate::app::utils::similar;
 use std::time::Duration;
 
