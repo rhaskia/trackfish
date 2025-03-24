@@ -87,7 +87,8 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     let mut tracks = Vec::new();
 
     for file in files {
-        match get_from_cache(&cache, &file)? {
+        let base = PathBuf::from(&file).file_name().unwrap().to_str().unwrap().to_string();
+        match get_from_cache(&cache, &base)? {
             Some(track) => {
                 tracks.push(track);
             }
@@ -247,6 +248,8 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
     if let Some(tag_year) = tag.get("Date") {
         year = tag_year.to_string();
     }
+
+    let file = PathBuf::from(file).file_name().unwrap().to_str().unwrap().to_string();
 
     Ok(Track { file, title, artists, album, genres, year, len, mood, trackno })
 }

@@ -11,12 +11,16 @@ use rusqlite::{
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use crate::app::track::{Track, Mood};
 use crate::app::settings::Settings;
 use sha2::{Sha256, Digest};
 use base64::{engine::general_purpose, Engine};
 use ndarray::Array1;
+use ndk_context::android_context;
+use jni::JNIEnv;
+use jni::objects::{JClass, JObject};
+use jni::sys::jstring;
 
 pub fn hash_filename(name: &str) -> String {
     let mut hasher = Sha256::new();
@@ -27,11 +31,14 @@ pub fn hash_filename(name: &str) -> String {
 }
 
 pub fn init_db() -> Result<Connection> {
-    let file = Settings::dir().join("tracks.db");
+    let file = PathBuf::from(Settings::load().directory + "/tracks.db");
     let db_exists = file.exists();
+    info!("Database exists at {file:?}: {db_exists}");
+
     let conn = Connection::open(file)?;
 
     if !db_exists {
+        info!("database creating!");
         conn.execute(
             "CREATE TABLE tracks (
                 file_hash TEXT PRIMARY KEY,
@@ -93,7 +100,7 @@ pub fn save_weight(conn: &Connection, track: &str, weights: &Array1<f32>) -> Res
     let file_hash = hash_filename(track);
     let blob_weights: Vec<u8> = weights.iter().map(|f| f.to_le_bytes()).flatten().collect();
     conn.execute(
-        "INSERT INTO weights (file_hash, weights) VALUES (?1, ?2)",
+        "INSERT OR REPLACE INTO weights (file_hash, weights) VALUES (?1, ?2)",
         params![file_hash, blob_weights])?;
 
     Ok(())
@@ -123,13 +130,8 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
     let file_hash = hash_filename(&item.file);
     conn.execute(
-        "INSERT INTO tracks (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
-            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10
-        )",
-        // ON CONFLICT(file_hash) DO UPDATE SET 
-        //     filename = excluded.filename,
-        //     size = excluded.size,
-        //     metadata = excluded.metadata",
+        "INSERT OR REPLACE INTO tracks (file_hash, file_path, title, album, artists, genres, mood, trackno, year, len) VALUES (
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         params![
             file_hash,
             item.file,

@@ -34,7 +34,24 @@ pub struct MusicController {
 
 // Basic functionality
 impl MusicController {
-    pub fn new(all_tracks: Vec<Track>) -> Self {
+    pub fn empty() -> Self {
+        Self {
+            all_tracks: vec!(),
+            track_info: vec!(),
+            artists: HashMap::new(),
+            genres: HashMap::new(),
+            albums: HashMap::new(),
+            listens: vec!(),
+            current_started: Instant::now(),
+            current_queue: 0,
+            queues: vec![Queue::all()],
+            player: AudioPlayer::new(String::new()),
+            encoder: AutoEncoder::new().unwrap(),
+            settings: Settings::load(),
+        }
+    }
+
+    pub fn new(all_tracks: Vec<Track>, directory: String) -> Self {
         let mut rng = thread_rng();
         let current_playing =
             if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
@@ -52,7 +69,7 @@ impl MusicController {
             artists: HashMap::new(),
             genres: HashMap::new(),
             albums: HashMap::new(),
-            player: AudioPlayer::new(),
+            player: AudioPlayer::new(directory),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
         };

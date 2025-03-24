@@ -36,26 +36,34 @@ fn main() {
         }
     }));
 
-    if cfg!(target_os = "android") {
-        android_logger::init_once(
-            Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
-        );
-        
-        launch(App);
-    } else {
-        LogTracer::init().expect("Failed to initialize LogTracer");
+    init();
+}
 
-        dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
+#[cfg(target_os = "android")]
+fn init() {
+    android_logger::init_once(
+        Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
+    );
 
-        let window = WindowBuilder::new().with_always_on_top(false);
-        let config = dioxus::desktop::Config::new().with_window(window);
-        LaunchBuilder::new().with_cfg(config).launch(App);
-    }
+    info!("Starting up trackfish");
+    
+    launch(App);
+}
+
+#[cfg(not(target_os = "android"))]
+fn init() {
+    LogTracer::init().expect("Failed to initialize LogTracer");
+
+    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
+
+    let window = WindowBuilder::new().with_always_on_top(false);
+    let config = dioxus::desktop::Config::new().with_window(window);
+    LaunchBuilder::new().with_cfg(config).launch(App);
 }
 
 #[component]
 fn App() -> Element {
-    let mut controller = use_signal(|| MusicController::new(Vec::new()));
+    let mut controller = use_signal(|| MusicController::empty());
 
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
@@ -76,7 +84,7 @@ fn App() -> Element {
         let tracks = load_tracks(&controller.read().settings.directory);
         if let Ok(t) = tracks {
             if let Ok(mut c) = controller.try_write() {
-                *c = MusicController::new(t);
+                *c = MusicController::new(t, c.settings.directory.clone());
             } else {
                 info!("Controller already borrowed");
             }
@@ -87,7 +95,7 @@ fn App() -> Element {
     });
 
     use_asset_handler("trackimage", move |request, responder| {
-        let r = Response::builder().status(404).body(&[]).unwrap();
+        let r = Response::builder().status(200).body(&[]).unwrap();
 
         let id = if let Ok(parsed) = request.uri().path().replace("/trackimage/", "").parse() {
             parsed
@@ -97,6 +105,8 @@ fn App() -> Element {
         let path = if let Ok(Some(track)) = controller.try_read().and_then(|c| Ok(c.get_track(id).cloned())) { 
             track.file
         } else { responder.respond(r); return };
+
+        let path = format!("{}/{path}", controller.read().settings.directory);
 
         let tag = if let Ok(t) = Tag::read_from_path(path) {
             t

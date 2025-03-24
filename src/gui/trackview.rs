@@ -29,7 +29,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
             time::sleep(Duration::from_secs_f64(0.25)).await;
             if !progress_held() {
                 *progress.write() = controller.read().player.progress_secs();
-                if controller.read().player.track_ended() {
+                if controller.read().player.track_ended() && controller.read().all_tracks.len() > 0 {
                     controller.write().skip();
                 }
             }
