@@ -305,6 +305,7 @@ checksum = "99ef2dfeaceccd0b8a6d72203409acc927d9eebc8180c5756099549c9f8f20a8"
 dependencies = [
  "bindgen 0.58.1",
  "cc",
+ "pkg-config",
 ]
 
 [[package]]
