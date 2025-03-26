@@ -2,7 +2,7 @@
 @media (min-aspect-ratio: 1.2) {
     .trackview {
         flex-direction: row !important;
-        height: calc(100% - 40px);
+        height: calc(100vh - 100px);
     }
 
     .imageview {

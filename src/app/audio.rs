@@ -9,7 +9,6 @@ pub struct AudioPlayer {
     _stream_handle: OutputStreamHandle,
     sink: Sink,
     current_song_len: f64,
-    directory: String,
 }
 
 impl PartialEq for AudioPlayer {
@@ -19,17 +18,16 @@ impl PartialEq for AudioPlayer {
 }
 
 impl AudioPlayer {
-    pub fn new(directory: String) -> Self {
+    pub fn new() -> Self {
         let (_stream, _stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&_stream_handle).unwrap();
 
-        AudioPlayer { _stream, _stream_handle, sink, current_song_len: 1.0, directory }
+        AudioPlayer { _stream, _stream_handle, sink, current_song_len: 1.0 }
     }
 
     pub fn play_track(&mut self, file_path: &str) {
-        let path = format!("{}/{}", self.directory.clone(), file_path);
-        info!("Playing track: {path:?}");
-        let file = BufReader::new(File::open(path).unwrap());
+        info!("Playing track: {file_path:?}");
+        let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
         let was_paused = self.sink.is_paused();
         self.current_song_len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();

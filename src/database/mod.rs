@@ -12,7 +12,7 @@ use rusqlite::{
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use crate::app::track::{Track, Mood};
+use crate::app::track::{Track, Mood, TrackInfo};
 use crate::app::settings::Settings;
 use sha2::{Sha256, Digest};
 use base64::{engine::general_purpose, Engine};
@@ -31,7 +31,7 @@ pub fn hash_filename(name: &str) -> String {
 }
 
 pub fn init_db() -> Result<Connection> {
-    let file = PathBuf::from(Settings::load().directory + "/tracks.db");
+    let file = Settings::dir().join("tracks.db");
     let db_exists = file.exists();
     info!("Database exists at {file:?}: {db_exists}");
 
@@ -58,7 +58,9 @@ pub fn init_db() -> Result<Connection> {
         conn.execute(
             "CREATE TABLE weights (
                 file_hash TEXT PRIMARY KEY,
-                weights BLOB
+                weights BLOB,
+                mfcc BLOB,
+                chroma BLOB,
             )", [])?;
     }
 
@@ -96,35 +98,46 @@ pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>
     Ok(result)
 }
 
-pub fn save_weight(conn: &Connection, track: &str, weights: &Array1<f32>) -> Result<()> {
+fn to_blob(array: &Array1<f32>) -> Vec<u8> {
+    array.iter().map(|f| f.to_le_bytes()).flatten().collect()
+}
+
+pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -> Result<()> {
     let file_hash = hash_filename(track);
-    let blob_weights: Vec<u8> = weights.iter().map(|f| f.to_le_bytes()).flatten().collect();
+    let genre_blob: Vec<u8> = to_blob(&weights.genre_space);
+    let mfcc_blob: Vec<u8> = to_blob(&weights.mfcc);
+    let chroma_blob: Vec<u8> = to_blob(&weights.chroma);
+
     conn.execute(
-        "INSERT OR REPLACE INTO weights (file_hash, weights) VALUES (?1, ?2)",
-        params![file_hash, blob_weights])?;
+        "INSERT OR REPLACE INTO weights (file_hash, genre_space, mfcc, chroma) VALUES (?1, ?2, ?3, ?4)",
+        params![file_hash, genre_blob, mfcc_blob, chroma_blob])?;
 
     Ok(())
 }
 
-pub fn cached_weight(conn: &Connection, track: &str) -> Result<Array1<f32>> {
+fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
+    let mut weights = vec![];
+    let mut raw = [0; 4];
+    for i in (0..(blob.len()/4)) {
+        raw.copy_from_slice(&blob[i*4..i*4+4]);
+        weights.push(f32::from_le_bytes(raw));
+    }
+
+    Array1::from_vec(weights)
+}
+
+pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
     let started = std::time::SystemTime::now();
     let file_hash = hash_filename(track);
     let mut stmt = conn.prepare("SELECT * FROM weights WHERE file_hash = ?1")?;
     
-    let result: Vec<u8> = stmt.query_row(params![file_hash], |row| {
-        Ok(row.get(1)?)
-    })?;
+    stmt.query_row(params![file_hash], |row| {
+        let genre_space = blob_to_array(row.get(1)?);
+        let mfcc = blob_to_array(row.get(2)?);
+        let chroma = blob_to_array(row.get(3)?);
 
-    let mut weights = vec![];
-    let mut raw = [0; 4];
-    for i in (0..(result.len()/4)) {
-        raw.copy_from_slice(&result[i*4..i*4+4]);
-        weights.push(f32::from_le_bytes(raw));
-    }
-
-    let array = Array1::from_vec(weights);
-
-    Ok(array)
+        Ok(TrackInfo { genre_space, mfcc, chroma, bpm: 100, key: 0 })
+    })
 }
 
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
