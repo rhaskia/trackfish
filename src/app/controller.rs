@@ -320,7 +320,7 @@ impl MusicController {
         }
 
         self.queues.push(Queue::new(queue, tracks));
-        self.current_queue = self.queues.len() - 1;
+        self.current_queue = self.queues.len() - 1
         self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
         self.play();
