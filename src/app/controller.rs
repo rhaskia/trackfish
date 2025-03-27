@@ -11,9 +11,10 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
-use crate::database::{init_db, cached_weight, save_track_weights, hash_filename};
+use crate::database::{init_db, cached_weight, save_track_weights, hash_filename, blob_to_array};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
+use crate::analysis::generate_track_info;
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -56,79 +57,77 @@ impl MusicController {
         let current_playing =
             if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
 
-        let mut queue = MusicController {
-            all_tracks: all_tracks.clone(),
-            current_started: Instant::now(),
-            listens: Vec::new(),
-            queues: vec![Queue::radio(
-                current_playing,
-                all_tracks.get(current_playing).cloned().unwrap_or_default().title,
-            )],
-            current_queue: 0,
-            track_info: Vec::new(),
-            artists: HashMap::new(),
-            genres: HashMap::new(),
-            albums: HashMap::new(),
-            player: AudioPlayer::new(),
-            encoder: AutoEncoder::new().unwrap(),
-            settings: Settings::load(),
-        };
+        let encoder = AutoEncoder::new().unwrap();
 
-        let mut track_info = Vec::new();
+        let mut track_info_vec = Vec::new();
 
         let started = std::time::SystemTime::now();
         let cache = init_db().unwrap();
 
         let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
         let mut result: Rows = stmt.query(params!()).unwrap();
-        let mut weights: HashMap<String, Array1<f32>> = HashMap::new();
+        let mut weights: HashMap<String, TrackInfo> = HashMap::new();
         while let Ok(Some(row)) = result.next() {
             let hash: String = row.get(0).unwrap();
-            let result: Vec<u8> = row.get(1).unwrap();
+            let genre_space = blob_to_array(row.get(1).unwrap());
+            let mfcc = blob_to_array(row.get(2).unwrap());
+            let chroma = blob_to_array(row.get(3).unwrap());
 
-            let mut value = vec![];
-            let mut raw = [0; 4];
-            for i in (0..(result.len()/4)) {
-                raw.copy_from_slice(&result[i*4..i*4+4]);
-                value.push(f32::from_le_bytes(raw));
-            }
-            weights.insert(hash, Array1::from_vec(value));
+            weights.insert(hash, TrackInfo { genre_space, mfcc, chroma, bpm: 0, key: 0 });
         }
+
+        let (mut albums, mut artists, mut genres) = (HashMap::new(), HashMap::new(), HashMap::new());
 
         for track in &all_tracks {
             let started = std::time::SystemTime::now();
             let file_hash = hash_filename(&track.file);
             if weights.contains_key(&file_hash) {
-                track_info.push(Array1::from(weights[&file_hash].clone()));
+                track_info_vec.push(weights[&file_hash].clone());
             } else {
-                let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
-                let weight = queue.encoder.encode(genre_vec);
-                save_track_weights(&cache, &track.file, &weight).unwrap();
-                track_info.push(weight);
+                let track_info = generate_track_info(&track, &encoder);
+                save_track_weights(&cache, &track.file, &track_info).unwrap();
+                track_info_vec.push(track_info);
             }
 
             for genre in track.genres.clone() {
-                *queue.genres.entry(genre.clone()).or_insert(0) += 1;
+                *genres.entry(genre.clone()).or_insert(0) += 1;
             }
 
             for artist in track.artists.clone() {
-                *queue.artists.entry(artist.clone()).or_insert(0) += 1;
+                *artists.entry(artist.clone()).or_insert(0) += 1;
             }
 
-            *queue.albums.entry(track.album.clone()).or_insert(0) += 1;
+            *albums.entry(track.album.clone()).or_insert(0) += 1;
         }
+
+        let mut controller = MusicController {
+            all_tracks: all_tracks.clone(),
+            current_started: Instant::now(),
+            listens: Vec::new(),
+            queues: vec![Queue::radio(
+                current_playing,
+                all_tracks.get(current_playing).cloned().unwrap_or_default().title,
+                track_info_vec[current_playing].clone(),
+            )],
+            current_queue: 0,
+            track_info: track_info_vec,
+            artists,
+            genres,
+            albums,
+            player: AudioPlayer::new(),
+            encoder: encoder,
+            settings: Settings::load(),
+        };
 
         info!("Calculated weights in {:?}", started.elapsed());
 
-        queue.track_info = track_info;
-
-        if let Some(track) = queue.current_track().cloned() {
-            queue.player.play_track(&track.file);
-            queue.toggle_playing();
+        if let Some(track) = controller.current_track().cloned() {
+            controller.player.play_track(&track.file);
+            controller.toggle_playing();
             info!("Started track {track:?}");
         }
 
-        queue
+        controller
     }
 
     pub fn play_track(&mut self, idx: usize) {
@@ -321,7 +320,7 @@ impl MusicController {
         }
 
         self.queues.push(Queue::new(queue, tracks));
-        self.current_queue = self.queues.len() - 1
+        self.current_queue = self.queues.len() - 1;
         self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
         self.play();

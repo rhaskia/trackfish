@@ -54,15 +54,15 @@ pub fn init_db() -> Result<Connection> {
             )",
             [],
         )?;
-
-        conn.execute(
-            "CREATE TABLE weights (
-                file_hash TEXT PRIMARY KEY,
-                weights BLOB,
-                mfcc BLOB,
-                chroma BLOB,
-            )", [])?;
     }
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS weights (
+            file_hash TEXT PRIMARY KEY,
+            genre_space BLOB,
+            mfcc BLOB,
+            chroma BLOB
+        ) ", [])?;
 
     Ok(conn)
 }
@@ -115,7 +115,7 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
     Ok(())
 }
 
-fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
+pub fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
     let mut weights = vec![];
     let mut raw = [0; 4];
     for i in (0..(blob.len()/4)) {

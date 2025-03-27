@@ -6,7 +6,7 @@ use std::f32::consts::PI;
 
 const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../chroma.npy");
 
-pub fn extract_chroma(audio_data: &[f32]) -> Vec<Vec<f32>> {
+pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
     let frame_size = 2048;
     let num_coefficients = 12;
     let hop_size = 2048;
@@ -49,6 +49,15 @@ pub fn extract_chroma(audio_data: &[f32]) -> Vec<Vec<f32>> {
         chroma_vectors.push(chroma.into_raw_vec());
     }
 
-    chroma_vectors
+    let mut mean_chroma = Array1::zeros(13);
+
+    for i in 0..13 {
+        for chroma in &chroma_vectors {
+            mean_chroma[i] += chroma[i]
+        }
+        mean_chroma /= chroma_vectors.len() as f32;
+    }
+
+    mean_chroma
 }
 

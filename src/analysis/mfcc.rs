@@ -1,14 +1,14 @@
 use ndarray::{Array1, Array2, ArrayBase};
 use aubio::{MFCC, FFT};
 
-pub fn extract_mfcc(buffer: &mut Vec<f32>, sample_rate: u32) -> Vec<f32> {
+pub fn extract_mfcc(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {
     let fft_size = 1024;
     let num_coefficients = 13;
     let num_filters = 20;
 
     let num_blocks = (buffer.len() as f32 / fft_size as f32).floor() as usize;
     if num_blocks == 0 {
-        buffer.resize(fft_size, 0.0);
+        // buffer.resize(fft_size, 0.0);
     }
 
     let mut fft = FFT::new(fft_size).map_err(|e| e.to_string()).unwrap();
@@ -34,6 +34,6 @@ pub fn extract_mfcc(buffer: &mut Vec<f32>, sample_rate: u32) -> Vec<f32> {
         mean_mfcc[i] /= num_blocks as f32;
     }
 
-    mean_mfcc
+    Array1::from_vec(mean_mfcc)
 }
 

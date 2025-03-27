@@ -1,6 +1,7 @@
 use ndarray::Array1;
 use std::time::Instant;
 use std::fmt::Display;
+use super::track::TrackInfo;
 
 #[derive(Clone, PartialEq)]
 pub struct Queue {
@@ -50,9 +51,9 @@ impl Queue {
         }
     }
 
-    pub fn radio(idx: usize, name: String) -> Self {
+    pub fn radio(idx: usize, name: String, track_info: TrackInfo) -> Self {
         Queue {
-            queue_type: QueueType::Radio(name, Array1::<f32>::zeros(16)),
+            queue_type: QueueType::Radio(name, track_info),
             current_track: 0,
             listens: Vec::new(),
             cached_order: vec![idx],
@@ -69,14 +70,14 @@ impl Queue {
 
     pub fn radio_genres(&self) -> Array1<f32> {
         match &self.queue_type {
-            QueueType::Radio(_, genres) => genres.clone(),
+            QueueType::Radio(_, track_info) => track_info.genre_space.clone(),
             _ => panic!("Queue not of type Radio"),
         }
     }
 
     pub fn mut_radio_genres(&mut self) -> &mut Array1<f32> {
         match &mut self.queue_type {
-            QueueType::Radio(_, ref mut genres) => genres,
+            QueueType::Radio(_, ref mut track_info) => &mut track_info.genre_space,
             _ => panic!("Queue not of type Radio"),
         }
     }
@@ -89,7 +90,7 @@ impl Queue {
 #[derive(PartialEq, Clone)]
 pub enum QueueType {
     AllTracks,
-    Radio(String, Array1<f32>),
+    Radio(String, TrackInfo),
     Artist(String),
     Album(String),
     Genre(String),
