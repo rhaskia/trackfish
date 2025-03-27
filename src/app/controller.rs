@@ -11,14 +11,14 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
-use crate::database::{init_db, cached_weight, save_weight, hash_filename};
+use crate::database::{init_db, cached_weight, save_track_weights, hash_filename};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
-    pub track_info: Vec<Array1<f32>>,
+    pub track_info: Vec<TrackInfo>,
     pub artists: HashMap<String, usize>,
     pub genres: HashMap<String, usize>,
     pub albums: HashMap<String, usize>,
@@ -45,7 +45,7 @@ impl MusicController {
             current_started: Instant::now(),
             current_queue: 0,
             queues: vec![Queue::all()],
-            player: AudioPlayer::new(String::new()),
+            player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
         }
@@ -69,7 +69,7 @@ impl MusicController {
             artists: HashMap::new(),
             genres: HashMap::new(),
             albums: HashMap::new(),
-            player: AudioPlayer::new(directory),
+            player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
         };
@@ -95,8 +95,6 @@ impl MusicController {
             weights.insert(hash, Array1::from_vec(value));
         }
 
-        info!("Calculated weights in {:?}", started.elapsed());
-
         for track in &all_tracks {
             let started = std::time::SystemTime::now();
             let file_hash = hash_filename(&track.file);
@@ -105,7 +103,7 @@ impl MusicController {
             } else {
                 let genre_vec = queue.encoder.genres_to_vec(track.genres.clone());
                 let weight = queue.encoder.encode(genre_vec);
-                save_weight(&cache, &track.file, &weight).unwrap();
+                save_track_weights(&cache, &track.file, &weight).unwrap();
                 track_info.push(weight);
             }
 
@@ -119,12 +117,6 @@ impl MusicController {
 
             *queue.albums.entry(track.album.clone()).or_insert(0) += 1;
         }
-        
-        info!("Calculated weights in {:?}", started.elapsed());
-
-        // queue.genres.sort();
-        // queue.albums.sort();
-        // queue.artists.sort();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -151,6 +143,7 @@ impl MusicController {
 
         self.current_started = Instant::now();
 
+        println!("{:?}", &self.all_tracks[idx].file);
         self.player.play_track(&self.all_tracks[idx].file);
     }
 
@@ -159,14 +152,7 @@ impl MusicController {
         let space = self.track_info[self.current_queue().current()].clone();
         let current = self.mut_current_queue().mut_radio_genres();
 
-        if *current == Array1::<f32>::zeros(16) {
-            *current = space;
-        } else {
-            info!("Old Space: {current}");
-            info!("{space:?}");
-            *current = lerp(current, &space, 0.7);
-            info!("New Space: {current}");
-        }
+        *current = space.genre_space;
 
         let _ = current;
         let current = self.current_queue().radio_genres();
@@ -241,7 +227,6 @@ impl MusicController {
     }
 
     pub fn skip(&mut self) {
-        info!("hi 2");
         if self.all_tracks.is_empty() {
             log::info!("No track to skip to");
             return;
@@ -336,7 +321,7 @@ impl MusicController {
         }
 
         self.queues.push(Queue::new(queue, tracks));
-        self.current_queue = self.queues.len() - 1;
+        self.current_queue = self.queues.len() - 1
         self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
         self.play();
@@ -464,7 +449,7 @@ impl MusicController {
     }
 }
 
-pub fn genres_dist_from_vec(lhs: &Array1<f32>, other: &Array1<f32>) -> f32 {
-    let diff = (lhs.clone() - other.clone()).pow2();
+pub fn genres_dist_from_vec(lhs: &TrackInfo, other: &Array1<f32>) -> f32 {
+    let diff = (lhs.genre_space.clone() - other.clone()).pow2();
     diff.sum().sqrt()
 }

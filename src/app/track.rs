@@ -87,8 +87,7 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     let mut tracks = Vec::new();
 
     for file in files {
-        let base = PathBuf::from(&file).file_name().unwrap().to_str().unwrap().to_string();
-        match get_from_cache(&cache, &base)? {
+        match get_from_cache(&cache, &file)? {
             Some(track) => {
                 tracks.push(track);
             }
@@ -297,11 +296,12 @@ fn path_is_audio(path: PathBuf) -> bool {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TrackInfo {
-    pub genres: Vec<usize>,
     pub genre_space: Array1<f32>,
-    pub artist: usize,
+    pub mfcc: Array1<f32>,
+    pub chroma: Array1<f32>,
+    pub key: i32,
     pub bpm: i32,
 }
 
