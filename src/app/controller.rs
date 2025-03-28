@@ -14,7 +14,7 @@ use super::settings::Settings;
 use crate::database::{init_db, cached_weight, save_track_weights, hash_filename, blob_to_array};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
-use crate::analysis::generate_track_info;
+use crate::analysis::{generate_track_info, utils::cosine_similarity};
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -151,7 +151,7 @@ impl MusicController {
         let space = self.track_info[self.current_queue().current()].clone();
         let current = self.mut_current_queue().mut_radio_genres();
 
-        *current = space.genre_space;
+        *current = space.mfcc;
 
         let _ = current;
         let current = self.current_queue().radio_genres();
@@ -165,30 +165,31 @@ impl MusicController {
             .collect();
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
-        for (dist, (i, _)) in dists.iter().enumerate() {
-            if self.all_tracks[*i].genres.len() == 0 {
-                continue;
-            }
-            weights[*i] += 1.0 / (1.0 + (dist as f32 * self.settings.radio_temp - 2.0).exp());
+        for (dist, (i, j)) in dists.iter().enumerate() {
+            // if self.all_tracks[*i].genres.len() == 0 {
+            //     continue;
+            // }
+            if dist == 0 { continue; }
+
+            weights[*i] = *j;
         }
 
-        for i in 0..self.all_tracks.len() {
-            let current_idx = self.current_queue().current();
-            if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
-                weights *= self.settings.radio_album_penalty;
-            }
-            if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
-                weights *= self.settings.radio_artist_penalty;
-            }
-            if let Some(current_mood) = &self.all_tracks[current_idx].mood {
-                if let Some(mood) = &self.all_tracks[i].mood {
-                    weights *= 0.8 + mood.shared(current_mood) / 17.5;
-                }
-            }
-        }
+        // for i in 0..self.all_tracks.len() {
+        //     let current_idx = self.current_queue().current();
+        //     if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
+        //         weights *= self.settings.radio_album_penalty;
+        //     }
+        //     if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
+        //         weights *= self.settings.radio_artist_penalty;
+        //     }
+        //     if let Some(current_mood) = &self.all_tracks[current_idx].mood {
+        //         if let Some(mood) = &self.all_tracks[i].mood {
+        //             weights *= 0.8 + mood.shared(current_mood) / 17.5;
+        //         }
+        //     }
+        // }
 
         for i in &self.current_queue().cached_order {
-            //weights[self.listens[i].id] -= (1.0 / ((i as f32 / 2.0 - 1.0).exp() + 1.0)).max(0.0);
             weights[*i] = 0.0;
         }
 
@@ -197,7 +198,13 @@ impl MusicController {
         // TODO: mfcc closeness rating
         // TODO: mood weighting
 
-        weights = weights.clamp(0.0, 10.0);
+        weights = weights.clamp(0.0, 100.0);
+
+        for weight in &mut weights {
+            if *weight < 0.5 {
+                *weight = 0.0;
+            }
+        }
 
         weights
     }
@@ -209,6 +216,7 @@ impl MusicController {
         let mut rng = thread_rng();
 
         let next = dist.sample(&mut rng);
+        info!("chosen weight {}", weights[next]);
         next
     }
 
@@ -320,7 +328,7 @@ impl MusicController {
         }
 
         self.queues.push(Queue::new(queue, tracks));
-        self.current_queue = self.queues.len() - 1
+        self.current_queue = self.queues.len() - 1;
         self.queues[self.current_queue].current_track = track_idx;
         self.play_track(track);
         self.play();
@@ -449,6 +457,5 @@ impl MusicController {
 }
 
 pub fn genres_dist_from_vec(lhs: &TrackInfo, other: &Array1<f32>) -> f32 {
-    let diff = (lhs.genre_space.clone() - other.clone()).pow2();
-    diff.sum().sqrt()
+    cosine_similarity(lhs.mfcc.clone(), other.clone())
 }

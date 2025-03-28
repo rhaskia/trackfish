@@ -45,6 +45,7 @@ desktop = ["dioxus/desktop", "aubio/pkg-config"]
 mobile = ["dioxus/mobile", "aubio/bindgen"]
 
 [profile]
+[profile.dev]
 
 [profile.wasm-dev]
 inherits = "dev"

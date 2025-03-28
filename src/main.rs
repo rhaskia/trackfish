@@ -106,8 +106,6 @@ fn App() -> Element {
             track.file
         } else { responder.respond(r); return };
 
-        let path = format!("{}/{path}", controller.read().settings.directory);
-
         let tag = if let Ok(t) = Tag::read_from_path(path) {
             t
         } else { responder.respond(r); return };
