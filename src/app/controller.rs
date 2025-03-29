@@ -2,7 +2,8 @@ use super::{
     audio::AudioPlayer,
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
-    queue::{QueueType, Queue, Listen}
+    queue::{QueueType, Queue, Listen},
+    utils::{similar, strip_unnessecary},
 };
 use log::info;
 use ndarray::Array1;
@@ -19,7 +20,7 @@ use crate::analysis::{generate_track_info, utils::cosine_similarity};
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
     pub track_info: Vec<TrackInfo>,
-    pub artists: HashMap<String, usize>,
+    pub artists: HashMap<String, (String, usize)>,
     pub genres: HashMap<String, usize>,
     pub albums: HashMap<String, usize>,
     pub listens: Vec<Listen>,
@@ -93,7 +94,9 @@ impl MusicController {
             }
 
             for artist in track.artists.clone() {
-                *artists.entry(artist.clone()).or_insert(0) += 1;
+                // some artists names seem to change captalization grr
+                let stripped = strip_unnessecary(&artist);
+                artists.entry(stripped).or_insert((artist, 0)).1 += 1;
             }
 
             *albums.entry(track.album.clone()).or_insert(0) += 1;
@@ -114,7 +117,7 @@ impl MusicController {
             genres,
             albums,
             player: AudioPlayer::new(),
-            encoder: encoder,
+            encoder,
             settings: Settings::load(),
         };
 
@@ -147,7 +150,7 @@ impl MusicController {
 
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
-        let space = self.track_info[self.current_queue().current()].clone();
+        let space = self.track_info[self.current_queue().cached_order[0]].clone();
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
         let mut dists: Vec<(usize, f32)> = self
@@ -159,34 +162,27 @@ impl MusicController {
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
         let mut min = 1.0;
-        for (dist, (i, j)) in dists.iter().enumerate() {
-            // if self.all_tracks[*i].genres.len() == 0 {
-            //     continue;
-            // }
-            if dist == 0 { continue; }
-
-            weights[*i] = *j;
-            if *j < min { min = *j; }
+        for (rank, (song, distance)) in dists.iter().enumerate() {
+            weights[*song] = *distance;
+            if *distance < min { min = *distance; }
         }
 
-        for weight in &mut weights {
-            *weight = (*weight - min) / (1.0 - min);
-            *weight = *weight * *weight;
-        }
-        println!("{min}");
+        weights = (weights - min) / (1.0 - min);
+
+        let grad = -20.0;
+        let cutoff = 15;
+        weights = 1.0 / ((weights * a - cutoff).exp() + 1.0);
+
+        weights.clamp(0.0, 1.0);
 
         // for i in 0..self.all_tracks.len() {
         //     let current_idx = self.current_queue().current();
         //     if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
         //         weights *= self.settings.radio_album_penalty;
         //     }
+        //
         //     if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
         //         weights *= self.settings.radio_artist_penalty;
-        //     }
-        //     if let Some(current_mood) = &self.all_tracks[current_idx].mood {
-        //         if let Some(mood) = &self.all_tracks[i].mood {
-        //             weights *= 0.8 + mood.shared(current_mood) / 17.5;
-        //         }
         //     }
         // }
 
@@ -195,11 +191,7 @@ impl MusicController {
         }
 
         // TODO: negative weighting for genres in songs skipped early (maybe)
-        // TODO: genre weighting using a subset of the previous radio songs
-        // TODO: mfcc closeness rating
-        // TODO: mood weighting
-
-        weights = weights.clamp(0.0, 100.0);
+        // TODO: weights for each feature used in weighting
 
         weights
     }

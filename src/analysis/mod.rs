@@ -17,17 +17,22 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let genre_space = encoder.encode(genre_vec);
     
     let started = Instant::now();
-    let (samples, sample_rate) = load_samples(&track.file);
-    // let duration_used = 10.0;
-    // samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
+    let (mut samples, sample_rate) = load_samples(&track.file);
+    if cfg!(target_os = "android") {
+        let duration_used = 10.0;
+        samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
+    }
     info!("samples loaded in {:?}", started.elapsed());
 
     let started = Instant::now();
     let mfcc = extract_mfcc(&samples, sample_rate);
     info!("mfcc calculated in {:?}", started.elapsed());
+
     let started = Instant::now();
     let chroma = extract_mfcc(&samples, sample_rate);
     info!("chroma calculated in {:?}", started.elapsed());
+
+    // let energy = estratto::get_rms(&samples);
 
     TrackInfo { genre_space, mfcc, chroma, bpm: 100, key: 0 }
 }

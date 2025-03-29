@@ -49,6 +49,7 @@ pub fn TrackItem(controller: Signal<MusicController>, selected_queue: Signal<usi
     rsx!{
         div {
             class: "trackitem",
+            draggable: true,
             class: if is_current() { "current" },
             onclick: move |_| {
                 controller.write().set_queue_and_track(selected_queue(), idx);

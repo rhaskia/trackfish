@@ -128,8 +128,8 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
     let mut artists = use_signal(|| Vec::new());
 
     use_effect(move || {
-        let mut artists_unsorted = controller.read().artists.clone().into_iter().collect::<Vec<(String, usize)>>();
-        artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        let mut artists_unsorted = controller.read().artists.clone().into_iter().collect::<Vec<(String, (String, usize))>>();
+        artists_unsorted.sort_by(|(_, (_, a)), (_, (_, b))| b.cmp(a));
         artists.set(artists_unsorted);
     });
 
@@ -151,9 +151,9 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
                 for i in 0..artists.read().len() {
                     div { class: "thinitem",
                         onclick: move |_| set_artist(artists.read()[i].clone().0),
-                        "{artists.read()[i].0}"
+                        "{artists.read()[i].1.0}"
                         br {}
-                        small { "{artists.read()[i].1} songs" }
+                        small { "{artists.read()[i].1.1} songs" }
                     }
                 }
             }

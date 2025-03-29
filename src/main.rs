@@ -130,6 +130,7 @@ fn App() -> Element {
         document::Link { href: "assets/menubar.css", rel: "stylesheet" }
         document::Link { href: "assets/settings.css", rel: "stylesheet" }
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
+        document::Link { href: "assets/queue.css", rel: "stylesheet" }
 
         div { class: "mainview",
             tabindex: 0,
