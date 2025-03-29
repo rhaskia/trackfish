@@ -2,9 +2,6 @@ use dioxus::prelude::*;
 use crate::app::MusicController;
 use crate::app::utils::strip_unnessecary;
 use super::{View, VIEW};
-use crate::app::utils::similar;
-use std::time::Duration;
-use dioxus_lazy::{lazy, List};
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -37,28 +34,19 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
                 "{display_time(total_time())} total duration"
             }
             div { class: "tracklist",
-                List {
-                    len: controller.read().all_tracks.len(),
-                    size: 400.,
-                    item_size: 60.,
-                    make_item: move |idx: &usize| {
-                        let idx = idx.clone();
-                        rsx!{
-                            div {
-                                class: "trackitem",
-                                id: "trackitem-{idx}",
-                                onclick: move |_| {
-                                    controller.write().add_all_queue(idx);
-                                    VIEW.write().current = View::Song;
-                                },
-                                img { src: "/trackimage/{idx}" }
-                                span { "{controller.read().all_tracks[idx].title}" }
-                                div { flex_grow: 1 }
-                                img { src: "/assets/icons/vert.svg" }
-                            }
-                        }
-                    },
-                    make_value: lazy::from_async_fn(|idx| async move { idx }),
+                for i in 0..controller.read().all_tracks.len() {
+                    div {
+                        class: "trackitem",
+                        id: "trackitem-{i}",
+                        onclick: move |_| {
+                            controller.write().add_all_queue(i);
+                            VIEW.write().current = View::Song;
+                        },
+                        img { loading: "onvisible", src: "/trackimage/{i}" }
+                        span { "{controller.read().all_tracks[i].title}" }
+                        div { flex_grow: 1 }
+                        img { loading: "onvisible", src: "/assets/icons/vert.svg" }
+                    }
                 }
             }
             if is_searching() {

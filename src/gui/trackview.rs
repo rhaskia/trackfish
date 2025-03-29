@@ -4,7 +4,6 @@ use std::time::Duration;
 use tokio::time;
 use log::info;
 use super::{View, VIEW};
-use crate::app::utils::similar;
 use super::input::{key_to_action, Action};
 
 #[component]

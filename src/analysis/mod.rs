@@ -9,7 +9,6 @@ use std::io::BufReader;
 use std::time::Instant;
 use rodio::{Decoder, Source};
 use crate::app::{track::{TrackInfo, Track}, embed::AutoEncoder};
-use ndarray::Array1;
 use log::info;
 
 pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
@@ -18,7 +17,7 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let genre_space = encoder.encode(genre_vec);
     
     let started = Instant::now();
-    let (mut samples, sample_rate) = load_samples(&track.file);
+    let (samples, sample_rate) = load_samples(&track.file);
     // let duration_used = 10.0;
     // samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
     info!("samples loaded in {:?}", started.elapsed());
@@ -34,8 +33,8 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
 }
 
 pub fn load_samples(file_path: &str) -> (Vec<f32>, u32) {
-    let file = File::open(file_path.clone()).unwrap();
-    let mut source = Decoder::new(BufReader::new(file)).unwrap();
+    let file = File::open(file_path).unwrap();
+    let source = Decoder::new(BufReader::new(file)).unwrap();
 
     let channels = source.channels();
     let sample_rate = source.sample_rate();

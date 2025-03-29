@@ -2,7 +2,6 @@ use super::queue::QueueType;
 use super::utils::similar;
 use id3::Tag;
 use id3::TagLike;
-use id3::frame::ExtendedText;
 use log::info;
 use ndarray::Array1;
 use std::fmt;
@@ -14,7 +13,6 @@ use crate::database::{init_db, get_from_cache, save_to_cache};
 use rodio::{Decoder, Source};
 use std::io::BufReader;
 
-use super::embed::AutoEncoder;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
@@ -225,7 +223,7 @@ pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
 }
 
 pub fn load_track(file: String) -> anyhow::Result<Track> {
-    let mut tag = Tag::read_from_path(file.clone())?;
+    let tag = Tag::read_from_path(file.clone())?;
     let source = Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
 
     let title = tag.title().unwrap_or_default().to_string();
@@ -248,7 +246,7 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
         year = tag_year.to_string();
     }
 
-    let file = PathBuf::from(file).file_name().unwrap().to_str().unwrap().to_string();
+    //let file = PathBuf::from(file).file_name().unwrap().to_str().unwrap().to_string();
 
     Ok(Track { file, title, artists, album, genres, year, len, mood, trackno })
 }

@@ -15,29 +15,24 @@ tokio = "1.41.1"
 http = "1.2.0"
 http-range = "0.1.5"
 dioxus-logger = "0.6.1"
-crossbow = "0.2.3"
 anyhow = "1.0.94"
 android_logger = "0.14.1"
 log = "0.4.22"
 ndarray = "0.16"
 ndarray-npy = "0.9"
 tracing = "0.1.41"
-tracing-android = "0.2.0"
 tracing-log = "0.2.0"
 rodio = { version = "0.20", features = ["cpal-shared-stdcxx"]}
 toml = "0.8.19"
 serde = { version = "1", features = ["derive"]}
 dirs = "6.0.0"
-rusqlite = { version = "0.33", features = ["bundled", "array"] }
-sha2 = "0.10.8"
-base64 = "0.22.1"
+rusqlite = { version = "0.34", features = ["bundled", "array"] }
 aubio = { version = "0.2.1"}
 rustfft = "6.2.0"
-dioxus-lazy = "0.3.0-alpha.3"
-wasm-bindgen = "0.2.100"
-ndk-context = "0.1.1"
-jni = "0.21.1"
-crossbow-android = "0.2.3"
+tracing-android = "0.2.0"
+
+[target.'cfg(target_os = "android")'.dependencies]
+crossbow = "0.2.3"
 
 [features]
 web = ["dioxus/web"]

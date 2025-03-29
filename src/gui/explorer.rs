@@ -1,7 +1,6 @@
 use crate::app::{utils::similar, MusicController};
 use super::{View, VIEW};
 use dioxus::prelude::*;
-use std::time::Instant;
 
 #[component]
 pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
@@ -14,7 +13,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
         albums.set(albums_unsorted);
     });
 
-    let mut set_album = move |name| {
+    let set_album = move |name| {
         VIEW.write().album = Some(name);
     };
 
@@ -98,7 +97,7 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
             h3 { 
                 if name().is_empty() {
                     "Unknown {viewtype():?}"
-                } else { "name()" }
+                } else { "{name()}" }
             }
             img { src: "assets/icons/shuffle.svg" }
         }
@@ -130,11 +129,11 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
 
     use_effect(move || {
         let mut artists_unsorted = controller.read().artists.clone().into_iter().collect::<Vec<(String, usize)>>();
-        //artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        artists_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         artists.set(artists_unsorted);
     });
 
-    let mut set_artist = move |name| {
+    let set_artist = move |name| {
         VIEW.write().artist = Some(name);
     };
 
@@ -171,11 +170,11 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
 
     use_effect(move || {
         let mut genres_unsorted = controller.read().genres.clone().into_iter().collect::<Vec<(String, usize)>>();
-        //genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+        genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         genres.set(genres_unsorted);
     });
 
-    let mut set_genre = move |name| {
+    let set_genre = move |name| {
         VIEW.write().genre = Some(name);
     };
 

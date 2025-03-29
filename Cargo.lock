@@ -1138,7 +1138,7 @@ dependencies = [
  "dioxus-history",
  "dioxus-hooks",
  "dioxus-html",
- "dioxus-logger 0.6.2",
+ "dioxus-logger",
  "dioxus-mobile",
  "dioxus-signals",
  "dioxus-web",
@@ -1414,21 +1414,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dioxus-lazy"
-version = "0.3.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89219a77048d7e2de2b7624ffb46eb8fd732cd78cccd2858915727897c56890a"
-dependencies = [
- "dioxus",
- "dioxus-logger 0.5.1",
- "dioxus-resize-observer",
- "dioxus-use-mounted",
- "futures",
- "log",
- "web-sys",
-]
-
-[[package]]
 name = "dioxus-lib"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1444,18 +1429,6 @@ dependencies = [
  "dioxus-rsx",
  "dioxus-signals",
  "warnings",
-]
-
-[[package]]
-name = "dioxus-logger"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fe09dc9773dc1f1bb0d38529203d6555d08f67aadca5cf955ac3d1a9e69880"
-dependencies = [
- "console_error_panic_hook",
- "tracing",
- "tracing-subscriber",
- "tracing-wasm",
 ]
 
 [[package]]
@@ -1486,20 +1459,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dioxus-resize-observer"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e53618d802425520849a0103dc09694899fbba71f214bab000bfa0e68db0d35"
-dependencies = [
- "dioxus",
- "dioxus-use-mounted",
- "dioxus-web",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "dioxus-rsx"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1526,15 +1485,6 @@ dependencies = [
  "rustc-hash",
  "tracing",
  "warnings",
-]
-
-[[package]]
-name = "dioxus-use-mounted"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7177eae935a9f5abdfd04ad47dc7cee2c2490b9f56aee0b5866f912470234b7f"
-dependencies = [
- "dioxus-lib",
 ]
 
 [[package]]
@@ -2997,9 +2947,9 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.31.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad8935b44e7c13394a179a438e0cebba0fe08fe01b54f152e29a93b5cf993fd4"
+checksum = "fbb8270bb4060bd76c6e96f20c52d80620f1d82a3470885694e41e0f81ef6fe7"
 dependencies = [
  "cc",
  "pkg-config",
@@ -4389,9 +4339,9 @@ dependencies = [
 
 [[package]]
 name = "rusqlite"
-version = "0.33.0"
+version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c6d5e5acb6f6129fe3f7ba0a7fc77bca1942cb568535e18e7bc40262baf3110"
+checksum = "37e34486da88d8e051c7c0e23c3f15fd806ea8546260aa2fec247e97242ec143"
 dependencies = [
  "bitflags 2.6.0",
  "fallible-iterator",
@@ -5371,33 +5321,26 @@ dependencies = [
  "android_logger",
  "anyhow",
  "aubio",
- "base64",
  "crossbow",
- "crossbow-android",
  "dioxus",
- "dioxus-lazy",
- "dioxus-logger 0.6.2",
+ "dioxus-logger",
  "dirs 6.0.0",
  "http",
  "http-range",
  "id3",
- "jni 0.21.1",
  "log",
  "ndarray",
  "ndarray-npy",
- "ndk-context",
  "rand 0.8.5",
  "rodio",
  "rusqlite",
  "rustfft",
  "serde",
- "sha2",
  "tokio",
  "toml",
  "tracing",
  "tracing-android",
  "tracing-log",
- "wasm-bindgen",
 ]
 
 [[package]]

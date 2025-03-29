@@ -2,8 +2,7 @@ use super::{
     audio::AudioPlayer,
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
-    queue::{QueueType, Queue, Listen},
-    utils::{similar, title_case, lerp}
+    queue::{QueueType, Queue, Listen}
 };
 use log::info;
 use ndarray::Array1;
@@ -11,7 +10,7 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
-use crate::database::{init_db, cached_weight, save_track_weights, hash_filename, blob_to_array};
+use crate::database::{init_db, save_track_weights, hash_filename, blob_to_array};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
@@ -52,7 +51,7 @@ impl MusicController {
         }
     }
 
-    pub fn new(all_tracks: Vec<Track>, directory: String) -> Self {
+    pub fn new(all_tracks: Vec<Track>, _directory: String) -> Self {
         let mut rng = thread_rng();
         let current_playing =
             if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
@@ -149,22 +148,17 @@ impl MusicController {
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
         let space = self.track_info[self.current_queue().current()].clone();
-        let current = self.mut_current_queue().mut_radio_genres();
-
-        *current = space.mfcc;
-
-        let _ = current;
-        let current = self.current_queue().radio_genres();
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
         let mut dists: Vec<(usize, f32)> = self
             .track_info
             .iter()
-            .map(|track| genres_dist_from_vec(&track, &current))
+            .map(|track| genres_dist_from_vec(&track, &space))
             .enumerate()
             .collect();
         dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
 
+        let mut min = 1.0;
         for (dist, (i, j)) in dists.iter().enumerate() {
             // if self.all_tracks[*i].genres.len() == 0 {
             //     continue;
@@ -172,7 +166,14 @@ impl MusicController {
             if dist == 0 { continue; }
 
             weights[*i] = *j;
+            if *j < min { min = *j; }
         }
+
+        for weight in &mut weights {
+            *weight = (*weight - min) / (1.0 - min);
+            *weight = *weight * *weight;
+        }
+        println!("{min}");
 
         // for i in 0..self.all_tracks.len() {
         //     let current_idx = self.current_queue().current();
@@ -199,12 +200,6 @@ impl MusicController {
         // TODO: mood weighting
 
         weights = weights.clamp(0.0, 100.0);
-
-        for weight in &mut weights {
-            if *weight < 0.5 {
-                *weight = 0.0;
-            }
-        }
 
         weights
     }
@@ -335,7 +330,7 @@ impl MusicController {
     }
 
     pub fn add_all_queue(&mut self, track: usize) {
-        let mut tracks = (0..self.all_tracks.len()).collect();
+        let tracks = (0..self.all_tracks.len()).collect();
         self.add_queue_at(tracks, QueueType::AllTracks, track);
     }
 
@@ -456,6 +451,6 @@ impl MusicController {
     }
 }
 
-pub fn genres_dist_from_vec(lhs: &TrackInfo, other: &Array1<f32>) -> f32 {
-    cosine_similarity(lhs.mfcc.clone(), other.clone())
+pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo) -> f32 {
+    (cosine_similarity(lhs.mfcc.clone(), rhs.chroma.clone()) + cosine_similarity(lhs.chroma.clone(), rhs.chroma.clone())) / 2.0
 }

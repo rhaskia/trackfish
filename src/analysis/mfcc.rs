@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, ArrayBase};
+use ndarray::Array1;
 use aubio::{MFCC, FFT};
 
 pub fn extract_mfcc(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {

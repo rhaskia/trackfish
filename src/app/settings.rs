@@ -65,7 +65,7 @@ impl Settings {
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
         std::fs::create_dir(Self::dir());
-        std::fs::write(Self::dir().join("settings.toml"), file);
+        std::fs::write(Self::dir().join("settings.toml"), file).unwrap();
     }
 
     pub fn toggle_shuffle(&mut self) {

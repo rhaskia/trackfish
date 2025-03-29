@@ -4,6 +4,8 @@ use super::{View, VIEW};
 
 #[component]
 pub fn Settings(controller: Signal<MusicController>) -> Element {
+    let volume = controller.read().settings.volume * 100.0;
+
     rsx!{
         div {
             display: if VIEW.read().current != View::Settings { "none" },
@@ -23,7 +25,7 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
                 }
                 input {
                     r#type: "range",
-                    value: "100.0",
+                    value: "{volume}",
                     oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap() / 100.0)
                 }
                 input {

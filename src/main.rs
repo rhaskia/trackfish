@@ -3,15 +3,12 @@ pub mod gui;
 pub mod database;
 pub mod analysis;
 
-use dioxus::{prelude::*, dioxus_core::{SpawnIfAsync, LaunchConfig}, mobile::WindowBuilder};
+use dioxus::{prelude::*, mobile::WindowBuilder};
 use http::Response;
 use log::{error, info};
-use android_logger::Config;
 use tracing_log::LogTracer;
-use log::LevelFilter;
 use id3::Tag;
 use std::io::Cursor;
-use std::ops::{AddAssign, SubAssign};
 use std::time::Instant;
 
 use crate::document::eval;
@@ -22,7 +19,7 @@ use dioxus::desktop::use_asset_handler;
 use dioxus::mobile::use_asset_handler;
 
 use gui::*;
-use app::{MusicController, audio::AudioPlayer, track::load_tracks};
+use app::{MusicController, track::load_tracks};
 
 fn main() {
     // Hook panics into the logger to see them on android
@@ -78,8 +75,11 @@ fn App() -> Element {
 
     use_future(move || async move { 
         let started = Instant::now();
-        let result = crossbow::Permission::StorageRead.request_async().await;
-        info!("{result:?}");
+        #[cfg(target_os = "android")]
+        {
+            let result = crossbow::Permission::StorageRead.request_async().await;
+            info!("{result:?}");
+        }
 
         let tracks = load_tracks(&controller.read().settings.directory);
         if let Ok(t) = tracks {
@@ -145,9 +145,9 @@ fn App() -> Element {
             TrackView { controller }
             QueueList { controller }
             AllTracks { controller }
-            // GenreList { controller }
-            // ArtistList { controller }
-            // AlbumsList { controller }
+            GenreList { controller }
+            ArtistList { controller }
+            AlbumsList { controller }
             Settings { controller }
         }
 

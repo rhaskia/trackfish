@@ -1,4 +1,3 @@
-use std::fs;
 use log::info;
 use rusqlite::{
     params,
@@ -9,26 +8,18 @@ use rusqlite::{
     types::{ToSqlOutput, FromSql, Value, ValueRef, FromSqlResult, FromSqlError}
 };
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-use std::path::{Path, PathBuf};
 use crate::app::track::{Track, Mood, TrackInfo};
 use crate::app::settings::Settings;
-use sha2::{Sha256, Digest};
-use base64::{engine::general_purpose, Engine};
 use ndarray::Array1;
-use ndk_context::android_context;
-use jni::JNIEnv;
-use jni::objects::{JClass, JObject};
-use jni::sys::jstring;
 
 pub fn hash_filename(name: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(name);
-    let hash = hasher.finalize();
-
-    general_purpose::STANDARD.encode(hash)
+    let mut hasher = DefaultHasher::new();
+    name.hash(&mut hasher);
+    hasher.finish().to_string()
 }
+
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 pub fn init_db() -> Result<Connection> {
     let file = Settings::dir().join("tracks.db");
@@ -37,24 +28,21 @@ pub fn init_db() -> Result<Connection> {
 
     let conn = Connection::open(file)?;
 
-    if !db_exists {
-        info!("database creating!");
-        conn.execute(
-            "CREATE TABLE tracks (
-                file_hash TEXT PRIMARY KEY,
-                file_path TEXT NOT NULL,
-                title TEXT NOT NULL,
-                album TEXT NOT NULL,
-                artists TEXT NOT NULL,
-                genres TEXT NOT NULL,
-                mood TEXT,
-                trackno INTEGER NOT NULL,
-                year TEXT NOT NULL,
-                len REAL NOT NULL
-            )",
-            [],
-        )?;
-    }
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tracks (
+            file_hash TEXT PRIMARY KEY,
+            file_path TEXT NOT NULL,
+            title TEXT NOT NULL,
+            album TEXT NOT NULL,
+            artists TEXT NOT NULL,
+            genres TEXT NOT NULL,
+            mood TEXT,
+            trackno INTEGER NOT NULL,
+            year TEXT NOT NULL,
+            len REAL NOT NULL
+        )",
+        [],
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS weights (
@@ -118,7 +106,7 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
 pub fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
     let mut weights = vec![];
     let mut raw = [0; 4];
-    for i in (0..(blob.len()/4)) {
+    for i in 0..(blob.len()/4) {
         raw.copy_from_slice(&blob[i*4..i*4+4]);
         weights.push(f32::from_le_bytes(raw));
     }

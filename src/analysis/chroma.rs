@@ -1,14 +1,11 @@
 use rustfft::{FftPlanner, num_complex::Complex};
-use ndarray::{Array1, Array2, ArrayBase};
+use ndarray::{Array1, Array2};
 use ndarray_npy::ReadNpyExt;
-use aubio::FFT;
-use std::f32::consts::PI;
 
 const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../chroma.npy");
 
 pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
     let frame_size = 2048;
-    let num_coefficients = 12;
     let hop_size = 2048;
     let mut chroma_vectors = Vec::new();
     let chroma_weights = Array2::<f32>::read_npy(&E_WEIGHTS[..]).unwrap();
@@ -46,7 +43,7 @@ pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
             }
         }
 
-        chroma_vectors.push(chroma.into_raw_vec());
+        chroma_vectors.push(chroma.into_shape((13, )).unwrap());
     }
 
     let mut mean_chroma = Array1::zeros(13);
