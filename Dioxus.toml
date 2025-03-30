@@ -10,10 +10,7 @@ identifier = "com.example.Music"
 publisher = "Rhaskia"
 
 icon = [
-   "./assets/icons/icon32.png",
-   "./assets/icons/icon64.png",
    "./assets/icons/icon256.png",
-   "./assets/icons/favicon.ico"
 ]
 
 category = "Music"

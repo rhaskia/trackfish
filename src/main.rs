@@ -1,15 +1,15 @@
-pub mod app;
-pub mod gui;
-pub mod database;
 pub mod analysis;
+pub mod app;
+pub mod database;
+pub mod gui;
 
-use dioxus::{prelude::*, mobile::WindowBuilder};
+use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
-use log::{error, info};
-use tracing_log::LogTracer;
 use id3::Tag;
+use log::{error, info};
 use std::io::Cursor;
 use std::time::Instant;
+use tracing_log::LogTracer;
 
 use crate::document::eval;
 
@@ -18,8 +18,8 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 
+use app::{track::load_tracks, MusicController};
 use gui::*;
-use app::{MusicController, track::load_tracks};
 
 fn main() {
     // Hook panics into the logger to see them on android
@@ -43,17 +43,30 @@ fn init() {
     );
 
     info!("Starting up trackfish");
-    
+
     launch(App);
 }
 
 #[cfg(not(target_os = "android"))]
 fn init() {
+    use dioxus::mobile::tao::window::Icon;
+
     LogTracer::init().expect("Failed to initialize LogTracer");
 
     dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
 
-    let window = WindowBuilder::new().with_always_on_top(false);
+    let png = &include_bytes!("../assets/icons/icon256.png")[..];
+    let header = minipng::decode_png_header(png).expect("bad PNG");
+    let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
+    let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");
+    image.convert_to_rgba8bpc();
+    let pixels = image.pixels();
+    let icon = Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap();
+
+    let window = WindowBuilder::new()
+        .with_title("TrackFish")
+        .with_always_on_top(false)
+        .with_window_icon(Some(icon));
     let config = dioxus::desktop::Config::new().with_window(window);
     LaunchBuilder::new().with_cfg(config).launch(App);
 }
@@ -64,7 +77,7 @@ fn App() -> Element {
 
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => log::error!("{err:?}"),
         }
     });
@@ -73,7 +86,7 @@ fn App() -> Element {
         info!("{:?}", VIEW.read().current);
     });
 
-    use_future(move || async move { 
+    use_future(move || async move {
         let started = Instant::now();
         #[cfg(target_os = "android")]
         {
@@ -99,20 +112,34 @@ fn App() -> Element {
 
         let id = if let Ok(parsed) = request.uri().path().replace("/trackimage/", "").parse() {
             parsed
-        } else { responder.respond(r); return };
+        } else {
+            responder.respond(r);
+            return;
+        };
 
         // Retry once free
-        let path = if let Ok(Some(track)) = controller.try_read().and_then(|c| Ok(c.get_track(id).cloned())) { 
+        let path = if let Ok(Some(track)) =
+            controller.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
+        {
             track.file
-        } else { responder.respond(r); return };
+        } else {
+            responder.respond(r);
+            return;
+        };
 
         let tag = if let Ok(t) = Tag::read_from_path(path) {
             t
-        } else { responder.respond(r); return };
+        } else {
+            responder.respond(r);
+            return;
+        };
 
         let mut file = if let Some(picture) = tag.pictures().next() {
             Cursor::new(picture.data.clone())
-        } else { responder.respond(r); return };
+        } else {
+            responder.respond(r);
+            return;
+        };
 
         spawn(async move {
             match get_stream_response(&mut file, &request).await {

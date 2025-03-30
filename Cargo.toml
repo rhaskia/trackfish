@@ -30,6 +30,7 @@ rusqlite = { version = "0.34", features = ["bundled", "array"] }
 aubio = { version = "0.2.1"}
 rustfft = "6.2.0"
 tracing-android = "0.2.0"
+minipng = "0.1.1"
 
 [target.'cfg(target_os = "android")'.dependencies]
 crossbow = "0.2.3"

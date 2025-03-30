@@ -170,8 +170,8 @@ impl MusicController {
         weights = (weights - min) / (1.0 - min);
 
         let grad = -20.0;
-        let cutoff = 15;
-        weights = 1.0 / ((weights * a - cutoff).exp() + 1.0);
+        let cutoff = 15.0;
+        weights = 1.0 / (((weights * grad) + cutoff).exp() + 1.0);
 
         weights.clamp(0.0, 1.0);
 
