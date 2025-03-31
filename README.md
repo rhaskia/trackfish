@@ -6,7 +6,7 @@ Using ~tags on your mp3/wav/other files (which you may need to tag using picard/
 
 # To Do:
  - [x] Proper Album & Artist Views
-       - [ ] More View Information (time, artists, etc)
+      - [ ] More View Information (time, artists, etc)
  - [ ] Proper Search View
  - [x] Custom Music Folder
  - [ ] Basic Settings (Shuffle, Queue, etc)
@@ -14,11 +14,11 @@ Using ~tags on your mp3/wav/other files (which you may need to tag using picard/
     - [ ] Exceptions for albums, artists from shuffle
     - [ ] View Settings
  - [ ] More Weighting
-       - [ ] Spectral
-       - [x] Chroma
-       - [x] MFCC
-       - [ ] Energy
+      - [ ] Spectral
+      - [x] Chroma
+      - [x] MFCC
+      - [ ] Energy
  - [ ] Theming
  - [ ] More Queue Management
-       - [ ] Locked Queues/Temp Queues
-       - [ ] Drag and Drop
+      - [ ] Locked Queues/Temp Queues
+      - [ ] Drag and Drop
