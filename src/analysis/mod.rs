@@ -1,5 +1,6 @@
 mod chroma;
 mod mfcc;
+mod spectral;
 pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
@@ -18,10 +19,10 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     
     let started = Instant::now();
     let (mut samples, sample_rate) = load_samples(&track.file);
-    if cfg!(target_os = "android") {
-        let duration_used = 10.0;
-        samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
-    }
+    // if cfg!(target_os = "android") {
+        // let duration_used = 10.0;
+        // samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
+    // }
     info!("samples loaded in {:?}", started.elapsed());
 
     let started = Instant::now();
@@ -45,9 +46,9 @@ pub fn load_samples(file_path: &str) -> (Vec<f32>, u32) {
     let sample_rate = source.sample_rate();
     info!("{sample_rate}");
     let started = Instant::now();
-    // let samples: Vec<i16> = source.take(sample_rate as usize * 10).collect();
-    // let samples: Vec<f32> = samples.into_iter().map(|n| n as f32).collect();
-    let samples: Vec<f32> = source.convert_samples().collect();
+    let samples: Vec<i16> = source.take(sample_rate as usize * 10).collect();
+    let samples: Vec<f32> = samples.into_iter().map(|n| n as f32).collect();
+    // let samples: Vec<f32> = source.convert_samples().collect();
     info!("samples calculated in {:?}", started.elapsed());
 
     info!("Total samples: {}", samples.len());
