@@ -4,6 +4,7 @@ mod spectral;
 pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
+pub use spectral::extract_spectral;
 
 use std::fs::File;
 use std::io::BufReader;
@@ -18,11 +19,7 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let genre_space = encoder.encode(genre_vec);
     
     let started = Instant::now();
-    let (mut samples, sample_rate) = load_samples(&track.file);
-    // if cfg!(target_os = "android") {
-        // let duration_used = 10.0;
-        // samples = samples[0..(sample_rate as f32 * duration_used) as usize].to_vec();
-    // }
+    let (mut samples, sample_rate) = load_samples(&track.file, Some(10.0));
     info!("samples loaded in {:?}", started.elapsed());
 
     let started = Instant::now();
@@ -38,7 +35,7 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     TrackInfo { genre_space, mfcc, chroma, bpm: 100, key: 0 }
 }
 
-pub fn load_samples(file_path: &str) -> (Vec<f32>, u32) {
+pub fn load_samples(file_path: &str, duration: Option<f32>) -> (Vec<f32>, u32) {
     let file = File::open(file_path).unwrap();
     let source = Decoder::new(BufReader::new(file)).unwrap();
 
@@ -46,9 +43,13 @@ pub fn load_samples(file_path: &str) -> (Vec<f32>, u32) {
     let sample_rate = source.sample_rate();
     info!("{sample_rate}");
     let started = Instant::now();
-    let samples: Vec<i16> = source.take(sample_rate as usize * 10).collect();
-    let samples: Vec<f32> = samples.into_iter().map(|n| n as f32).collect();
-    // let samples: Vec<f32> = source.convert_samples().collect();
+    let samples: Vec<f32> = if let Some(duration) = duration {
+        let samples: Vec<i16> = source.take((sample_rate as f32 * duration) as usize ).collect();
+        samples.into_iter().map(|n| n as f32).collect()
+    } else {
+        source.convert_samples().collect()
+    };
+
     info!("samples calculated in {:?}", started.elapsed());
 
     info!("Total samples: {}", samples.len());
