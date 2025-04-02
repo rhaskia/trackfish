@@ -1,10 +1,12 @@
 mod chroma;
 mod mfcc;
+mod tempo;
 mod spectral;
 pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
 pub use spectral::extract_spectral;
+pub use tempo::extract_tempo;
 
 use std::fs::File;
 use std::io::BufReader;
@@ -30,9 +32,14 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let chroma = extract_mfcc(&samples, sample_rate);
     info!("chroma calculated in {:?}", started.elapsed());
 
-    // let energy = estratto::get_rms(&samples);
+    let started = Instant::now();
+    let spectral = extract_spectral(&samples, sample_rate);
+    info!("spectral calculated in {:?}", started.elapsed());
 
-    TrackInfo { genre_space, mfcc, chroma, bpm: 100, key: 0 }
+    let energy = 1.0;
+    let bpm = extract_tempo(&samples, sample_rate);
+
+    TrackInfo { genre_space, mfcc, chroma, spectral, bpm, energy, key: 0 }
 }
 
 pub fn load_samples(file_path: &str, duration: Option<f32>) -> (Vec<f32>, u32) {

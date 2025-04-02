@@ -5,7 +5,6 @@ fn main() {
 
     let spec = extract_spectral(&samples, sample_rate);
     let mean = spec.sum() / spec.len() as f32;
-    let spec = spec / mean;
     println!("{spec}");
 
     std::fs::write("./spec.txt", spec.map(|weight| weight.to_string()).to_vec().join("\n"));

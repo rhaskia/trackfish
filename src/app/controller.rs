@@ -11,7 +11,7 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
 use super::settings::Settings;
-use crate::database::{init_db, save_track_weights, hash_filename, blob_to_array};
+use crate::database::{init_db, save_track_weights, hash_filename, blob_to_array, row_to_weights};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
@@ -68,12 +68,8 @@ impl MusicController {
         let mut result: Rows = stmt.query(params!()).unwrap();
         let mut weights: HashMap<String, TrackInfo> = HashMap::new();
         while let Ok(Some(row)) = result.next() {
-            let hash: String = row.get(0).unwrap();
-            let genre_space = blob_to_array(row.get(1).unwrap());
-            let mfcc = blob_to_array(row.get(2).unwrap());
-            let chroma = blob_to_array(row.get(3).unwrap());
-
-            weights.insert(hash, TrackInfo { genre_space, mfcc, chroma, bpm: 0, key: 0 });
+            let hash = row.get(0).unwrap();
+            weights.insert(hash, row_to_weights(&row).unwrap());
         }
 
         let (mut albums, mut artists, mut genres) = (HashMap::new(), HashMap::new(), HashMap::new());
@@ -174,6 +170,12 @@ impl MusicController {
         weights = 1.0 / (((weights * grad) + cutoff).exp() + 1.0);
 
         weights.clamp(0.0, 1.0);
+        
+        for weight in &mut weights {
+            if weight.is_nan() {
+                *weight = 0.0;
+            }
+        }
 
         // for i in 0..self.all_tracks.len() {
         //     let current_idx = self.current_queue().current();

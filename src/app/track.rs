@@ -299,8 +299,10 @@ pub struct TrackInfo {
     pub genre_space: Array1<f32>,
     pub mfcc: Array1<f32>,
     pub chroma: Array1<f32>,
+    pub spectral: Array1<f32>,
+    pub energy: f32,
     pub key: i32,
-    pub bpm: i32,
+    pub bpm: f32,
 }
 
 impl TrackInfo {

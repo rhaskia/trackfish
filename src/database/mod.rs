@@ -5,6 +5,7 @@ use rusqlite::{
     Result,
     ToSql,
     OptionalExtension,
+    Row,
     types::{ToSqlOutput, FromSql, Value, ValueRef, FromSqlResult, FromSqlError}
 };
 
@@ -49,7 +50,11 @@ pub fn init_db() -> Result<Connection> {
             file_hash TEXT PRIMARY KEY,
             genre_space BLOB,
             mfcc BLOB,
-            chroma BLOB
+            spectral BLOB,
+            chroma BLOB,
+            energy FLOAT,
+            key INT,
+            bpm INT
         ) ", [])?;
 
     Ok(conn)
@@ -95,10 +100,19 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
     let genre_blob: Vec<u8> = to_blob(&weights.genre_space);
     let mfcc_blob: Vec<u8> = to_blob(&weights.mfcc);
     let chroma_blob: Vec<u8> = to_blob(&weights.chroma);
+    let spectral_blob: Vec<u8> = to_blob(&weights.spectral);
 
     conn.execute(
-        "INSERT OR REPLACE INTO weights (file_hash, genre_space, mfcc, chroma) VALUES (?1, ?2, ?3, ?4)",
-        params![file_hash, genre_blob, mfcc_blob, chroma_blob])?;
+        "INSERT OR REPLACE INTO weights 
+        (file_hash,
+         genre_space,
+         mfcc,
+         chroma,
+         spectral,
+         energy,
+         key,
+         bpm) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![file_hash, genre_blob, mfcc_blob, chroma_blob, spectral_blob, weights.energy, weights.key, weights.bpm])?;
 
     Ok(())
 }
@@ -120,12 +134,20 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
     let mut stmt = conn.prepare("SELECT * FROM weights WHERE file_hash = ?1")?;
     
     stmt.query_row(params![file_hash], |row| {
-        let genre_space = blob_to_array(row.get(1)?);
-        let mfcc = blob_to_array(row.get(2)?);
-        let chroma = blob_to_array(row.get(3)?);
-
-        Ok(TrackInfo { genre_space, mfcc, chroma, bpm: 100, key: 0 })
+        row_to_weights(&row)
     })
+}
+
+pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
+    let genre_space = blob_to_array(row.get(1)?);
+    let mfcc = blob_to_array(row.get(2)?);
+    let chroma = blob_to_array(row.get(3)?);
+    let spectral = blob_to_array(row.get(4)?);
+    let energy = row.get(5)?;
+    let key = row.get(6)?;
+    let bpm = row.get(7)?;
+
+    Ok(TrackInfo { genre_space, mfcc, chroma, spectral, energy, key, bpm })
 }
 
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
