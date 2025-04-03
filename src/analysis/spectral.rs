@@ -6,7 +6,6 @@ pub fn extract_spectral(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {
     let num_coefficients = 13;
 
     let num_blocks = (buffer.len() as f32 / fft_size as f32).floor() as usize;
-    println!("{}", buffer.len());
 
     let mut fft = FFT::new(fft_size).map_err(|e| e.to_string()).unwrap();
     let mut fft_scratch: Vec<f32> = vec![0.0; fft_size];

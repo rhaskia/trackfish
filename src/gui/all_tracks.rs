@@ -61,7 +61,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
     let mut search = use_signal(String::new);
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());
-        log::info!("{search}");
+        log::info!("searching {search}");
         if search.is_empty() {
             Vec::new()
         } else {
@@ -77,6 +77,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
             class: "searchholder",
             onclick: move |_| is_searching.set(false),
             div { flex: 1 }
+            div { "{matches:?}" }
             div {
                 class: "searchpopup",
                 div {

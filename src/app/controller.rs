@@ -140,13 +140,14 @@ impl MusicController {
 
         self.current_started = Instant::now();
 
-        println!("{:?}", &self.all_tracks[idx].file);
+        info!("{:?}", &self.all_tracks[idx].file);
         self.player.play_track(&self.all_tracks[idx].file);
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
         let space = self.track_info[self.current_queue().cached_order[0]].clone();
+        println!("{:?}", space);
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
         let mut dists: Vec<(usize, f32)> = self
@@ -155,25 +156,36 @@ impl MusicController {
             .map(|track| genres_dist_from_vec(&track, &space))
             .enumerate()
             .collect();
-        dists.sort_by(|(_, a), (_, b)| a.total_cmp(b));
+        dists.sort_by(|(_, a), (_, b)| b.total_cmp(a));
 
         let mut min = 1.0;
         for (rank, (song, distance)) in dists.iter().enumerate() {
-            weights[*song] = *distance;
+            if rank == 0 { continue; }
+            weights[*song] = 10.0 / rank as f32;
+            if rank < 20 {
+                info!("{distance}");
+            }
             if *distance < min { min = *distance; }
         }
 
-        weights = (weights - min) / (1.0 - min);
-
-        let grad = -20.0;
-        let cutoff = 15.0;
-        weights = 1.0 / (((weights * grad) + cutoff).exp() + 1.0);
-
         weights.clamp(0.0, 1.0);
+        weights = weights.pow2();
+
+        // weights = (weights - min) / (1.0 - min);
+
+        // let grad = -7.0;
+        // let cutoff = 98.8;
+        // weights *= 100.0;
+        //weights = 1.0 / (((weights * grad) + cutoff).exp() + 1.0);
+
         
         for weight in &mut weights {
             if weight.is_nan() {
                 *weight = 0.0;
+            }
+
+            if *weight > 1.0 {
+                *weight = 1.0;
             }
         }
 
@@ -302,6 +314,7 @@ impl MusicController {
             tracks = shuffle_with_first(tracks, track);
         }
 
+        info!("{track}");
         let track_idx = tracks.iter().position(|e| *e == track).unwrap();
 
         for i in 0..self.queues.len() {
@@ -446,5 +459,5 @@ impl MusicController {
 }
 
 pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo) -> f32 {
-    (cosine_similarity(lhs.mfcc.clone(), rhs.chroma.clone()) + cosine_similarity(lhs.chroma.clone(), rhs.chroma.clone())) / 2.0
+    (cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone()) + cosine_similarity(lhs.chroma.clone(), rhs.chroma.clone())) / 2.0
 }

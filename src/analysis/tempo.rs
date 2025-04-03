@@ -3,16 +3,15 @@ use aubio::{Tempo, FFT, OnsetMode, SpecDesc};
 
 pub fn extract_tempo(buffer: &Vec<f32>, sample_rate: u32) -> f32 {
     let fft_size = 1024;
-    let hop_size = 1024;
+    let hop_size = 512;
     let num_coefficients = 13;
 
     let num_blocks = (buffer.len() as f32 / fft_size as f32).floor() as usize;
-    println!("{}", buffer.len());
 
     let mut fft = FFT::new(fft_size).map_err(|e| e.to_string()).unwrap();
     let mut fft_scratch: Vec<f32> = vec![0.0; fft_size];
 
-    let mut spec = Tempo::new(OnsetMode::Energy, fft_size, hop_size, sample_rate).unwrap();
+    let mut spec = Tempo::new(OnsetMode::Energy, fft_size, hop_size, sample_rate as u32).unwrap();
     let mut mean_spec: Vec<f32> = vec![0.0; num_coefficients];
     let mut spec_scratch: Vec<f32> = vec![0.0; num_coefficients];
     let mut spec_vec = vec![];

@@ -40,7 +40,11 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
                     div {
                         class: "thinitem",
                         onclick: move |_| set_album(albums.read()[i].0.clone()),
-                        span { "{albums.read()[i].0}" }
+                        if albums.read()[i].0.is_empty() {
+                            span { "Unknown Album" }
+                        } else {
+                            span { "{albums.read()[i].0}" }
+                        }
                         br {}
                         small { "{albums.read()[i].1} songs" }
                     }
@@ -150,7 +154,7 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
 
                 for i in 0..artists.read().len() {
                     div { class: "thinitem",
-                        onclick: move |_| set_artist(artists.read()[i].clone().0),
+                        onclick: move |_| set_artist(artists.read()[i].clone().1.0),
                         "{artists.read()[i].1.0}"
                         br {}
                         small { "{artists.read()[i].1.1} songs" }

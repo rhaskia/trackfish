@@ -22,12 +22,35 @@ pub fn hash_filename(name: &str) -> String {
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+pub fn table_outdated(conn: &Connection, table: &str) -> bool {
+    let result = conn.prepare(&format!("
+        SELECT * FROM {table}
+    ")).unwrap();
+
+    let columns_needed = vec!["file_hash", "genre_space", "spectral", "chroma", "energy", "key", "bpm"];
+
+    if columns_needed.len() != result.column_count() { return false; }
+
+    for (a, b) in result.column_names().into_iter().zip(columns_needed) {
+        if a != b {
+            info!("column {a} does not match needed column {b}");
+            return true;
+        }
+    }
+
+    false
+}
+
 pub fn init_db() -> Result<Connection> {
     let file = Settings::dir().join("tracks.db");
     let db_exists = file.exists();
     info!("Database exists at {file:?}: {db_exists}");
 
     let conn = Connection::open(file)?;
+
+    if table_outdated(&conn, "weights") {
+        conn.execute("DROP TABLE weights", params![]).expect("Could not drop table weights");
+    }
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS tracks (
