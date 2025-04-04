@@ -23,9 +23,12 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 pub fn table_outdated(conn: &Connection, table: &str) -> bool {
-    let result = conn.prepare(&format!("
+    let result = match conn.prepare(&format!("
         SELECT * FROM {table}
-    ")).unwrap();
+    ")) {
+        Ok(res) => res,
+        Err(_) => return false,
+    };
 
     let columns_needed = vec!["file_hash", "genre_space", "spectral", "chroma", "energy", "key", "bpm"];
 

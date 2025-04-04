@@ -6,10 +6,23 @@ use serde::{Serialize, Deserialize};
 pub struct Settings {
     pub volume: f32,
     pub directory: String,
-    pub radio_temp: f32,
-    pub radio_album_penalty: f32,
-    pub radio_artist_penalty: f32,
-    pub shuffle: bool,
+    pub radio: RadioSettings,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
+pub struct RadioSettings {
+    pub temp: f32,
+    pub album_penalty: f32,
+    pub artist_penalty: f32,
+    pub weight_mode: WeightMode,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Clone, Default)]
+pub enum WeightMode {
+    #[default]
+    First,
+    Average, 
+    Last
 }
 
 impl Default for Settings {
@@ -33,10 +46,18 @@ impl Default for Settings {
         Self { 
             volume: 1.0,
             directory,
-            radio_temp: 0.1,
-            radio_album_penalty: 0.7,
-            radio_artist_penalty: 0.7,
-            shuffle: false
+            radio: RadioSettings::default()
+        }
+    }
+}
+
+impl Default for RadioSettings {
+    fn default() -> Self {
+        Self {
+            temp: 0.7,
+            album_penalty: 0.2,
+            artist_penalty: 0.7,
+            weight_mode: WeightMode::default()
         }
     }
 }
@@ -66,9 +87,5 @@ impl Settings {
         let file = toml::to_string(&self).unwrap();
         std::fs::create_dir(Self::dir());
         std::fs::write(Self::dir().join("settings.toml"), file).unwrap();
-    }
-
-    pub fn toggle_shuffle(&mut self) {
-        self.shuffle = !self.shuffle
     }
 }

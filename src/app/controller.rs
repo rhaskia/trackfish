@@ -24,6 +24,7 @@ pub struct MusicController {
     pub genres: HashMap<String, usize>,
     pub albums: HashMap<String, usize>,
     pub listens: Vec<Listen>,
+    pub shuffle: bool,
     current_started: Instant,
 
     pub current_queue: usize,
@@ -49,6 +50,7 @@ impl MusicController {
             player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
+            shuffle: false,
         }
     }
 
@@ -115,6 +117,7 @@ impl MusicController {
             player: AudioPlayer::new(),
             encoder,
             settings: Settings::load(),
+            shuffle: false,
         };
 
         info!("Calculated weights in {:?}", started.elapsed());
@@ -168,7 +171,7 @@ impl MusicController {
             if *distance < min { min = *distance; }
         }
 
-        weights.clamp(0.0, 1.0);
+        weights.clamp(0.0, 100.0);
         weights = weights.pow2();
 
         // weights = (weights - min) / (1.0 - min);
@@ -182,10 +185,6 @@ impl MusicController {
         for weight in &mut weights {
             if weight.is_nan() {
                 *weight = 0.0;
-            }
-
-            if *weight > 1.0 {
-                *weight = 1.0;
             }
         }
 
@@ -310,7 +309,7 @@ impl MusicController {
     }
 
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
-        if self.settings.shuffle {
+        if self.shuffle {
             tracks = shuffle_with_first(tracks, track);
         }
 
@@ -352,6 +351,10 @@ impl MusicController {
             .map(|(idx, _)| idx)
             .collect()
     }
+
+    pub fn toggle_shuffle(&mut self) {
+        self.shuffle = !self.shuffle
+    }
 }
 
 pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
@@ -384,7 +387,7 @@ impl MusicController {
     }
 
     pub fn set_temp(&mut self, temp: f32) {
-        self.settings.radio_temp = temp;
+        self.settings.radio.temp = temp;
         self.settings.save();
     }
 }

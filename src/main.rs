@@ -172,7 +172,7 @@ fn App() -> Element {
             },
             TrackView { controller }
             QueueList { controller }
-            AllTracks { controller }
+            // AllTracks { controller }
             GenreList { controller }
             ArtistList { controller }
             AlbumsList { controller }

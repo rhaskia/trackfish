@@ -5,15 +5,21 @@ Using ~tags on your mp3/wav/other files (which you may need to tag using picard/
 
 # To Do:
  - [x] Proper Album & Artist Views
-      - [ ] More View Information (time, artists, etc)
+      - [ ] More view information (time, artists, etc)
+      - [ ] Track settings (play, play after, start radio)
  - [ ] Proper Search View
+ - [ ] Shuffle/Unshuffle
  - [x] Custom Music Folder
+ - [ ] Autoplaylists
+    - [ ] Basics that foobar would have
+    - [ ] Sort by audio features
  - [ ] Basic Settings (Shuffle, Queue, etc)
  - [ ] Comprehensive Settings
     - [ ] Exceptions for albums, artists from shuffle
     - [ ] View Settings
+    - [ ] End of queue action
  - [ ] More Weighting
-      - [ ] Spectral
+      - [x] Spectral
       - [x] Chroma
       - [x] MFCC
       - [ ] Energy

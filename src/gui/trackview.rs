@@ -135,8 +135,8 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                     button {
                         class: "shuffle-button",
                         class: "svg-button",
-                        class: if controller.read().settings.shuffle { "shuffle-on" },
-                        onclick: move |_| controller.write().settings.toggle_shuffle(),
+                        class: if controller.read().shuffle { "shuffle-on" },
+                        onclick: move |_| controller.write().toggle_shuffle(),
                     }
                 }
             }
