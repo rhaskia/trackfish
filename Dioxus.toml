@@ -10,6 +10,7 @@ identifier = "com.example.Music"
 publisher = "Rhaskia"
 
 icon = [
+    "./assets/icons/favicon.svg",
    "./assets/icons/icon256.png",
 ]
 
@@ -24,5 +25,5 @@ tsp = true
 allow_downgrades = true
 
 [bundle.windows.webview_install_mode.DownloadBootstrapper]
-silent = true
+silent = false
 

@@ -48,7 +48,7 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
                 background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
             }
             div { class: "imageview",
-                img { src: "/trackimage/{controller.read().current_track_idx()}" }
+                img { src: "/trackimage/{controller.read().current_track_idx()}", loading: "lazy" }
             }
             div {
                 class: "trackoptions",

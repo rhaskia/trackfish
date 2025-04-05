@@ -118,8 +118,8 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                         };
                         VIEW.write().open(View::Song);
                     },
-                    img { src: "/trackimage/{track}" }
-                    span { "{controller.read().get_track(track).unwrap().title}" }
+                    img { src: "/trackimage/{track}", loading: "lazy" }
+                    "{controller.read().get_track(track).unwrap().title}"
                 }
             }
         }

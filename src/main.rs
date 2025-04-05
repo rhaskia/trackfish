@@ -38,6 +38,9 @@ fn main() {
 
 #[cfg(target_os = "android")]
 fn init() {
+    use android_logger::Config;
+    use log::LevelFilter;
+
     android_logger::init_once(
         Config::default().with_max_level(LevelFilter::Trace).with_tag("com.example.Music"),
     );
@@ -143,7 +146,9 @@ fn App() -> Element {
 
         spawn(async move {
             match get_stream_response(&mut file, &request).await {
-                Ok(response) => responder.respond(response),
+                Ok(response) => {
+                    responder.respond(response);
+                } 
                 Err(err) => error!("Error: {:?}", err),
             }
         });

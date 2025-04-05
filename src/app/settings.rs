@@ -1,5 +1,5 @@
 use std::{path::PathBuf, str::FromStr};
-
+use log::info;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
@@ -65,14 +65,16 @@ impl Default for RadioSettings {
 impl Settings {
     pub fn dir() -> PathBuf {
         if cfg!(target_os = "android") { 
-            PathBuf::from_str("/data/data/com.example.Music/").unwrap()
+            cache_dir::get_cache_dir().unwrap()
         } else {
             dirs::config_dir().unwrap().join("trackfish/")
         }
     }
 
     pub fn load() -> Self {
-        let file = std::fs::read_to_string(Self::dir().join("settings.toml")).unwrap_or_default();
+        let dir = Self::dir().join("settings.toml");
+        info!("loading settings from {dir:?}");
+        let file = std::fs::read_to_string(dir).unwrap_or_default();
         match toml::from_str(&file) {
             Ok(config) => config,
             Err(_) => {
