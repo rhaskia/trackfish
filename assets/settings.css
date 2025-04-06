@@ -13,3 +13,11 @@
     width: 150px;
     display: inline;
 }
+
+.settingsheader {
+    margin: 7px;
+    margin-bottom: 0px;
+    padding: 3px;
+    padding-bottom: 10px;
+    border-bottom: 1px grey solid;
+}

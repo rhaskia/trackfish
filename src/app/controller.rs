@@ -353,6 +353,33 @@ impl MusicController {
     }
 
     pub fn toggle_shuffle(&mut self) {
+        if self.shuffle {
+            // unshuffle queues
+            for queue in &mut self.queues {
+                let current = queue.cached_order[queue.current_track];
+
+                match queue.queue_type {
+                    QueueType::Radio(_, _) => {},
+                    QueueType::Album(_) => queue.cached_order.sort_by(|a, b| self.all_tracks[*a].trackno.cmp(&self.all_tracks[*b].trackno)),
+                    _ => queue.cached_order.sort_by(|a, b| a.cmp(b)),
+                }
+                
+                // Keep same track playing
+                let new_idx = queue.cached_order.iter().position(|n| *n == current);
+                queue.current_track = new_idx.unwrap_or(0);
+            } 
+        } else {
+            for queue in &mut self.queues {
+                if let QueueType::Radio(_, _) = queue.queue_type {
+                    // Painful to try and unshuffle radio queues
+                    continue;
+                }
+
+                queue.cached_order = shuffle_with_first(queue.cached_order.clone(), queue.current());
+                queue.current_track = 0;
+            }
+        }
+
         self.shuffle = !self.shuffle
     }
 }

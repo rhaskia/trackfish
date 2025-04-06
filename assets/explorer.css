@@ -103,8 +103,8 @@
 }
 
 .tracklist .current {
-    border: 1px solid var(--accent);
     border-radius: 8px;
+    background: #ffffff11;
 }
 
 .thinitem small {

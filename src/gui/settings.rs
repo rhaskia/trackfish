@@ -10,7 +10,7 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
         div {
             display: if VIEW.read().current != View::Settings { "none" },
             class: "settingsview",
-            h2 { "Settings" }
+            h2 { class: "settingsheader", "Settings" }
             div {
                 span { "Music Directory" }
                 br { }

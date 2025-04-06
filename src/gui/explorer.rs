@@ -68,23 +68,23 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
         _ => unreachable!(),
     });
 
-    let mut tracks = use_signal(move || {
-        controller.read().get_tracks_where(|t| match viewtype() {
+    let mut tracks = use_memo(move || {
+        let mut tracks = controller.read().get_tracks_where(|t| match viewtype() {
             View::Albums => similar(&t.album, &name.read()),
             View::Artists => t.has_artist(&name.read()),
             View::Genres => t.has_genre(&name.read()),
             _ => unreachable!(),
-        })
-    });
+        });
 
-    use_future(move || async move {
-        if View::Albums == viewtype() {
-            tracks.write().sort_by(|a, b| {
+        if viewtype() == View::Albums {
+            tracks.sort_by(|a, b| {
                 controller.read().all_tracks[*a]
                     .trackno
                     .cmp(&controller.read().all_tracks[*b].trackno)
             });
         }
+
+        tracks
     });
 
     rsx! {
@@ -119,7 +119,7 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                         VIEW.write().open(View::Song);
                     },
                     img { src: "/trackimage/{track}", loading: "lazy" }
-                    "{controller.read().get_track(track).unwrap().title}"
+                    span { "{controller.read().get_track(track).unwrap().title}" }
                 }
             }
         }
