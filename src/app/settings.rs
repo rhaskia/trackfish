@@ -85,6 +85,12 @@ impl Settings {
         }
     }
 
+    pub fn exists() -> bool {
+        let dir = Self::dir().join("settings.toml");
+        println!("{}", dir.exists());
+        dir.exists()
+    }
+
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
         std::fs::create_dir(Self::dir());

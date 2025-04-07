@@ -47,7 +47,7 @@ fn init() {
 
     info!("Starting up trackfish");
 
-    launch(App);
+    launch(SetUpRoute);
 }
 
 #[cfg(not(target_os = "android"))]
@@ -71,7 +71,33 @@ fn init() {
         .with_always_on_top(false)
         .with_window_icon(Some(icon));
     let config = dioxus::desktop::Config::new().with_window(window);
-    LaunchBuilder::new().with_cfg(config).launch(App);
+    LaunchBuilder::new().with_cfg(config).launch(SetUpRoute);
+}
+
+#[component]
+fn SetUpRoute() -> Element {
+    use trackfish::app::settings::Settings;
+    let set_up = use_signal(Settings::exists);
+
+    rsx! {
+        if set_up() {
+            App {}
+        } else {
+            label {
+                r#for: "directory",
+                "Select music directory:"
+            }
+            br {}
+            input { 
+                id: "directory",
+                onchange: |e| info!("{e:?}"),
+            }
+            // Other options
+            br {}
+            br {}
+            button { "Confirm" }
+        }
+    }
 }
 
 #[component]
