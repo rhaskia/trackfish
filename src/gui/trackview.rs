@@ -45,10 +45,10 @@ pub fn TrackView(controller: Signal<MusicController>) -> Element {
             },
             display: if VIEW.read().current != View::Song { "none" },
             div { class: "trackblur",
-                background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
+                // background_image: "url(/trackimage/{controller.read().current_track_idx()})" 
             }
             div { class: "imageview",
-                img { src: "/trackimage/{controller.read().current_track_idx()}", loading: "lazy" }
+                // img { src: "/trackimage/{controller.read().current_track_idx()}", loading: "lazy" }
             }
             div {
                 class: "trackoptions",

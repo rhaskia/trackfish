@@ -6,12 +6,29 @@
 .settingsview {
     display: flex;
     padding: 10px;
+    flex-direction: column;
+}
+
+.settingsmenu {
+    display: flex;
     flex-direction: row;
 }
 
 .settingsview span {
     width: 150px;
     display: inline;
+}
+
+.settingsbutton {
+    color: white;
+    min-height: 30px;
+    margin: 0 10px;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    border-bottom: 1px grey solid;
+    text-align: left;
+    font-size: 18px;
 }
 
 .settingsheader {
@@ -21,3 +38,4 @@
     padding-bottom: 10px;
     border-bottom: 1px grey solid;
 }
+
