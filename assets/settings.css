@@ -16,6 +16,7 @@
     margin: auto;
     max-width: 900px;
     width: 100%;
+    margin-top: 30px;
 }
 
 .settingslistbutton {
@@ -74,11 +75,19 @@
 }
 
 input[type=text] {
-    border: 1px solid white;
+    border: 1px solid grey;
     background: none;
     color: white;
     padding-left: 5px;
     border-radius: 5px
+}
+
+input[type=text]:active {
+    border: 1px solid white;
+}
+
+input[type=text]:hover {
+    border: 1px solid lightgrey;
 }
 
 input[type=checkbox] {
@@ -128,7 +137,7 @@ input[type=checkbox]:hover {
 }
 
 input[type=checkbox]:checked {
-    background-color: #4da6ff;
+    background-color: cornflowerblue;
 }
 
 input[type=checkbox]:checked::after {
@@ -180,3 +189,13 @@ input[type=checkbox]:checked::after {
   }
 }
 
+.smalltextinput {
+    width: 25px;
+    margin-left: 10px;
+}
+
+.settingsinput {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}

@@ -34,7 +34,8 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
                 "{display_time(total_time())} total duration"
             }
             div { class: "tracklist",
-                for i in 0..controller.read().all_tracks.len() {
+                // extremely slow to load all tracks
+                for i in 0..controller.read().all_tracks.len().min(100) {
                     div {
                         class: "trackitem",
                         id: "trackitem-{i}",

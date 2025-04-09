@@ -50,26 +50,28 @@ fn init() {
     launch(SetUpRoute);
 }
 
-#[cfg(not(target_os = "android"))]
-fn init() {
-    use dioxus::mobile::tao::window::Icon;
+use dioxus::mobile::tao::window::Icon;
 
-    LogTracer::init().expect("Failed to initialize LogTracer");
-
-    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
-
+fn load_image() -> Icon {
     let png = &include_bytes!("../assets/icons/icon256.png")[..];
     let header = minipng::decode_png_header(png).expect("bad PNG");
     let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
     let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");
     image.convert_to_rgba8bpc();
     let pixels = image.pixels();
-    let icon = Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap();
+    Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap()
+}
+
+#[cfg(not(target_os = "android"))]
+fn init() {
+    LogTracer::init().expect("Failed to initialize LogTracer");
+
+    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
 
     let window = WindowBuilder::new()
         .with_title("TrackFish")
         .with_always_on_top(false)
-        .with_window_icon(Some(icon));
+        .with_window_icon(Some(load_image()));
     let config = dioxus::desktop::Config::new().with_window(window);
     LaunchBuilder::new().with_cfg(config).launch(SetUpRoute);
 }
