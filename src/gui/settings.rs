@@ -5,54 +5,41 @@ use std::fmt::{Display, Formatter};
 
 #[component]
 pub fn Settings(controller: Signal<MusicController>) -> Element {
-    let mut settings_menu = use_signal(|| None);
+    let mut settings_menu = use_signal(|| SettingsMenu::Audio);
+    let mut extended_list = use_signal(|| false);
 
     rsx!{
         div {
             display: if VIEW.read().current != View::Settings { "none" },
             class: "settingsview",
-            match settings_menu() {
-                Some(menu) => match menu {
-                    SettingsMenu::Radio => rsx!{ RadioSettings { controller } },
-                    _ => rsx!{}
-                }
-                None => {
-                    rsx!{
-                        h2 {
-                            class: "settingsheader",
-                            "Settings"
-                        }
-                        button {
-                            class: "settingsbutton",
-                            onclick: move |_| settings_menu.set(Some(SettingsMenu::Radio)),
-                            "Radio Settings"
-                        }
-                        button {
-                            class: "settingsbutton",
-                            onclick: move |_| settings_menu.set(Some(SettingsMenu::Audio)),
-                            "Audio"
-                        }
-                        button {
-                            class: "settingsbutton",
-                            onclick: move |_| settings_menu.set(Some(SettingsMenu::Library)),
-                            "Song library"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-fn SettingsHeader(menu: Signal<SettingsMenu>) -> Element {
-    rsx!{
-        div {
-            class: "settingsheader",
             button {
-                "Exit"
+                class: "settingslistbutton",
+                onclick: move |_| extended_list.set(!extended_list()),
             }
-            "{menu}"
+            div {
+                class: "settingslist", 
+                class: if !extended_list() { "closed" },
+                button {
+                    class: "settingsbutton",
+                    onclick: move |_| settings_menu.set(SettingsMenu::Audio),
+                    "Audio"
+                }
+                button {
+                    class: "settingsbutton",
+                    onclick: move |_| settings_menu.set(SettingsMenu::Radio),
+                    "Radio Settings"
+                }
+                button {
+                    class: "settingsbutton",
+                    onclick: move |_| settings_menu.set(SettingsMenu::Library),
+                    "Song library"
+                }
+            }
+            match settings_menu() {
+                SettingsMenu::Radio => rsx!{ RadioSettings { controller } },
+                SettingsMenu::Library => rsx!{ LibrarySettings { controller } },
+                SettingsMenu::Audio => rsx!{ AudioSettings { controller } },
+            }
         }
     }
 }
@@ -67,8 +54,8 @@ enum SettingsMenu {
 impl Display for SettingsMenu {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
-            SettingsMenu::Radio => f.write_str("Audio Settings"),
-            SettingsMenu::Audio => f.write_str("Radio Settings"),
+            SettingsMenu::Radio => f.write_str("Radio Settings"),
+            SettingsMenu::Audio => f.write_str("Audio Settings"),
             SettingsMenu::Library => f.write_str("Track Library"),
         }
     }
@@ -81,16 +68,16 @@ fn AudioSettings(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
             class: "settingsmenu",
+            h2 { class: "settingsbar", "Audio" }
             div {
+                class: "settingbox",
                 span { "Volume" } 
-            }
-            div {
-                display: "flex",
-                flex_direction: "column",
                 input {
                     r#type: "range",
-                    value: "{volume}",
-                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap() / 100.0)
+                    max: "1",
+                    step: "0.01",
+                    value: "{controller.read().settings.volume}",
+                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap())
                 }
             }
         }
@@ -102,22 +89,46 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
     rsx!{
         div {
             class: "settingsmenu",
+            h2 { class: "settingsbar", "Audio" }
             div {
-                span { "Music Directory" }
-                br { }
-                span { "Radio Temperature" } 
-            }
-            div {
-                display: "flex",
-                flex_direction: "column",
-                input { 
-                    onchange: move |e| controller.write().set_directory(e.value()),
+                class: "settingbox",
+                span {
+                    "Radio Temperature"
                 }
                 input {
                     r#type: "range",
                     max: "20.0",
                     value: "10.0",
                     oninput: move |e| controller.write().set_temp(e.parsed::<f32>().unwrap() / 10.0)
+                }
+            }
+            div {
+                class: "settingbox",
+                span { "Test" }
+                input {
+                    r#type: "checkbox",
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn LibrarySettings(controller: Signal<MusicController>) -> Element {
+    rsx!{
+        div {
+            class: "settingsmenu",
+            h2 { class: "settingsbar", "Audio" }
+            div {
+                span { "Music Directory" }
+            }
+            div {
+                display: "flex",
+                flex_direction: "column",
+                input { 
+                    r#type: "text",
+                    value: "{controller.write().settings.directory}",
+                    onchange: move |e| controller.write().set_directory(e.value()),
                 }
             }
         }

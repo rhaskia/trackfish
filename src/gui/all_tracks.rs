@@ -63,6 +63,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
         let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
         if search.is_empty() {
+            log::info!("searching {search}");
             Vec::new()
         } else {
             tracks.read().iter()

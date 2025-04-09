@@ -31,7 +31,7 @@ impl Track {
     pub fn matches(&self, queue_type: QueueType) -> bool {
         match queue_type {
             QueueType::AllTracks => true,
-            QueueType::Radio(_, _) => false,
+            QueueType::Radio(_) => false,
             QueueType::Artist(target_artist) => {
                 self.artists.iter().any(|artist| similar(artist, &target_artist))
             }

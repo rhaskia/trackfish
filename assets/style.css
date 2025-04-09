@@ -74,15 +74,15 @@ body {
 input[type="range"] {
     appearance: none;
     background: var(--weakfg);
-    height: 5px;
+    height: 3px;
     border-radius: 5px;
-    margin: 10px;
+    margin: 10px 0;
 }
 
 input[type="range"]::-webkit-slider-thumb {
-    width: 10px;
+    width: 15px;
     appearance: none;
-    height: 10px;
+    height: 15px;
     background: var(--fg);
     border-radius: 10px;
 }

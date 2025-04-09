@@ -107,7 +107,6 @@ impl MusicController {
             queues: vec![Queue::radio(
                 current_playing,
                 all_tracks.get(current_playing).cloned().unwrap_or_default().title,
-                track_info_vec[current_playing].clone(),
             )],
             current_queue: 0,
             track_info: track_info_vec,
@@ -165,9 +164,6 @@ impl MusicController {
         for (rank, (song, distance)) in dists.iter().enumerate() {
             if rank == 0 { continue; }
             weights[*song] = 10.0 / rank as f32;
-            if rank < 20 {
-                info!("{distance}");
-            }
             if *distance < min { min = *distance; }
         }
 
@@ -249,7 +245,7 @@ impl MusicController {
         }
 
         match current_queue.queue_type {
-            QueueType::Radio(_, _) => {
+            QueueType::Radio(_) => {
                 let next = self.next_similar();
                 self.queues[self.current_queue].current_track += 1;
                 self.queues[self.current_queue].cached_order.push(next);
@@ -359,7 +355,7 @@ impl MusicController {
                 let current = queue.cached_order[queue.current_track];
 
                 match queue.queue_type {
-                    QueueType::Radio(_, _) => {},
+                    QueueType::Radio(_) => {},
                     QueueType::Album(_) => queue.cached_order.sort_by(|a, b| self.all_tracks[*a].trackno.cmp(&self.all_tracks[*b].trackno)),
                     _ => queue.cached_order.sort_by(|a, b| a.cmp(b)),
                 }
@@ -370,7 +366,7 @@ impl MusicController {
             } 
         } else {
             for queue in &mut self.queues {
-                if let QueueType::Radio(_, _) = queue.queue_type {
+                if let QueueType::Radio(_) = queue.queue_type {
                     // Painful to try and unshuffle radio queues
                     continue;
                 }

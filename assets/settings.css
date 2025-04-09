@@ -6,12 +6,29 @@
 .settingsview {
     display: flex;
     padding: 10px;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 .settingsmenu {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    gap: 10px;
+    margin: auto;
+    max-width: 900px;
+    width: 100%;
+}
+
+.settingslistbutton {
+    z-index: 10;
+    background: none;
+    background: url(icons/menu.svg);
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    border: none;
+    filter: brightness(2);
 }
 
 .settingsview span {
@@ -26,16 +43,140 @@
     padding: 10px 0;
     background: none;
     border: none;
-    border-bottom: 1px grey solid;
     text-align: left;
     font-size: 18px;
 }
 
-.settingsheader {
-    margin: 7px;
-    margin-bottom: 0px;
-    padding: 3px;
+.settingsbar {
+    width: fit-content;
+    margin: 0;
+    margin-left: 10px;
+    margin-top: 30px;
+    margin-bottom: 5px;
+}
+
+.back {
+    background-image: url("icons/back.svg");
+    height: 24px;
+    margin: 5px;
+}
+
+.settingsbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    /* border-bottom: 1px solid grey; */
     padding-bottom: 10px;
-    border-bottom: 1px grey solid;
+    align-content: space-evenly;
+    max-width: 900px;
+    margin: auto;
+    width: 100%;
+}
+
+input[type=text] {
+    border: 1px solid white;
+    background: none;
+    color: white;
+    padding-left: 5px;
+    border-radius: 5px
+}
+
+input[type=checkbox] {
+    appearance: none;
+    background-color: grey;
+    border-radius: 72px;
+    border-style: none;
+    flex-shrink: 0;
+    height: 20px;
+    margin: 0;
+    position: relative;
+    width: 30px;
+}
+
+input[type=checkbox]::before {
+    bottom: -6px;
+    content: "";
+    left: -6px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+}
+
+input[type=checkbox],
+input[type=checkbox]::after {
+    transition: all 100ms ease-out;
+}
+
+input[type=checkbox]::after {
+    background-color: whitesmoke;
+    border-radius: 50%;
+    content: "";
+    height: 14px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    width: 14px;
+}
+
+input[type=checkbox] {
+    cursor: default;
+}
+
+input[type=checkbox]:hover {
+    transition-duration: 0s;
+    opacity: 0.9;
+}
+
+input[type=checkbox]:checked {
+    background-color: #4da6ff;
+}
+
+input[type=checkbox]:checked::after {
+    background-color: white;
+    left: 13px;
+}
+
+.checkbox-wrapper-2 :focus:not(.focus-visible) {
+    outline: 0;
+}
+
+.settingbox {
+    background: #313131;
+    border-radius: 5px;
+    height: 30px;
+    padding: 5px;
+    display: flex;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    justify-content: space-between;
+    line-height: 28px;
+    font-size: 14px;
+    padding: 0 10px;
+    align-items: center;
+}
+
+.settingslist {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    padding-top: 25px;
+}
+
+@media (max-width: 600px) {
+  .settingslist {
+    transition: left 1s;
+    position: absolute;
+    background: #151818;
+    border-right: 1px solid grey;
+    left: 0;
+    top: 0;
+    height: calc(100% - 95px);
+    width: 70%;
+    padding: 10px;
+    padding-top: 35px;
+  }
+
+  .closed {
+    left: -500px;
+  }
 }
 

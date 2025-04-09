@@ -130,6 +130,7 @@
     width: 100%;
     display: flex;
     flex-direction: row;
+    gap: 12px;
     margin: 10px 0;
 }
 

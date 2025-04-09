@@ -51,9 +51,9 @@ impl Queue {
         }
     }
 
-    pub fn radio(idx: usize, name: String, track_info: TrackInfo) -> Self {
+    pub fn radio(idx: usize, name: String) -> Self {
         Queue {
-            queue_type: QueueType::Radio(name, track_info),
+            queue_type: QueueType::Radio(name),
             current_track: 0,
             listens: Vec::new(),
             cached_order: vec![idx],
@@ -68,20 +68,6 @@ impl Queue {
         self.cached_order[idx]
     }
 
-    pub fn radio_genres(&self) -> Array1<f32> {
-        match &self.queue_type {
-            QueueType::Radio(_, track_info) => track_info.genre_space.clone(),
-            _ => panic!("Queue not of type Radio"),
-        }
-    }
-
-    pub fn mut_radio_genres(&mut self) -> &mut Array1<f32> {
-        match &mut self.queue_type {
-            QueueType::Radio(_, ref mut track_info) => &mut track_info.genre_space,
-            _ => panic!("Queue not of type Radio"),
-        }
-    }
-
     pub fn len(&self) -> usize {
         self.cached_order.len()
     }
@@ -90,7 +76,7 @@ impl Queue {
 #[derive(PartialEq, Clone)]
 pub enum QueueType {
     AllTracks,
-    Radio(String, TrackInfo),
+    Radio(String),
     Artist(String),
     Album(String),
     Genre(String),
@@ -102,7 +88,7 @@ impl Display for QueueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AllTracks => f.write_str("All Tracks"),
-            Self::Radio(name, _) => write!(f, "{name} Radio"),
+            Self::Radio(name) => write!(f, "{name} Radio"),
             Self::Exclusion(excluded) => f.write_str(&format!("Excluding {excluded}")),
             Self::Artist(artist) => f.write_str(artist),
             Self::Album(album) => f.write_str(album),
