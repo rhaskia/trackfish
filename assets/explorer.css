@@ -106,6 +106,10 @@
     scroll-behavior: smooth;
 }
 
+#genrelist {
+    padding-left: 10px;
+}
+
 .tracklist .current {
     border-radius: 8px;
     background: #ffffff11;

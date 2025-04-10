@@ -28,6 +28,7 @@
     position: absolute;
     top: 10px;
     left: 10px;
+    margin-left: 5px;
     border: none;
     filter: brightness(2);
 }
@@ -44,6 +45,7 @@
     padding: 10px 0;
     background: none;
     border: none;
+    gap: 10px;
     text-align: left;
     font-size: 18px;
 }
@@ -54,6 +56,7 @@
     margin-left: 10px;
     margin-top: 30px;
     margin-bottom: 5px;
+    padding-left: 2px;
 }
 
 .back {
@@ -168,20 +171,43 @@ input[type=checkbox]:checked::after {
     flex-direction: column;
     min-width: 200px;
     padding-top: 25px;
+    margin-right: 10px;
+    padding-top: 35px;
+    gap: 5px;
+}
+
+.settingsbutton {
+    background: #313131;
+    border-radius: 5px;
+    height: 30px;
+    padding: 5px;
+    display: flex;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    line-height: 28px;
+    font-size: 14px;
+    padding: 0 5px;
+    align-items: center;
+    margin: 0;
+}
+
+.settingsbutton img {
+    filter: brightness(2);
 }
 
 @media (max-width: 600px) {
   .settingslist {
     transition: left 1s;
     position: absolute;
-    background: #151818;
+    background: #1d2021;
     border-right: 1px solid grey;
     left: 0;
     top: 0;
-    height: calc(100% - 95px);
-    width: 70%;
+    height: calc(100% - 105px);
+    width: 100%;
+    max-width: 300px;
     padding: 10px;
-    padding-top: 35px;
+    padding-top: 45px;
+    border-radius: 8px;
   }
 
   .closed {
@@ -190,7 +216,7 @@ input[type=checkbox]:checked::after {
 }
 
 .smalltextinput {
-    width: 25px;
+    width: 30px;
     margin-left: 10px;
 }
 
@@ -200,35 +226,34 @@ input[type=checkbox]:checked::after {
     align-items: center;
 }
 
-select {
+.settingsselect {
     appearance: none;
     background: none;
     border: 1px solid grey;
     padding: 3px 10px;
+    width: 100px;
 }
 
-select:hover {
+.settingsselect:hover {
     border: 1px solid lightgrey;
 }
 
-select:active {
+.settingsselect:active {
     border: 1px solid white;
+    outline: none;
 }
 
-option {
+.settingsselect option {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    color: blue;
-    background-color: white;
-    border: 1px solid blue;
+    color: white;
+    background-color: #313131;
 }
 
-/* select::after { */
-/*     content: ""; */
-/*     justify-self: end; */
-/*     width: 0.8em; */
-/*     height: 0.5em; */
-/*     background-color: grey; */
-/*     clip-path: polygon(100% 0%, 0 0%, 50% 100%); */
-/* } */
+.selectwrapper {
+    background: url(icons/down.svg) 100% no-repeat;
+    overflow: hidden;
+    background-position-x: calc(100% - 10px);
+    background-position-y: 6px;
+}

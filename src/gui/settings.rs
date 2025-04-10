@@ -28,16 +28,19 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
+                    img { src: "assets/icons/audio.svg" }
                     "Audio"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Radio),
+                    img { src: "assets/icons/radio.svg" }
                     "Radio Settings"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Library),
+                    img { src: "assets/icons/library.svg" }
                     "Song library"
                 }
             }
@@ -120,16 +123,20 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
             div {
                 class: "settingbox",
                 span { "Track features to use" }
-                select {
-                    onchange: |e| info!("{e:?}"),
-                    option {
-                        "First"
-                    }
-                    option {
-                        "Last"
-                    }
-                    option {
-                        "Average"
+                div {
+                    class: "selectwrapper",
+                    select {
+                        class: "settingsselect",
+                        onchange: |e| info!("{e:?}"),
+                        option {
+                            "First"
+                        }
+                        option {
+                            "Last"
+                        }
+                        option {
+                            "Average"
+                        }
                     }
                 }
             }
