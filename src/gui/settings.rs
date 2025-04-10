@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use crate::app::MusicController;
 use super::{View, VIEW};
 use std::fmt::{Display, Formatter};
+use log::info;
 
 #[component]
 pub fn Settings(controller: Signal<MusicController>) -> Element {
@@ -26,19 +27,16 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
                 class: if !extended_list() { "closed" },
                 button {
                     class: "settingsbutton",
-                    tabindex: if !extended_list() { "-1" },
                     onclick: move |_| set_menu(SettingsMenu::Audio),
                     "Audio"
                 }
                 button {
                     class: "settingsbutton",
-                    tabindex: if !extended_list() { "-1" },
                     onclick: move |_| set_menu(SettingsMenu::Radio),
                     "Radio Settings"
                 }
                 button {
                     class: "settingsbutton",
-                    tabindex: if !extended_list() { "-1" },
                     onclick: move |_| set_menu(SettingsMenu::Library),
                     "Song library"
                 }
@@ -121,9 +119,18 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
             }
             div {
                 class: "settingbox",
-                span { "Test" }
-                input {
-                    r#type: "checkbox",
+                span { "Track features to use" }
+                select {
+                    onchange: |e| info!("{e:?}"),
+                    option {
+                        "First"
+                    }
+                    option {
+                        "Last"
+                    }
+                    option {
+                        "Average"
+                    }
                 }
             }
         }
