@@ -2,11 +2,13 @@ mod chroma;
 mod mfcc;
 mod tempo;
 mod spectral;
+mod zcr;
 pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
 pub use spectral::extract_spectral;
 pub use tempo::extract_tempo;
+pub use zcr::extract_zcr;
 
 use std::fs::File;
 use std::io::BufReader;
@@ -21,7 +23,7 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let genre_space = encoder.encode(genre_vec);
     
     let started = Instant::now();
-    let (mut samples, sample_rate) = load_samples(&track.file, Some(10.0));
+    let (samples, sample_rate) = load_samples(&track.file, Some(10.0));
     info!("samples loaded in {:?}", started.elapsed());
 
     let started = Instant::now();
@@ -38,6 +40,8 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
 
     let energy = 1.0;
     let bpm = extract_tempo(&samples, sample_rate);
+
+    let _zcr = extract_zcr(&samples, sample_rate);
 
     TrackInfo { genre_space, mfcc, chroma, spectral, bpm, energy, key: 0 }
 }

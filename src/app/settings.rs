@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
 use log::info;
 use serde::{Serialize, Deserialize};
 
@@ -12,9 +12,9 @@ pub struct Settings {
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub struct RadioSettings {
     pub temp: f32,
+    pub weight_mode: WeightMode,
     pub album_penalty: f32,
     pub artist_penalty: f32,
-    pub weight_mode: WeightMode,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Default)]
@@ -93,7 +93,7 @@ impl Settings {
 
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
-        std::fs::create_dir(Self::dir());
+        std::fs::create_dir(Self::dir()).unwrap();
         std::fs::write(Self::dir().join("settings.toml"), file).unwrap();
     }
 }

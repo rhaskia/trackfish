@@ -133,7 +133,7 @@
     width: calc(100% - 20px);
 }
 
-.trackitem img {
+.trackitemicon {
     height: 40px;
     width: 40px;
     border-radius: 2px;

@@ -57,7 +57,7 @@ fn load_image() -> Icon {
     let header = minipng::decode_png_header(png).expect("bad PNG");
     let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
     let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");
-    image.convert_to_rgba8bpc();
+    image.convert_to_rgba8bpc().unwrap();
     let pixels = image.pixels();
     Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap()
 }
@@ -298,11 +298,11 @@ pub fn MenuBar() -> Element {
                 class: "svg-button",
                 onclick: move |_| VIEW.write().open(View::Genres),
             }
-            button {
-                class: "search-button",
-                class: "svg-button",
-                onclick: move |_| VIEW.write().open(View::Search),
-            }
+            // button {
+            //     class: "search-button",
+            //     class: "svg-button",
+            //     onclick: move |_| VIEW.write().open(View::Search),
+            // }
             button {
                 class: "settings-button",
                 class: "svg-button",

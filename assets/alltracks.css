@@ -3,3 +3,10 @@
     height: 100%;
     flex-direction: column;
 }
+
+.trackitemoptions {
+    margin: auto;
+    width: 24px;
+    height: 24px;
+    filter: brightness(2);
+}

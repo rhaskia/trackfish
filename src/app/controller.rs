@@ -3,15 +3,15 @@ use super::{
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
     queue::{QueueType, Queue, Listen},
-    utils::{similar, strip_unnessecary},
+    utils::{strip_unnessecary},
 };
 use log::info;
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
-use super::settings::Settings;
-use crate::database::{init_db, save_track_weights, hash_filename, blob_to_array, row_to_weights};
+use super::settings::{Settings, WeightMode};
+use crate::database::{init_db, save_track_weights, hash_filename, row_to_weights};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
@@ -77,7 +77,6 @@ impl MusicController {
         let (mut albums, mut artists, mut genres) = (HashMap::new(), HashMap::new(), HashMap::new());
 
         for track in &all_tracks {
-            let started = std::time::SystemTime::now();
             let file_hash = hash_filename(&track.file);
             if weights.contains_key(&file_hash) {
                 track_info_vec.push(weights[&file_hash].clone());
@@ -146,9 +145,27 @@ impl MusicController {
         self.player.play_track(&self.all_tracks[idx].file);
     }
 
+    pub fn get_space(&mut self) -> TrackInfo {
+        match self.settings.radio.weight_mode {
+            WeightMode::First => self.track_info[self.current_queue().cached_order[0]].clone(),
+            WeightMode::Last => self.track_info[*self.current_queue().cached_order.iter().last().unwrap()].clone(),
+            WeightMode::Average => {
+                let mut tracks = Vec::new();
+
+                // Introduce count later?
+                let count = self.current_queue().cached_order.len();
+                for i in (count.max(10) - 10)..count {
+                    tracks.push(self.track_info[self.current_queue().cached_order[i]].clone());
+                }
+
+                TrackInfo::average(tracks)
+            }
+        }
+    }
+
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
-        let space = self.track_info[self.current_queue().cached_order[0]].clone();
+        let space = self.get_space();
         println!("{:?}", space);
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);

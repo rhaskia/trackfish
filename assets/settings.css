@@ -39,15 +39,23 @@
 }
 
 .settingsbutton {
+    background: #313131;
+    transition: width 1s, color 1s;
     color: white;
-    min-height: 30px;
-    margin: 0 10px;
-    padding: 10px 0;
-    background: none;
-    border: none;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    border-radius: 5px;
+    height: 30px;
+    padding: 10px 5px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 0;
     gap: 10px;
     text-align: left;
-    font-size: 18px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    border: none;
 }
 
 .settingsbar {
@@ -167,27 +175,13 @@ input[type=checkbox]:checked::after {
 }
 
 .settingslist {
+    transition: width 1s; 
     display: flex;
     flex-direction: column;
-    min-width: 200px;
     padding-top: 25px;
     margin-right: 10px;
     padding-top: 35px;
     gap: 5px;
-}
-
-.settingsbutton {
-    background: #313131;
-    border-radius: 5px;
-    height: 30px;
-    padding: 5px;
-    display: flex;
-    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
-    line-height: 28px;
-    font-size: 14px;
-    padding: 0 5px;
-    align-items: center;
-    margin: 0;
 }
 
 .settingsbutton img {
@@ -213,6 +207,21 @@ input[type=checkbox]:checked::after {
   .closed {
     left: -500px;
   }
+}
+
+@media (min-width: 600px) {
+    .closed .settingsbutton {
+        color: #ffffff00
+    }
+
+    .settingslist button {
+        width: 200px;
+        overflow: hidden;
+    }
+
+    .closed button {
+        width: 34px;
+    }
 }
 
 .smalltextinput {

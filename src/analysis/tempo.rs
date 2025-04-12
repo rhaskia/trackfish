@@ -1,5 +1,4 @@
-use ndarray::Array1;
-use aubio::{Tempo, FFT, OnsetMode, SpecDesc};
+use aubio::{Tempo, FFT, OnsetMode};
 
 pub fn extract_tempo(buffer: &Vec<f32>, sample_rate: u32) -> f32 {
     let fft_size = 1024;

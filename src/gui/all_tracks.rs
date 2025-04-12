@@ -14,8 +14,8 @@ fn display_time(total: u64) -> String {
 #[component]
 pub fn AllTracks(controller: Signal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
-    let tracks = use_signal(|| (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
-    let total_time: Signal<u64> = use_signal(|| controller.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
+    let tracks = use_memo(move || (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
+    let total_time = use_memo(move || controller.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
 
     rsx!{
         div {
@@ -30,7 +30,7 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
             div {
                 color: "white",
                 padding: "10px",
-                "{tracks.read().len()} songs / "
+                "{controller.read().all_tracks.len()} songs / "
                 "{display_time(total_time())} total duration"
             }
             div { class: "tracklist",
@@ -43,10 +43,14 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
                             controller.write().add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
-                        img { loading: "onvisible", src: "/trackimage/{i}" }
+                        img { class: "trackitemicon", loading: "onvisible", src: "/trackimage/{i}" }
                         span { "{controller.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }
-                        img { loading: "onvisible", src: "/assets/icons/vert.svg" }
+                        img { 
+                            class: "trackbutton",
+                            loading: "onvisible",
+                            src: "/assets/icons/vert.svg"
+                        }
                     }
                 }
             }
@@ -58,7 +62,7 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usize>>, is_searching: Signal<bool>) -> Element {
+pub fn TracksSearch(controller: Signal<MusicController>, tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Element {
     let mut search = use_signal(String::new);
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());

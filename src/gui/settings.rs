@@ -72,8 +72,6 @@ impl Display for SettingsMenu {
 
 #[component]
 fn AudioSettings(controller: Signal<MusicController>) -> Element {
-    let volume = controller.read().settings.volume;
-
     rsx!{
         div {
             class: "settingsmenu",
@@ -137,6 +135,44 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
                         option {
                             "Average"
                         }
+                    }
+                }
+            }
+            div {
+                class: "settingbox",
+                span { "Same artist penalty" }
+                div {
+                    class: "settingsinput",
+                    input {
+                        r#type: "range",
+                        max: "1.0",
+                        step: "0.01",
+                        value: "{controller.read().settings.radio.artist_penalty}",
+                        oninput: move |e| controller.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
+                    }
+                    input {
+                        class: "smalltextinput",
+                        r#type: "text",
+                        value: "{controller.read().settings.radio.artist_penalty}",
+                    }
+                }
+            }
+            div {
+                class: "settingbox",
+                span { "Same album penalty" }
+                div {
+                    class: "settingsinput",
+                    input {
+                        r#type: "range",
+                        max: "1.0",
+                        step: "0.01",
+                        value: "{controller.read().settings.radio.album_penalty}",
+                        oninput: move |e| controller.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
+                    }
+                    input {
+                        class: "smalltextinput",
+                        r#type: "text",
+                        value: "{controller.read().settings.radio.album_penalty}",
                     }
                 }
             }

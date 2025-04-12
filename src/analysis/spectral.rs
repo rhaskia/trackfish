@@ -1,7 +1,7 @@
 use ndarray::Array1;
-use aubio::{SpecShape, FFT, OnsetMode, SpecDesc};
+use aubio::{SpecShape, FFT, SpecDesc};
 
-pub fn extract_spectral(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {
+pub fn extract_spectral(buffer: &Vec<f32>, _sample_rate: u32) -> Array1<f32> {
     let fft_size = 1024;
     let num_coefficients = 13;
 

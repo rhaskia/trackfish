@@ -14,10 +14,15 @@ pub fn QueueList(controller: Signal<MusicController>) -> Element {
         div { id: "queuelist", class: "tracklist",
             display: if VIEW.read().current != View::Queue { "none" },
 
-            select { onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
-                for i in 0..controller.read().queues.len() {
-                    option { value: "{i}", selected: i == selected_queue(),
-                        "{controller.read().queues[i].queue_type}"
+            div {
+                class: "selectwrapper",
+                select { 
+                    class: "queueselect",
+                    onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
+                    for i in 0..controller.read().queues.len() {
+                        option { value: "{i}", selected: i == selected_queue(),
+                            "{controller.read().queues[i].queue_type}"
+                        }
                     }
                 }
             }

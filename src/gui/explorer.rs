@@ -68,7 +68,7 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
         _ => unreachable!(),
     });
 
-    let mut tracks = use_memo(move || {
+    let tracks = use_memo(move || {
         let mut tracks = controller.read().get_tracks_where(|t| match viewtype() {
             View::Albums => similar(&t.album, &name.read()),
             View::Artists => t.has_artist(&name.read()),
