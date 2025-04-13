@@ -10,6 +10,9 @@ use log::{error, info};
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
+use std::collections::HashMap;
+use crate::database::{row_to_weights, init_db};
+use rusqlite::{Rows, params};
 
 use crate::document::eval;
 
@@ -18,7 +21,7 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 
-use app::{track::load_tracks, MusicController};
+use app::{track::{load_tracks, TrackInfo}, MusicController};
 use gui::*;
 
 fn main() {
@@ -105,6 +108,7 @@ fn SetUpRoute() -> Element {
 #[component]
 fn App() -> Element {
     let mut controller = use_signal(|| MusicController::empty());
+    let mut loading_track_weights = use_signal(|| 0);
 
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
@@ -136,55 +140,31 @@ fn App() -> Element {
         } else {
             info!("{:?}", tracks);
         }
+
+        let cache = init_db().unwrap();
+
+        let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
+        let mut result: Rows = stmt.query(params!()).unwrap();
+        let mut weights: HashMap<String, TrackInfo> = HashMap::new();
+        while let Ok(Some(row)) = result.next() {
+            let hash = row.get(0).unwrap();
+            weights.insert(hash, row_to_weights(&row).unwrap());
+        }
+
+        let len = controller.read().all_tracks.len();
+        for i in 0..len {
+            loading_track_weights += 1;
+            controller.write().load_weight(&cache, &weights, i);
+            tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+        }
     });
 
-    // spawn(async {
-    //     #[cfg(target_os = "android")]
-    //     {
-    //         use jni::JNIEnv;
-    //         use jni::objects::JClass;
-    //         use jni::sys::jint;
-    //         use jni::objects::JValue;
-    //
-    //         let ctx = ndk_context::android_context();
-    //         let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
-    //         let mut env = vm.attach_current_thread().unwrap();
-    //         let class_ctx = env.find_class("android/content/Context").unwrap();
-    //
-    //         let media_session_class = env.find_class("android/media/session/MediaSession").unwrap();
-    //         let tag = env.new_string("MyMediaSession").expect("Failed to create Java string");
-    //
-    //         let context = unsafe { jni::objects::JObject::from_raw(ctx.context().cast()) };
-    //
-    //         let media_session = env.new_object(
-    //             media_session_class,
-    //             "(Landroid/content/Context;Ljava/lang/String;)V",
-    //             &[JValue::Object(&context), JValue::Object(&tag.into())],
-    //         ).expect("Failed to create MediaSession object");
-    //
-    //         info!("hi!");
-    //
-    //         let flag_handles_media_buttons = 1; // MediaSession.FLAG_HANDLES_MEDIA_BUTTONS
-    //         let flag_handles_transport_controls = 2; // MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS
-    //         let flags = flag_handles_media_buttons | flag_handles_transport_controls;
-    //         env.call_method(
-    //             &media_session,
-    //             "setFlags",
-    //             "(I)V",
-    //             &[JValue::Int(flags)],
-    //         ).unwrap();
-    //
-    //         // Set the session active
-    //         env.call_method(
-    //             &media_session,
-    //             "setActive",
-    //             "(Z)V",
-    //             &[JValue::Bool(1)],
-    //         ).unwrap();
-    //
-    //         info!("hi!");
-    //     }
-    // });
+    spawn(async {
+        #[cfg(target_os = "android")]
+        {
+            super::media::set_media_context();
+        }
+    });
 
     use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(200).body(&[]).unwrap();
@@ -251,6 +231,10 @@ fn App() -> Element {
                 },
                 _ => {}
             },
+    
+
+            span { "{loading_track_weights}" }
+
             TrackView { controller }
             QueueList { controller }
             AllTracks { controller }

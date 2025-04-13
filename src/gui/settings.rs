@@ -191,7 +191,7 @@ fn LibrarySettings(controller: Signal<MusicController>) -> Element {
                 span { "Music Directory" }
                 input { 
                     r#type: "text",
-                    value: "{controller.write().settings.directory}",
+                    value: "{controller.read().settings.directory}",
                     onchange: move |e| controller.write().set_directory(e.value()),
                 }
             }

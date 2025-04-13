@@ -324,3 +324,17 @@ impl TrackInfo {
         }
     }
 }
+
+impl Default for TrackInfo {
+    fn default() -> Self {
+        TrackInfo {
+            genre_space: Array1::zeros(16),
+            mfcc: Array1::zeros(13),
+            chroma: Array1::zeros(13),
+            spectral: Array1::zeros(13),
+            energy: 0.0,
+            key: 0,
+            bpm: 0.0,
+        }
+    }
+}
