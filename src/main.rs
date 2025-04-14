@@ -21,7 +21,7 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 
-use app::{track::{load_tracks, TrackInfo}, MusicController};
+use app::{track::{load_tracks, TrackInfo}, MusicController, settings::RadioSettings};
 use gui::*;
 
 fn main() {
@@ -81,8 +81,9 @@ fn init() {
 
 #[component]
 fn SetUpRoute() -> Element {
-    use trackfish::app::settings::Settings;
-    let set_up = use_signal(Settings::exists);
+    use app::settings::Settings;
+    let mut set_up = use_signal(Settings::exists);
+    let dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
         if set_up() {
@@ -95,12 +96,18 @@ fn SetUpRoute() -> Element {
             br {}
             input { 
                 id: "directory",
-                onchange: |e| info!("{e:?}"),
+                value: dir,
             }
             // Other options
             br {}
             br {}
-            button { "Confirm" }
+            button {
+                onclick: move |_| { 
+                    Settings { directory: dir(), volume: 1.0, radio: RadioSettings::default() }.save();
+                    set_up.set(true);
+                },
+                "Confirm"
+            }
         }
     }
 }
@@ -109,6 +116,7 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let mut controller = use_signal(|| MusicController::empty());
     let mut loading_track_weights = use_signal(|| 0);
+    let mut tracks_count = use_signal(|| 0);
 
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
@@ -123,14 +131,18 @@ fn App() -> Element {
 
     use_future(move || async move {
         let started = Instant::now();
+        info!("hi");
         #[cfg(target_os = "android")]
         {
-            let result = crossbow::Permission::StorageRead.request_async().await;
+            //let result = crossbow::Permission::StorageRead.request_async().await;
+            let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::ReadMediaAudio).await;
             info!("{result:?}");
         }
 
+        info!("hi");
         let tracks = load_tracks(&controller.read().settings.directory);
         if let Ok(t) = tracks {
+            tracks_count.set(t.len());
             if let Ok(mut c) = controller.try_write() {
                 *c = MusicController::new(t, c.settings.directory.clone());
             } else {
@@ -154,15 +166,20 @@ fn App() -> Element {
         let len = controller.read().all_tracks.len();
         for i in 0..len {
             loading_track_weights += 1;
-            controller.write().load_weight(&cache, &weights, i);
-            tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+            let is_cached = controller.write().load_weight(&cache, &weights, i);
+            if !is_cached {
+                tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+            }
         }
     });
 
-    spawn(async {
+    use_future(|| async {
         #[cfg(target_os = "android")]
         {
-            super::media::set_media_context();
+            let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::PostNotifications).await;
+            info!("{result:?}");
+            crate::gui::media::set_media_context();
+            info!("silly");
         }
     });
 
@@ -219,6 +236,12 @@ fn App() -> Element {
         document::Link { href: "assets/settings.css", rel: "stylesheet" }
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
         document::Link { href: "assets/queue.css", rel: "stylesheet" }
+        
+        div {
+            class: "loadingpopup",
+            hidden: loading_track_weights() == tracks_count(),
+            "Loading weights for track {loading_track_weights} out of {tracks_count} "
+        }
 
         div { class: "mainview",
             tabindex: 0,
@@ -231,13 +254,10 @@ fn App() -> Element {
                 },
                 _ => {}
             },
-    
-
-            span { "{loading_track_weights}" }
 
             TrackView { controller }
             QueueList { controller }
-            AllTracks { controller }
+            //AllTracks { controller }
             GenreList { controller }
             ArtistList { controller }
             AlbumsList { controller }

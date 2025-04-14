@@ -110,17 +110,18 @@ impl MusicController {
         controller
     }
 
-    pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) {
+    pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
         let track = &self.all_tracks[track_idx];
         let file_hash = hash_filename(&track.file);
         if weights.contains_key(&file_hash) {
             self.track_info.push(weights[&file_hash].clone());
+            return true;
         } else {
             let track_info = generate_track_info(&track, &self.encoder);
             save_track_weights(&cache, &track.file, &track_info).unwrap();
             self.track_info.push(track_info);
+            return false;
         }
-
     }
 
     pub fn play_track(&mut self, idx: usize) {

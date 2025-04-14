@@ -27,7 +27,10 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
       - [x] Spectral
       - [x] Chroma
       - [x] MFCC
+      - [x] Zero Crossing Rate
       - [ ] Energy
+      - [ ] Key
+      - [ ] BPM/Tempo
  - [ ] Theming
  - [ ] More Queue Management
       - [ ] Locked Queues/Temp Queues

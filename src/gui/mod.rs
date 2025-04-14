@@ -5,6 +5,8 @@ pub mod trackview;
 pub mod stream;
 pub mod explorer;
 pub mod input;
+#[cfg(target_os = "android")]
+pub mod media;
 
 pub use stream::get_stream_response;
 pub use settings::Settings;

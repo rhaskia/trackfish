@@ -6,7 +6,7 @@ name = "TrackFish"
 title = "TrackFish"
 
 [bundle]
-identifier = "com.example.Music"
+identifier = "com.example.Trackfish"
 publisher = "Rhaskia"
 
 icon = [
@@ -17,7 +17,8 @@ icon = [
 category = "Music"
 
 [bundle.android]
-permissions = ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+#permissions = ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "MANAGE_EXTERNAL_STORAGE", "READ_MEDIA_AUDIO"]
+permissions = ["READ_MEDIA_AUDIO", "POST_NOTIFICATIONS"]
 
 [bundle.windows]
 icon_path = "assets/icons/icon256.png"

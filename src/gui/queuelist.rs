@@ -61,7 +61,7 @@ pub fn TrackItem(controller: Signal<MusicController>, selected_queue: Signal<usi
                 VIEW.write().current = View::Song;
             },
             img { class: "trackbutton draghandle", src: "/assets/icons/draghandle.svg" }
-            img { src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}" }
+            img { class: "trackitemicon", loading: "onvisible", src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}" }
             span { "{title}" }
             div { flex_grow: 1 }
             img { class: "trackbutton", src: "/assets/icons/vert.svg" }
