@@ -111,10 +111,9 @@ fn SetUpRoute() -> Element {
         }
     }
 }
-
+    
 #[component]
 fn App() -> Element {
-    let mut controller = use_signal(|| MusicController::empty());
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
 
@@ -140,10 +139,10 @@ fn App() -> Element {
         }
 
         info!("hi");
-        let tracks = load_tracks(&controller.read().settings.directory);
+        let tracks = load_tracks(&CONTROLLER.read().settings.directory);
         if let Ok(t) = tracks {
             tracks_count.set(t.len());
-            if let Ok(mut c) = controller.try_write() {
+            if let Ok(mut c) = CONTROLLER.try_write() {
                 *c = MusicController::new(t, c.settings.directory.clone());
             } else {
                 info!("Controller already borrowed");
@@ -163,23 +162,35 @@ fn App() -> Element {
             weights.insert(hash, row_to_weights(&row).unwrap());
         }
 
-        let len = controller.read().all_tracks.len();
+        let len = CONTROLLER.read().all_tracks.len();
         for i in 0..len {
             loading_track_weights += 1;
-            let is_cached = controller.write().load_weight(&cache, &weights, i);
+            let is_cached = CONTROLLER.write().load_weight(&cache, &weights, i);
             if !is_cached {
                 tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
             }
         }
     });
 
-    use_future(|| async {
-        #[cfg(target_os = "android")]
-        {
-            let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::PostNotifications).await;
-            info!("{result:?}");
-            crate::gui::media::set_media_context();
-            info!("silly");
+    #[cfg(target_os = "android")]
+    let mut session = use_signal(|| None);
+
+    #[cfg(target_os = "android")]
+    use_future(move || async move {
+        let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::PostNotifications).await;
+        info!("{result:?}");
+        session.set(Some(crate::gui::media::MediaSession::new()));
+        info!("silly");
+    });
+
+    #[cfg(target_os = "android")]
+    use_effect(move || {
+        if let Some(ref mut session) = *session.write() {
+            if let Some(track) = CONTROLLER.read().current_track() {
+                let image = Tag::read_from_path(&track.file).unwrap().pictures().next().and_then(|p| Some(p.data.clone()));
+                session.update_metadata(&track.title, &track.artists[0], (track.len * 1000.0) as i64, image);
+                session.update_state(CONTROLLER.read().playing(), (CONTROLLER.read().player.progress_secs() * 1000.0) as i64);
+            }
         }
     });
 
@@ -195,7 +206,7 @@ fn App() -> Element {
 
         // Retry once free
         let path = if let Ok(Some(track)) =
-            controller.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
+            CONTROLLER.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
         {
             track.file
         } else {
@@ -255,13 +266,13 @@ fn App() -> Element {
                 _ => {}
             },
 
-            TrackView { controller }
-            QueueList { controller }
-            //AllTracks { controller }
-            GenreList { controller }
-            ArtistList { controller }
-            AlbumsList { controller }
-            Settings { controller }
+            TrackView { }
+            QueueList { }
+            //AllTracks { }
+            GenreList { }
+            ArtistList { }
+            AlbumsList { }
+            Settings { }
         }
 
         MenuBar {}

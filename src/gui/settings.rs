@@ -3,9 +3,10 @@ use crate::app::MusicController;
 use super::{View, VIEW};
 use std::fmt::{Display, Formatter};
 use log::info;
+use super::CONTROLLER;
 
 #[component]
-pub fn Settings(controller: Signal<MusicController>) -> Element {
+pub fn Settings() -> Element {
     let mut settings_menu = use_signal(|| SettingsMenu::Audio);
     let mut extended_list = use_signal(|| false);
 
@@ -45,9 +46,9 @@ pub fn Settings(controller: Signal<MusicController>) -> Element {
                 }
             }
             match settings_menu() {
-                SettingsMenu::Radio => rsx!{ RadioSettings { controller } },
-                SettingsMenu::Library => rsx!{ LibrarySettings { controller } },
-                SettingsMenu::Audio => rsx!{ AudioSettings { controller } },
+                SettingsMenu::Radio => rsx!{ RadioSettings { } },
+                SettingsMenu::Library => rsx!{ LibrarySettings { } },
+                SettingsMenu::Audio => rsx!{ AudioSettings { } },
             }
         }
     }
@@ -71,7 +72,7 @@ impl Display for SettingsMenu {
 }
 
 #[component]
-fn AudioSettings(controller: Signal<MusicController>) -> Element {
+fn AudioSettings() -> Element {
     rsx!{
         div {
             class: "settingsmenu",
@@ -83,8 +84,8 @@ fn AudioSettings(controller: Signal<MusicController>) -> Element {
                     r#type: "range",
                     max: "1",
                     step: "0.01",
-                    value: "{controller.read().settings.volume}",
-                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap())
+                    value: "{CONTROLLER.read().settings.volume}",
+                    oninput: move |e| CONTROLLER.write().set_volume(e.parsed::<f32>().unwrap())
                 }
             }
         }
@@ -92,7 +93,7 @@ fn AudioSettings(controller: Signal<MusicController>) -> Element {
 }
 
 #[component]
-fn RadioSettings(controller: Signal<MusicController>) -> Element {
+fn RadioSettings() -> Element {
     rsx!{
         div {
             class: "settingsmenu",
@@ -108,13 +109,13 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
                         r#type: "range",
                         max: "2.0",
                         step: "0.01",
-                        value: "{controller.read().settings.radio.temp}",
-                        oninput: move |e| controller.write().set_temp(e.parsed::<f32>().unwrap())
+                        value: "{CONTROLLER.read().settings.radio.temp}",
+                        oninput: move |e| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap())
                     }
                     input {
                         class: "smalltextinput",
                         r#type: "text",
-                        value: "{controller.read().settings.radio.temp}",
+                        value: "{CONTROLLER.read().settings.radio.temp}",
                     }
                 }
             }
@@ -147,13 +148,13 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
                         r#type: "range",
                         max: "1.0",
                         step: "0.01",
-                        value: "{controller.read().settings.radio.artist_penalty}",
-                        oninput: move |e| controller.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
+                        value: "{CONTROLLER.read().settings.radio.artist_penalty}",
+                        oninput: move |e| CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
                     }
                     input {
                         class: "smalltextinput",
                         r#type: "text",
-                        value: "{controller.read().settings.radio.artist_penalty}",
+                        value: "{CONTROLLER.read().settings.radio.artist_penalty}",
                     }
                 }
             }
@@ -166,13 +167,13 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
                         r#type: "range",
                         max: "1.0",
                         step: "0.01",
-                        value: "{controller.read().settings.radio.album_penalty}",
-                        oninput: move |e| controller.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
+                        value: "{CONTROLLER.read().settings.radio.album_penalty}",
+                        oninput: move |e| CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
                     }
                     input {
                         class: "smalltextinput",
                         r#type: "text",
-                        value: "{controller.read().settings.radio.album_penalty}",
+                        value: "{CONTROLLER.read().settings.radio.album_penalty}",
                     }
                 }
             }
@@ -181,7 +182,7 @@ fn RadioSettings(controller: Signal<MusicController>) -> Element {
 }
 
 #[component]
-fn LibrarySettings(controller: Signal<MusicController>) -> Element {
+fn LibrarySettings() -> Element {
     rsx!{
         div {
             class: "settingsmenu",
@@ -191,8 +192,8 @@ fn LibrarySettings(controller: Signal<MusicController>) -> Element {
                 span { "Music Directory" }
                 input { 
                     r#type: "text",
-                    value: "{controller.read().settings.directory}",
-                    onchange: move |e| controller.write().set_directory(e.value()),
+                    value: "{CONTROLLER.read().settings.directory}",
+                    onchange: move |e| CONTROLLER.write().set_directory(e.value()),
                 }
             }
         }

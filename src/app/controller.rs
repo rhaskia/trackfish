@@ -437,6 +437,10 @@ impl MusicController {
         self.player.play();
     }
 
+    pub fn pause(&mut self) {
+        self.player.pause();
+    }
+
     pub fn playing(&self) -> bool {
         self.player.playing()
     }
