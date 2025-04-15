@@ -11,11 +11,13 @@ fn display_time(total: u64) -> String {
     format!("{hours}:{minutes:02}:{seconds:02}")
 }
 
+use super::CONTROLLER;
+
 #[component]
-pub fn AllTracks(controller: Signal<MusicController>) -> Element {
+pub fn AllTracks() -> Element {
     let mut is_searching = use_signal(|| false);
-    let tracks = use_signal(|| (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
-    let total_time: Signal<u64> = use_signal(|| controller.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
+    let tracks = use_memo(move || (0..CONTROLLER.read().all_tracks.len()).collect::<Vec<usize>>());
+    let total_time = use_memo(move || CONTROLLER.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
 
     rsx!{
         div {
@@ -30,34 +32,39 @@ pub fn AllTracks(controller: Signal<MusicController>) -> Element {
             div {
                 color: "white",
                 padding: "10px",
-                "{tracks.read().len()} songs / "
+                "{CONTROLLER.read().all_tracks.len()} songs / "
                 "{display_time(total_time())} total duration"
             }
             div { class: "tracklist",
-                for i in 0..controller.read().all_tracks.len() {
+                // extremely slow to load all tracks
+                for i in 0..CONTROLLER.read().all_tracks.len().min(100) {
                     div {
                         class: "trackitem",
                         id: "trackitem-{i}",
                         onclick: move |_| {
-                            controller.write().add_all_queue(i);
+                            CONTROLLER.write().add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
-                        img { loading: "onvisible", src: "/trackimage/{i}" }
-                        span { "{controller.read().all_tracks[i].title}" }
+                        img { class: "trackitemicon", loading: "onvisible", src: "/trackimage/{i}" }
+                        span { "{CONTROLLER.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }
-                        img { loading: "onvisible", src: "/assets/icons/vert.svg" }
+                        img { 
+                            class: "trackbutton",
+                            loading: "onvisible",
+                            src: "/assets/icons/vert.svg"
+                        }
                     }
                 }
             }
             if is_searching() {
-                TracksSearch { controller, tracks, is_searching }
+                TracksSearch { tracks, is_searching }
             }
         }
     }
 }
 
 #[component]
-pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usize>>, is_searching: Signal<bool>) -> Element {
+pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Element {
     let mut search = use_signal(String::new);
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());
@@ -67,7 +74,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
             Vec::new()
         } else {
             tracks.read().iter()
-                .filter(|t| strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search))
+                .filter(|t| strip_unnessecary(&CONTROLLER.read().all_tracks[**t].title).starts_with(&search))
                 .cloned()
                 .collect::<Vec<usize>>()
         }
@@ -103,7 +110,7 @@ pub fn TracksSearch(controller: Signal<MusicController>, tracks: Signal<Vec<usiz
                                 ));
                             },
                             img { src: "/trackimage/{track}" }
-                            span { "{controller.read().all_tracks[track].title}" }
+                            span { "{CONTROLLER.read().all_tracks[track].title}" }
                         }
                     }
                 }

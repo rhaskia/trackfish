@@ -10,15 +10,19 @@ use log::{error, info};
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
-
+use std::collections::HashMap;
+use crate::database::{row_to_weights, init_db};
+use rusqlite::{Rows, params};
+use crate::media::{MediaMsg, MEDIA_MSG_TX};
 use crate::document::eval;
+use tokio::sync::mpsc::unbounded_channel;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 
-use app::{track::load_tracks, MusicController};
+use app::{track::{load_tracks, TrackInfo}, MusicController, settings::RadioSettings};
 use gui::*;
 
 fn main() {
@@ -50,34 +54,37 @@ fn init() {
     launch(SetUpRoute);
 }
 
-#[cfg(not(target_os = "android"))]
-fn init() {
-    use dioxus::mobile::tao::window::Icon;
+use dioxus::mobile::tao::window::Icon;
 
-    LogTracer::init().expect("Failed to initialize LogTracer");
-
-    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
-
+fn load_image() -> Icon {
     let png = &include_bytes!("../assets/icons/icon256.png")[..];
     let header = minipng::decode_png_header(png).expect("bad PNG");
     let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
     let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");
-    image.convert_to_rgba8bpc();
+    image.convert_to_rgba8bpc().unwrap();
     let pixels = image.pixels();
-    let icon = Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap();
+    Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap()
+}
+
+#[cfg(not(target_os = "android"))]
+fn init() {
+    LogTracer::init().expect("Failed to initialize LogTracer");
+
+    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
 
     let window = WindowBuilder::new()
         .with_title("TrackFish")
         .with_always_on_top(false)
-        .with_window_icon(Some(icon));
+        .with_window_icon(Some(load_image()));
     let config = dioxus::desktop::Config::new().with_window(window);
     LaunchBuilder::new().with_cfg(config).launch(SetUpRoute);
 }
 
 #[component]
 fn SetUpRoute() -> Element {
-    use trackfish::app::settings::Settings;
-    let set_up = use_signal(Settings::exists);
+    use app::settings::Settings;
+    let mut set_up = use_signal(Settings::exists);
+    let dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
         if set_up() {
@@ -90,19 +97,26 @@ fn SetUpRoute() -> Element {
             br {}
             input { 
                 id: "directory",
-                onchange: |e| info!("{e:?}"),
+                value: dir,
             }
             // Other options
             br {}
             br {}
-            button { "Confirm" }
+            button {
+                onclick: move |_| { 
+                    Settings { directory: dir(), volume: 1.0, radio: RadioSettings::default() }.save();
+                    set_up.set(true);
+                },
+                "Confirm"
+            }
         }
     }
 }
-
+    
 #[component]
 fn App() -> Element {
-    let mut controller = use_signal(|| MusicController::empty());
+    let mut loading_track_weights = use_signal(|| 0);
+    let mut tracks_count = use_signal(|| 0);
 
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
@@ -117,15 +131,19 @@ fn App() -> Element {
 
     use_future(move || async move {
         let started = Instant::now();
+        info!("hi");
         #[cfg(target_os = "android")]
         {
-            let result = crossbow::Permission::StorageRead.request_async().await;
+            //let result = crossbow::Permission::StorageRead.request_async().await;
+            let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::ReadMediaAudio).await;
             info!("{result:?}");
         }
 
-        let tracks = load_tracks(&controller.read().settings.directory);
+        info!("hi");
+        let tracks = load_tracks(&CONTROLLER.read().settings.directory);
         if let Ok(t) = tracks {
-            if let Ok(mut c) = controller.try_write() {
+            tracks_count.set(t.len());
+            if let Ok(mut c) = CONTROLLER.try_write() {
                 *c = MusicController::new(t, c.settings.directory.clone());
             } else {
                 info!("Controller already borrowed");
@@ -134,55 +152,60 @@ fn App() -> Element {
         } else {
             info!("{:?}", tracks);
         }
+
+        let cache = init_db().unwrap();
+
+        let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
+        let mut result: Rows = stmt.query(params!()).unwrap();
+        let mut weights: HashMap<String, TrackInfo> = HashMap::new();
+        while let Ok(Some(row)) = result.next() {
+            let hash = row.get(0).unwrap();
+            weights.insert(hash, row_to_weights(&row).unwrap());
+        }
+
+        let len = CONTROLLER.read().all_tracks.len();
+        for i in 0..len {
+            loading_track_weights += 1;
+            let is_cached = CONTROLLER.write().load_weight(&cache, &weights, i);
+            if !is_cached {
+                tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+            }
+        }
     });
 
-    // spawn(async {
-    //     #[cfg(target_os = "android")]
-    //     {
-    //         use jni::JNIEnv;
-    //         use jni::objects::JClass;
-    //         use jni::sys::jint;
-    //         use jni::objects::JValue;
-    //
-    //         let ctx = ndk_context::android_context();
-    //         let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
-    //         let mut env = vm.attach_current_thread().unwrap();
-    //         let class_ctx = env.find_class("android/content/Context").unwrap();
-    //
-    //         let media_session_class = env.find_class("android/media/session/MediaSession").unwrap();
-    //         let tag = env.new_string("MyMediaSession").expect("Failed to create Java string");
-    //
-    //         let context = unsafe { jni::objects::JObject::from_raw(ctx.context().cast()) };
-    //
-    //         let media_session = env.new_object(
-    //             media_session_class,
-    //             "(Landroid/content/Context;Ljava/lang/String;)V",
-    //             &[JValue::Object(&context), JValue::Object(&tag.into())],
-    //         ).expect("Failed to create MediaSession object");
-    //
-    //         info!("hi!");
-    //
-    //         let flag_handles_media_buttons = 1; // MediaSession.FLAG_HANDLES_MEDIA_BUTTONS
-    //         let flag_handles_transport_controls = 2; // MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS
-    //         let flags = flag_handles_media_buttons | flag_handles_transport_controls;
-    //         env.call_method(
-    //             &media_session,
-    //             "setFlags",
-    //             "(I)V",
-    //             &[JValue::Int(flags)],
-    //         ).unwrap();
-    //
-    //         // Set the session active
-    //         env.call_method(
-    //             &media_session,
-    //             "setActive",
-    //             "(Z)V",
-    //             &[JValue::Bool(1)],
-    //         ).unwrap();
-    //
-    //         info!("hi!");
-    //     }
-    // });
+    #[cfg(target_os = "android")]
+    let mut session = use_signal(|| None);
+
+    #[cfg(target_os = "android")]
+    use_future(move || async move {
+        let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::PostNotifications).await;
+        info!("{result:?}");
+        let (tx, mut rx) = unbounded_channel();
+        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+        session.set(Some(crate::gui::media::MediaSession::new()));
+        info!("Set up media session successfully");
+
+        while let Some(msg) = rx.recv().await {
+            match msg {
+                MediaMsg::Play => CONTROLLER.write().play(),
+                MediaMsg::Pause => CONTROLLER.write().pause(),
+                MediaMsg::Next => CONTROLLER.write().skip(),
+                MediaMsg::Previous => CONTROLLER.write().skipback(),
+                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
+            }
+        }
+    });
+
+    #[cfg(target_os = "android")]
+    use_effect(move || {
+        if let Some(ref mut session) = *session.write() {
+            if let Some(track) = CONTROLLER.read().current_track() {
+                let image = Tag::read_from_path(&track.file).unwrap().pictures().next().and_then(|p| Some(p.data.clone()));
+                session.update_metadata(&track.title, &track.artists[0], (track.len * 1000.0) as i64, image);
+                session.update_state(CONTROLLER.read().playing(), (CONTROLLER.read().player.progress_secs() * 1000.0) as i64);
+            }
+        }
+    });
 
     use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(200).body(&[]).unwrap();
@@ -196,7 +219,7 @@ fn App() -> Element {
 
         // Retry once free
         let path = if let Ok(Some(track)) =
-            controller.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
+            CONTROLLER.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
         {
             track.file
         } else {
@@ -237,6 +260,12 @@ fn App() -> Element {
         document::Link { href: "assets/settings.css", rel: "stylesheet" }
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
         document::Link { href: "assets/queue.css", rel: "stylesheet" }
+        
+        div {
+            class: "loadingpopup",
+            hidden: loading_track_weights() == tracks_count(),
+            "Loading weights for track {loading_track_weights} out of {tracks_count} "
+        }
 
         div { class: "mainview",
             tabindex: 0,
@@ -249,13 +278,14 @@ fn App() -> Element {
                 },
                 _ => {}
             },
-            TrackView { controller }
-            QueueList { controller }
-            AllTracks { controller }
-            GenreList { controller }
-            ArtistList { controller }
-            AlbumsList { controller }
-            Settings { controller }
+
+            TrackView { }
+            QueueList { }
+            //AllTracks { }
+            GenreList { }
+            ArtistList { }
+            AlbumsList { }
+            Settings { }
         }
 
         MenuBar {}
@@ -296,11 +326,11 @@ pub fn MenuBar() -> Element {
                 class: "svg-button",
                 onclick: move |_| VIEW.write().open(View::Genres),
             }
-            button {
-                class: "search-button",
-                class: "svg-button",
-                onclick: move |_| VIEW.write().open(View::Search),
-            }
+            // button {
+            //     class: "search-button",
+            //     class: "svg-button",
+            //     onclick: move |_| VIEW.write().open(View::Search),
+            // }
             button {
                 class: "settings-button",
                 class: "svg-button",

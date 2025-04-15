@@ -1,7 +1,5 @@
-use ndarray::Array1;
 use std::time::Instant;
 use std::fmt::Display;
-use super::track::TrackInfo;
 
 #[derive(Clone, PartialEq)]
 pub struct Queue {

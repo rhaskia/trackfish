@@ -155,7 +155,6 @@ pub fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
 }
 
 pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
-    let started = std::time::SystemTime::now();
     let file_hash = hash_filename(track);
     let mut stmt = conn.prepare("SELECT * FROM weights WHERE file_hash = ?1")?;
     

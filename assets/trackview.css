@@ -48,6 +48,7 @@
     }
 }
 
+
 .trackview {
     padding: 20px;
     display: flex;
@@ -77,6 +78,7 @@
 }
 
 .imageview {
+    margin: auto;
     margin-top: 30px;
     aspect-ratio: 1;
     display: flex;

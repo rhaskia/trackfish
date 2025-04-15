@@ -3,16 +3,16 @@ use super::{
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
     queue::{QueueType, Queue, Listen},
-    utils::{similar, strip_unnessecary},
+    utils::{strip_unnessecary},
 };
 use log::info;
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
-use super::settings::Settings;
-use crate::database::{init_db, save_track_weights, hash_filename, blob_to_array, row_to_weights};
-use rusqlite::{params, Rows};
+use super::settings::{Settings, WeightMode};
+use crate::database::{init_db, save_track_weights, hash_filename, row_to_weights};
+use rusqlite::{params, Rows, Connection};
 use std::collections::HashMap;
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
 
@@ -61,32 +61,12 @@ impl MusicController {
 
         let encoder = AutoEncoder::new().unwrap();
 
-        let mut track_info_vec = Vec::new();
-
         let started = std::time::SystemTime::now();
         let cache = init_db().unwrap();
-
-        let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
-        let mut result: Rows = stmt.query(params!()).unwrap();
-        let mut weights: HashMap<String, TrackInfo> = HashMap::new();
-        while let Ok(Some(row)) = result.next() {
-            let hash = row.get(0).unwrap();
-            weights.insert(hash, row_to_weights(&row).unwrap());
-        }
 
         let (mut albums, mut artists, mut genres) = (HashMap::new(), HashMap::new(), HashMap::new());
 
         for track in &all_tracks {
-            let started = std::time::SystemTime::now();
-            let file_hash = hash_filename(&track.file);
-            if weights.contains_key(&file_hash) {
-                track_info_vec.push(weights[&file_hash].clone());
-            } else {
-                let track_info = generate_track_info(&track, &encoder);
-                save_track_weights(&cache, &track.file, &track_info).unwrap();
-                track_info_vec.push(track_info);
-            }
-
             for genre in track.genres.clone() {
                 *genres.entry(genre.clone()).or_insert(0) += 1;
             }
@@ -109,7 +89,7 @@ impl MusicController {
                 all_tracks.get(current_playing).cloned().unwrap_or_default().title,
             )],
             current_queue: 0,
-            track_info: track_info_vec,
+            track_info: Vec::new(),
             artists,
             genres,
             albums,
@@ -130,6 +110,20 @@ impl MusicController {
         controller
     }
 
+    pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
+        let track = &self.all_tracks[track_idx];
+        let file_hash = hash_filename(&track.file);
+        if weights.contains_key(&file_hash) {
+            self.track_info.push(weights[&file_hash].clone());
+            return true;
+        } else {
+            let track_info = generate_track_info(&track, &self.encoder);
+            save_track_weights(&cache, &track.file, &track_info).unwrap();
+            self.track_info.push(track_info);
+            return false;
+        }
+    }
+
     pub fn play_track(&mut self, idx: usize) {
         if let Some(current_track) = self.current_track() {
             self.listens.push(Listen::new(
@@ -146,9 +140,27 @@ impl MusicController {
         self.player.play_track(&self.all_tracks[idx].file);
     }
 
+    pub fn get_space(&mut self) -> TrackInfo {
+        match self.settings.radio.weight_mode {
+            WeightMode::First => self.track_info[self.current_queue().cached_order[0]].clone(),
+            WeightMode::Last => self.track_info[*self.current_queue().cached_order.iter().last().unwrap()].clone(),
+            WeightMode::Average => {
+                let mut tracks = Vec::new();
+
+                // Introduce count later?
+                let count = self.current_queue().cached_order.len();
+                for i in (count.max(10) - 10)..count {
+                    tracks.push(self.track_info.get(self.current_queue().cached_order[i]).cloned().unwrap_or_default());
+                }
+
+                TrackInfo::average(tracks)
+            }
+        }
+    }
+
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
-        let space = self.track_info[self.current_queue().cached_order[0]].clone();
+        let space = self.get_space();
         println!("{:?}", space);
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
@@ -423,6 +435,10 @@ impl MusicController {
 
     pub fn play(&mut self) {
         self.player.play();
+    }
+
+    pub fn pause(&mut self) {
+        self.player.pause();
     }
 
     pub fn playing(&self) -> bool {

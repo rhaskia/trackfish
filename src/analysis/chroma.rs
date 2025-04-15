@@ -15,7 +15,7 @@ pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
     let fft = fft_planner.plan_fft_forward(frame_size);
 
     for frame in audio_data.chunks(hop_size) {
-        let hann_window: Vec<f32> = (0..frame_size)
+        let _hann_window: Vec<f32> = (0..frame_size)
             .map(|n| 0.5 * (1.0 - (2.0 * std::f32::consts::PI * n as f32 / (frame_size as f32)).cos()))
             .collect();
 
@@ -43,7 +43,7 @@ pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
             }
         }
 
-        chroma_vectors.push(chroma.into_shape((13, )).unwrap());
+        chroma_vectors.push(chroma.into_shape_with_order((13, )).unwrap());
     }
 
     let mut mean_chroma = Array1::zeros(13);

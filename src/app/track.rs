@@ -310,4 +310,31 @@ impl TrackInfo {
         let diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
         diff.sum().sqrt()
     }
+
+    pub fn average(tracks: Vec<TrackInfo>) -> TrackInfo {
+        let count = tracks.len() as f32;
+        TrackInfo {
+            genre_space: tracks.iter().fold(Array1::zeros(16), |a, b| a + b.genre_space.clone()) / count,
+            mfcc: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.mfcc.clone()) / count,
+            chroma: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.chroma.clone()) / count,
+            spectral: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.spectral.clone()) / count,
+            energy: tracks.iter().map(|t| t.energy).sum::<f32>() / count,
+            key: tracks.iter().map(|t| t.key).sum::<i32>() / count as i32,
+            bpm: tracks.iter().map(|t| t.bpm).sum::<f32>() / count,
+        }
+    }
+}
+
+impl Default for TrackInfo {
+    fn default() -> Self {
+        TrackInfo {
+            genre_space: Array1::zeros(16),
+            mfcc: Array1::zeros(13),
+            chroma: Array1::zeros(13),
+            spectral: Array1::zeros(13),
+            energy: 0.0,
+            key: 0,
+            bpm: 0.0,
+        }
+    }
 }

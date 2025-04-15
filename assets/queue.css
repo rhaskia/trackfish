@@ -1,3 +1,20 @@
 .draghandle {
     margin-right: 10px;
 }
+
+.trackbutton {
+    filter: brightness(2);
+}
+
+.queueselect {
+    appearance: none;
+    min-height: 25px;
+    padding: 0 10px;
+    color: white;
+    background: none;
+    width: calc(100% - 10px);
+}
+
+.trackitemimg {
+    
+}

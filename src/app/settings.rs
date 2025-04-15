@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
 use log::info;
 use serde::{Serialize, Deserialize};
 
@@ -12,9 +12,9 @@ pub struct Settings {
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub struct RadioSettings {
     pub temp: f32,
+    pub weight_mode: WeightMode,
     pub album_penalty: f32,
     pub artist_penalty: f32,
-    pub weight_mode: WeightMode,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Default)]
@@ -27,25 +27,9 @@ pub enum WeightMode {
 
 impl Default for Settings {
     fn default() -> Self {
-        let directory = if cfg!(target_os = "android") {
-            "/storage/emulated/0/Music".to_string()
-        } else { 
-            match dirs::audio_dir() {
-                Some(dir) => dir.display().to_string(),
-                None => {
-                    let dir = match std::env::consts::OS {
-                        "linux" => "~/Music",
-                        _ => ""
-                    };
-                    let _ = std::fs::create_dir(dir);
-                    dir.to_string()
-                }
-            }
-        };
-        
         Self { 
             volume: 1.0,
-            directory,
+            directory: Self::default_audio_dir(),
             radio: RadioSettings::default()
         }
     }
@@ -71,6 +55,24 @@ impl Settings {
         }
     }
 
+    pub fn default_audio_dir() -> String {
+        if cfg!(target_os = "android") {
+            "/storage/emulated/0/Music".to_string()
+        } else { 
+            match dirs::audio_dir() {
+                Some(dir) => dir.display().to_string(),
+                None => {
+                    let dir = match std::env::consts::OS {
+                        "linux" => "~/Music",
+                        _ => ""
+                    };
+                    let _ = std::fs::create_dir(dir);
+                    dir.to_string()
+                }
+            }
+        }
+    }
+
     pub fn load() -> Self {
         let dir = Self::dir().join("settings.toml");
         info!("loading settings from {dir:?}");
@@ -93,7 +95,9 @@ impl Settings {
 
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
-        std::fs::create_dir(Self::dir());
+        if let Err(err) = std::fs::create_dir(Self::dir()) {
+            info!("{err}");
+        };
         std::fs::write(Self::dir().join("settings.toml"), file).unwrap();
     }
 }

@@ -1,14 +1,15 @@
 use crate::app::{utils::similar, MusicController};
 use super::{View, VIEW};
 use dioxus::prelude::*;
+use super::CONTROLLER;
 
 #[component]
-pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
+pub fn AlbumsList() -> Element {
     let mut albums = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut albums_unsorted = controller.read().albums.clone().into_iter().collect::<Vec<(String, usize)>>();
+        let mut albums_unsorted = CONTROLLER.read().albums.clone().into_iter().collect::<Vec<(String, usize)>>();
         albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         albums.set(albums_unsorted);
     });
@@ -51,7 +52,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
                 }
             }
             if VIEW.read().album.is_some() {
-                TracksView { controller, viewtype: View::Albums }
+                TracksView { viewtype: View::Albums }
             }
         }
 
@@ -59,7 +60,7 @@ pub fn AlbumsList(controller: Signal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Element {
+pub fn TracksView(viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
     let name = use_memo(move || match viewtype() {
         View::Albums => VIEW.read().album.clone().unwrap(),
@@ -68,8 +69,8 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
         _ => unreachable!(),
     });
 
-    let mut tracks = use_memo(move || {
-        let mut tracks = controller.read().get_tracks_where(|t| match viewtype() {
+    let tracks = use_memo(move || {
+        let mut tracks = CONTROLLER.read().get_tracks_where(|t| match viewtype() {
             View::Albums => similar(&t.album, &name.read()),
             View::Artists => t.has_artist(&name.read()),
             View::Genres => t.has_genre(&name.read()),
@@ -78,9 +79,9 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
 
         if viewtype() == View::Albums {
             tracks.sort_by(|a, b| {
-                controller.read().all_tracks[*a]
+                CONTROLLER.read().all_tracks[*a]
                     .trackno
-                    .cmp(&controller.read().all_tracks[*b].trackno)
+                    .cmp(&CONTROLLER.read().all_tracks[*b].trackno)
             });
         }
 
@@ -111,15 +112,15 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
                     class: "trackitem",
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => controller.write().play_album_at(name(), track),
-                            View::Artists => controller.write().play_artist_at(name(), track),
-                            View::Genres => controller.write().play_genre_at(name(), track),
+                            View::Albums => CONTROLLER.write().play_album_at(name(), track),
+                            View::Artists => CONTROLLER.write().play_artist_at(name(), track),
+                            View::Genres => CONTROLLER.write().play_genre_at(name(), track),
                             _ => unreachable!(),
                         };
                         VIEW.write().open(View::Song);
                     },
-                    img { src: "/trackimage/{track}", loading: "lazy" }
-                    span { "{controller.read().get_track(track).unwrap().title}" }
+                    img { class: "trackitemicon", src: "/trackimage/{track}", loading: "lazy" }
+                    span { "{CONTROLLER.read().get_track(track).unwrap().title}" }
                 }
             }
         }
@@ -128,11 +129,11 @@ pub fn TracksView(controller: Signal<MusicController>, viewtype: View) -> Elemen
 }
 
 #[component]
-pub fn ArtistList(controller: Signal<MusicController>) -> Element {
+pub fn ArtistList() -> Element {
     let mut artists = use_signal(|| Vec::new());
 
     use_effect(move || {
-        let mut artists_unsorted = controller.read().artists.clone().into_iter().collect::<Vec<(String, (String, usize))>>();
+        let mut artists_unsorted = CONTROLLER.read().artists.clone().into_iter().collect::<Vec<(String, (String, usize))>>();
         artists_unsorted.sort_by(|(_, (_, a)), (_, (_, b))| b.cmp(a));
         artists.set(artists_unsorted);
     });
@@ -162,18 +163,18 @@ pub fn ArtistList(controller: Signal<MusicController>) -> Element {
                 }
             }
             if VIEW.read().artist.is_some() {
-                TracksView { controller, viewtype: View::Artists }
+                TracksView { viewtype: View::Artists }
             }
         }
     }
 }
 
 #[component]
-pub fn GenreList(controller: Signal<MusicController>) -> Element {
+pub fn GenreList() -> Element {
     let mut genres = use_signal(|| Vec::new());
 
     use_effect(move || {
-        let mut genres_unsorted = controller.read().genres.clone().into_iter().collect::<Vec<(String, usize)>>();
+        let mut genres_unsorted = CONTROLLER.read().genres.clone().into_iter().collect::<Vec<(String, usize)>>();
         genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
         genres.set(genres_unsorted);
     });
@@ -208,7 +209,7 @@ pub fn GenreList(controller: Signal<MusicController>) -> Element {
                 }
             }
             if VIEW.read().genre.is_some() {
-                TracksView { controller, viewtype: View::Genres }
+                TracksView { viewtype: View::Genres }
             }
         }
     }

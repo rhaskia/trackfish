@@ -82,6 +82,14 @@ impl AudioPlayer {
         sink.play();
     }
 
+    pub fn pause(&mut self) {
+        let sink = if let Some(sink) = self.try_new_sink() {
+            sink
+        } else { return };
+
+        sink.pause();
+    }
+
     pub fn playing(&self) -> bool {
         let sink = if let Some(sink) = &self.sink {
             sink

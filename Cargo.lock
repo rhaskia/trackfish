@@ -3781,9 +3781,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.20.2"
+version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
+checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
 name = "option-ext"
@@ -5444,16 +5444,20 @@ dependencies = [
  "aubio",
  "cache-dir",
  "crossbow",
+ "crossbow-android",
  "dioxus",
  "dioxus-logger",
  "dirs 6.0.0",
  "http",
  "http-range",
  "id3",
+ "jni 0.21.1",
  "log",
  "minipng",
  "ndarray",
  "ndarray-npy",
+ "ndk-context",
+ "once_cell",
  "rand 0.8.5",
  "rodio",
  "rusqlite",
