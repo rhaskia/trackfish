@@ -8,29 +8,44 @@ You will need to copy libc++shared.so into `.\target\dx\trackfish\release\androi
 You will also need to use my modified version of the dioxus-cli, branch manifest.
 
 # To Do:
+ - [x] Audio playing, skipping, etc
+ - [x] Working track view
  - [x] Proper Album & Artist Views
-      - [ ] More view information (time, artists, etc)
-      - [ ] Track settings (play, play after, start radio)
+    - [ ] More view information (time, artists, etc)
+    - [ ] Track settings (play, play after, start radio)
  - [ ] Proper Search View
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
- - [ ] Autoplaylists
+ - [ ] Media notifications/control
+    - [x] Android
+    - [ ] Desktop
+ - [ ] Playlists 
+    - [ ] Creation
+    - [ ] Playing as queue
+    - [ ] Saving
+ - [ ] Auto Playlists
     - [ ] Basics that foobar would have
     - [ ] Sort by audio features
- - [ ] Basic Settings (Shuffle, Queue, etc)
- - [ ] Comprehensive Settings
-    - [ ] Exceptions for albums, artists from shuffle
+ - [ ] Settings
+    - [x] Settings View
+    - [ ] Audio settings (volume, fade, etc)
+    - [ ] Radio settings (weights, temperature, etc)
+    - [ ] Library settings
+    - [ ] Exceptions for albums, artists from shuffle (?)
     - [ ] View Settings
-    - [ ] End of queue action
+ - [x] Radio playing system
  - [ ] More Weighting
-      - [x] Spectral
-      - [x] Chroma
-      - [x] MFCC
-      - [x] Zero Crossing Rate
-      - [ ] Energy
-      - [ ] Key
-      - [ ] BPM/Tempo
- - [ ] Theming
- - [ ] More Queue Management
-      - [ ] Locked Queues/Temp Queues
-      - [ ] Drag and Drop
+    - [x] Spectral
+    - [x] Chroma
+    - [x] MFCCs
+    - [x] Zero Crossing Rate
+    - [ ] Energy
+    - [ ] Key
+    - [ ] BPM/Tempo
+ - [ ] Theming (loading of custom css)
+ - [ ] Queue Management
+    - [x] Switch queues
+    - [x] Select song in queue
+    - [ ] Locked Queues/Temp Queues
+    - [ ] Drag and Drop
+    - [ ] End of queue options - stop, next, repeat, reshuffle etc
