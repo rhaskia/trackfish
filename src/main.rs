@@ -13,8 +13,9 @@ use tracing_log::LogTracer;
 use std::collections::HashMap;
 use crate::database::{row_to_weights, init_db};
 use rusqlite::{Rows, params};
-
+use crate::media::{MediaMsg, MEDIA_MSG_TX};
 use crate::document::eval;
+use tokio::sync::mpsc::unbounded_channel;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
@@ -179,8 +180,21 @@ fn App() -> Element {
     use_future(move || async move {
         let result = crossbow_android::permission::request_permission(&crossbow_android::permission::AndroidPermission::PostNotifications).await;
         info!("{result:?}");
+        let (tx, mut rx) = unbounded_channel();
+        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
         session.set(Some(crate::gui::media::MediaSession::new()));
-        info!("silly");
+        info!("Set up media session successfully");
+
+        while let Some(msg) = rx.recv().await {
+            match msg {
+                MediaMsg::Play => {
+                    CONTROLLER.write().play();
+                }
+                MediaMsg::Pause => {
+                    CONTROLLER.write().play();
+                }
+            }
+        }
     });
 
     #[cfg(target_os = "android")]

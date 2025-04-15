@@ -10,6 +10,23 @@ use jni::objects::GlobalRef;
 
 use super::CONTROLLER;
 
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender, UnboundedReceiver};
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> = Lazy::new(|| Mutex::new(None));
+
+pub enum MediaMsg {
+    Play, 
+    Pause
+}
+
+fn send_media_msg(msg: MediaMsg) {
+    if let Some(tx) = MEDIA_MSG_TX.lock().unwrap().as_ref() {
+        let _ = tx.send(msg);
+    }
+}
+
 pub struct MediaSession {
     media_session: GlobalRef,
     callback: GlobalRef,
@@ -148,19 +165,18 @@ impl MediaSession {
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPlay(_env: JNIEnv, _class: JClass) {
     log::info!("Rust received Play");
-    // CONTROLLER.write().play();
+    send_media_msg(MediaMsg::Play)
 }
 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPause(_env: JNIEnv, _class: JClass) {
     log::info!("Rust received Pause");
-    // CONTROLLER.write().pause();
+    send_media_msg(MediaMsg::Pause)
 }
 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnNext(_env: JNIEnv, _class: JClass) {
     log::info!("Rust received Next");
-    // CONTROLLER.write().skip();
 }
 
 #[no_mangle]
@@ -263,13 +279,6 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
             JValue::Object(&pending_intent),
         ],
     )?;
-
-    // env.call_method(
-    //     &builder,
-    //     "addAction",
-    //     "(Landroid/app/Notification$Action;)Landroid/app/Notification$Builder;",
-    //     &[JValue::Object(&play_action)],
-    // )?;
 
     let style_class = env.find_class("android/app/Notification$MediaStyle")?;
     let media_style = env.new_object(style_class, "()V", &[])?;
