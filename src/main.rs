@@ -187,12 +187,11 @@ fn App() -> Element {
 
         while let Some(msg) = rx.recv().await {
             match msg {
-                MediaMsg::Play => {
-                    CONTROLLER.write().play();
-                }
-                MediaMsg::Pause => {
-                    CONTROLLER.write().play();
-                }
+                MediaMsg::Play => CONTROLLER.write().play(),
+                MediaMsg::Pause => CONTROLLER.write().pause(),
+                MediaMsg::Next => CONTROLLER.write().skip(),
+                MediaMsg::Previous => CONTROLLER.write().skipback(),
+                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
             }
         }
     });

@@ -16,14 +16,19 @@ use std::sync::Mutex;
 
 pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> = Lazy::new(|| Mutex::new(None));
 
+#[derive(Debug)]
 pub enum MediaMsg {
     Play, 
-    Pause
+    Pause,
+    Next,
+    Previous,
+    SeekTo(i64),
 }
 
 fn send_media_msg(msg: MediaMsg) {
     if let Some(tx) = MEDIA_MSG_TX.lock().unwrap().as_ref() {
-        let _ = tx.send(msg);
+        info!("{msg:?}");
+        tx.send(msg).unwrap();
     }
 }
 
@@ -177,16 +182,19 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPause(_env: 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnNext(_env: JNIEnv, _class: JClass) {
     log::info!("Rust received Next");
+    send_media_msg(MediaMsg::Next)
 }
 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPrevious(_env: JNIEnv, _class: JClass) {
     log::info!("Rust received Previous");
+    send_media_msg(MediaMsg::Previous)
 }
 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(_env: JNIEnv, _class: JClass, pos: jint) {
     log::info!("Rust received Seek To {:?}", pos);
+    send_media_msg(MediaMsg::SeekTo(pos.into()));
 }
 
 pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JObject, bitmap: Option<&JObject>) -> jni::errors::Result<()> {
@@ -255,9 +263,34 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
 
     let title = env.new_string("Track Title")?;
     let artist = env.new_string("Artist Name")?;
+
     env.call_method(&builder, "setContentTitle", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;", &[JValue::Object(&JObject::from(title))])?;
     env.call_method(&builder, "setContentText", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;", &[JValue::Object(&JObject::from(artist))])?;
-    env.call_method(&builder, "setSmallIcon", "(I)Landroid/app/Notification$Builder;", &[JValue::Int(17301540)])?;
+
+    let icon_name = env.new_string("ic_notification")?; // your drawable name
+    let def_type = env.new_string("drawable")?;
+    let def_package = env.new_string("com.example.Trackfish")?; // your actual package
+
+    let resources = env.call_method(
+        &context,
+        "getResources",
+        "()Landroid/content/res/Resources;",
+        &[],
+    )?.l()?;
+
+    // int id = getResources().getIdentifier("ic_notification", "drawable", "com.example.Trackfish");
+    let icon_id = env.call_method(
+        &resources,
+        "getIdentifier",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
+        &[
+            JValue::Object(&JObject::from(icon_name)),
+            JValue::Object(&JObject::from(def_type)),
+            JValue::Object(&JObject::from(def_package)),
+        ],
+    )?.i()?;
+    
+    env.call_method(&builder, "setSmallIcon", "(I)Landroid/app/Notification$Builder;", &[JValue::Int(icon_id)])?;
 
     if let Some(bitmap) = bitmap {
         env.call_method(
