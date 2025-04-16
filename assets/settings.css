@@ -252,7 +252,7 @@ input[type=checkbox]:checked::after {
     outline: none;
 }
 
-.settingsselect option {
+option {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;

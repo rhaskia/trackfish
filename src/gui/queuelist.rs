@@ -16,7 +16,7 @@ pub fn QueueList() -> Element {
             display: if VIEW.read().current != View::Queue { "none" },
 
             div {
-                class: "selectwrapper",
+                class: "selectwrapper queueselectwrapper",
                 select { 
                     class: "queueselect",
                     onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),

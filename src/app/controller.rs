@@ -99,6 +99,8 @@ impl MusicController {
             shuffle: false,
         };
 
+        controller.player.set_volume(controller.settings.volume);
+
         info!("Calculated weights in {:?}", started.elapsed());
 
         if let Some(track) = controller.current_track().cloned() {
