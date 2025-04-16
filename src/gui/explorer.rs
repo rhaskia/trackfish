@@ -121,6 +121,15 @@ pub fn TracksView(viewtype: View) -> Element {
                     },
                     img { class: "trackitemicon", src: "/trackimage/{track}", loading: "lazy" }
                     span { "{CONTROLLER.read().get_track(track).unwrap().title}" }
+                    div { flex_grow: 1 }
+                    img { 
+                        class: "trackbutton",
+                        onclick: move |e| {
+                            e.stop_propagation();
+                            super::TRACKOPTION.set(Some(track));
+                        },
+                        src: "/assets/icons/vert.svg"
+                    }
                 }
             }
         }
