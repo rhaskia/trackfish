@@ -3,18 +3,20 @@ use super::{
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
     queue::{QueueType, Queue, Listen},
-    utils::{strip_unnessecary, similar},
+    utils::{strip_unnessecary, similar}, playlist::get_playlist_files,
+    settings::{Settings, WeightMode},
+    playlist::Playlist,
 };
 use log::info;
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use std::time::Instant;
-use super::settings::{Settings, WeightMode};
 use crate::database::{init_db, save_track_weights, hash_filename, row_to_weights};
 use rusqlite::{params, Rows, Connection};
 use std::collections::HashMap;
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
+use std::path::PathBuf;
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -25,6 +27,7 @@ pub struct MusicController {
     pub albums: HashMap<String, usize>,
     pub listens: Vec<Listen>,
     pub shuffle: bool,
+    pub playlists: Vec<Playlist>,
     current_started: Instant,
 
     pub current_queue: usize,
@@ -51,6 +54,7 @@ impl MusicController {
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
             shuffle: false,
+            playlists: Vec::new(),
         }
     }
 
@@ -97,9 +101,11 @@ impl MusicController {
             encoder,
             settings: Settings::load(),
             shuffle: false,
+            playlists: Vec::new(),
         };
 
         controller.player.set_volume(controller.settings.volume);
+        controller.load_playlists();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -110,6 +116,15 @@ impl MusicController {
         }
 
         controller
+    }
+
+    pub fn load_playlists(&mut self) {
+        let files = get_playlist_files(&self.settings.directory).unwrap(); 
+
+        for file in files {
+            let playlist = Playlist::load(&self.settings.directory, &file, &self.all_tracks);
+            self.playlists.push(playlist);
+        }
     }
 
     pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
@@ -322,6 +337,12 @@ impl MusicController {
         self.add_queue_at(vec![track], QueueType::Radio(track_name), track);
     }
 
+    pub fn start_playlist_at(&mut self, playlist: usize, track: usize) {
+        self.add_queue_at(self.playlists[playlist].tracks.clone(),
+            QueueType::Playlist(self.playlists[playlist].name.clone(), playlist),
+            track);
+    }
+
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
         if self.shuffle {
             tracks = shuffle_with_first(tracks, track);
@@ -401,6 +422,27 @@ impl MusicController {
         let position = self.current_queue().current_track;
         self.mut_current_queue().cached_order.insert(position + 1, track);
     }
+
+    pub fn add_to_playlist(&mut self, playlist: usize, track: usize) {
+        let file = relative_path(&self.all_tracks[track].file, &self.settings.directory);
+        info!("{file}");
+        self.playlists[playlist].tracks.push(track);
+        self.playlists[playlist].track_paths.push(file);
+        self.playlists[playlist].save(&self.settings.directory);
+    }
+}
+
+pub fn relative_path(file: &str, dir: &str) -> String {
+    let file_canon = PathBuf::from(file).canonicalize().unwrap();
+    let dir_canon = PathBuf::from(dir).canonicalize().unwrap();
+    let mut file_comp = file_canon.components();
+    let mut dir_comp = dir_canon.components();
+
+    while dir_comp.next().is_some() {
+        file_comp.next();
+    }
+
+    file_comp.as_path().to_string_lossy().to_string()
 }
 
 pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {

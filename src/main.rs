@@ -208,10 +208,12 @@ fn App() -> Element {
             id 
         } else { responder.respond(r); return; };
 
-        let mut file = CONTROLLER.read().get_track(id).cloned()
+        let mut file = if let Some(file) = CONTROLLER.read().get_track(id).cloned()
             .and_then(|track| Tag::read_from_path(track.file).ok())
             .and_then(|tag| tag.pictures().next().cloned())
-            .and_then(|picture| Some(Cursor::new(picture.data))).unwrap();
+            .and_then(|picture| Some(Cursor::new(picture.data))) {
+            file
+        } else { responder.respond(r); return; };
 
         spawn(async move {
             match get_stream_response(&mut file, &request).await {
@@ -229,6 +231,7 @@ fn App() -> Element {
         document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
         document::Link { href: "assets/explorer.css", rel: "stylesheet" }
         document::Link { href: "assets/menubar.css", rel: "stylesheet" }
+        document::Link { href: "assets/playlists.css", rel: "stylesheet" }
         document::Link { href: "assets/settings.css", rel: "stylesheet" }
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
         document::Link { href: "assets/trackoptions.css", rel: "stylesheet" }
@@ -255,10 +258,11 @@ fn App() -> Element {
             TrackView { }
             TrackOptions { }
             QueueList { }
-            //AllTracks { }
+            AllTracks { }
             GenreList { }
             ArtistList { }
             AlbumsList { }
+            PlaylistsView { }
             Settings { }
         }
 
@@ -299,6 +303,11 @@ pub fn MenuBar() -> Element {
                 class: "genres-button",
                 class: "svg-button",
                 onclick: move |_| VIEW.write().open(View::Genres),
+            }
+            button {
+                class: "playlists-button",
+                class: "svg-button",
+                onclick: move |_| VIEW.write().open(View::Playlists),
             }
             // button {
             //     class: "search-button",

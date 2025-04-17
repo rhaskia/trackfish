@@ -66,10 +66,15 @@ pub fn TracksView(viewtype: View) -> Element {
         View::Albums => VIEW.read().album.clone().unwrap(),
         View::Artists => VIEW.read().artist.clone().unwrap(),
         View::Genres => VIEW.read().genre.clone().unwrap(),
+        View::Playlists => CONTROLLER.read().playlists[VIEW.read().playlist.unwrap()].name.clone(),
         _ => unreachable!(),
     });
 
     let tracks = use_memo(move || {
+        if let View::Playlists = viewtype() {
+            return CONTROLLER.read().playlists[VIEW.read().playlist.unwrap()].tracks.clone();
+        }
+
         let mut tracks = CONTROLLER.read().get_tracks_where(|t| match viewtype() {
             View::Albums => similar(&t.album, &name.read()),
             View::Artists => t.has_artist(&name.read()),
@@ -95,6 +100,7 @@ pub fn TracksView(viewtype: View) -> Element {
                     View::Albums => VIEW.write().album = None,
                     View::Artists => VIEW.write().artist = None,
                     View::Genres => VIEW.write().genre = None,
+                    View::Playlists => VIEW.write().playlist = None,
                     _ => unreachable!(),
                 },
                 src: "assets/icons/back.svg",
@@ -115,6 +121,7 @@ pub fn TracksView(viewtype: View) -> Element {
                             View::Albums => CONTROLLER.write().play_album_at(name(), track),
                             View::Artists => CONTROLLER.write().play_artist_at(name(), track),
                             View::Genres => CONTROLLER.write().play_genre_at(name(), track),
+                            View::Playlists => CONTROLLER.write().start_playlist_at(VIEW.read().playlist.unwrap(), track),
                             _ => unreachable!(),
                         };
                         VIEW.write().open(View::Song);

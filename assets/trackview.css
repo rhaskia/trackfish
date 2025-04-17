@@ -48,6 +48,12 @@
     }
 }
 
+.buttonrow button {
+    flex: 1 1 0;
+    height: 24px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 
 .trackview {
     padding: 20px;

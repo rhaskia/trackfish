@@ -3,6 +3,7 @@ pub mod audio;
 pub mod controller;
 pub mod queue;
 pub mod utils;
+pub mod playlist;
 pub mod track;
 pub mod settings;
 

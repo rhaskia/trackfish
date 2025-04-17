@@ -37,22 +37,32 @@ pub fn TrackView() -> Element {
 
     rsx! {
         div { class: "trackview",
+            // Keyboard track controls
+            // Need to move higher in app
             onkeydown: move |e| match key_to_action(e) {
                 Some(Action::Skip) => CONTROLLER.write().skip(),
                 Some(Action::SkipPrevious) => CONTROLLER.write().skipback(),
                 Some(Action::PauseToggle) => CONTROLLER.write().toggle_playing(),
                 _ => {},
             },
+
             display: if VIEW.read().current != View::Song { "none" },
+
+            // Background image blur
             div { class: "trackblur",
                 background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})" 
             }
+
+            // Main track image
             div { class: "imageview",
                 img { src: "/trackimage/{CONTROLLER.read().current_track_idx()}", loading: "lazy" }
             }
+
             div {
                 class: "trackcontrols",
                 h3 { "{CONTROLLER.read().current_track_title().unwrap_or_default()}" }
+
+                // Song artist list
                 span { class: "artistspecifier",
                     for (idx , artist) in CONTROLLER
                         .read()
@@ -62,6 +72,7 @@ pub fn TrackView() -> Element {
                         .into_iter()
                         .enumerate()
                     {
+                        // Start each artist with comma after first
                         if idx > 0 {
                             ", "
                         }
@@ -74,19 +85,24 @@ pub fn TrackView() -> Element {
                         }
                     }
                 }
+
+                // Song album list
                 span {
                     class: "albumspecifier",
+                    // Open album view on click
                     onclick: move |_| {
                         VIEW.write().album = Some(CONTROLLER.read().current_track_album().unwrap_or_default().to_string());
                         VIEW.write().open(View::Albums);
                     },
-                    // TODO: open Album View for current album
                     "{CONTROLLER.read().current_track_album().unwrap_or_default()}"
                 }
+
+                // Song genre list
                 span { class: "genresspecifier",
                     if let Some(genres) = CONTROLLER.read().current_track_genres() {
                         for genre in genres.iter().cloned() {
                             span { 
+                                // Open genre view on click
                                 onclick: move |_| {
                                     VIEW.write().open(View::Genres);
                                     VIEW.write().genre = Some(genre.clone()); 
@@ -96,6 +112,8 @@ pub fn TrackView() -> Element {
                         }
                     }
                 }
+
+                // Track progress information
                 div { class: "progressrow",
                     span { class: "songprogress",
                         "{format_seconds(CONTROLLER.read().player.progress_secs())}"
@@ -115,10 +133,13 @@ pub fn TrackView() -> Element {
                     }
                     span { class: "songlength", "{format_seconds(CONTROLLER.read().player.song_length())}" }
                 }
+
+                // Track controls
                 div { class: "buttonrow",
                     button { 
                         class: "like-button",
                         class: "svg-button",
+                        // Open track options for current track
                         onclick: move |_| super::TRACKOPTION.set(Some(CONTROLLER.read().current_track_idx())),
                     }
                     button {

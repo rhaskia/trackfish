@@ -39,6 +39,7 @@ impl Track {
             QueueType::Genre(_) => todo!(),
             QueueType::Union(_) => todo!(),
             QueueType::Exclusion(_) => todo!(),
+            QueueType::Playlist(_, _) => todo!(),
         }
     }
 

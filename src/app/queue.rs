@@ -78,6 +78,7 @@ pub enum QueueType {
     Artist(String),
     Album(String),
     Genre(String),
+    Playlist(String, usize),
     Union(Vec<QueueType>),
     Exclusion(Box<QueueType>),
 }
@@ -87,6 +88,7 @@ impl Display for QueueType {
         match self {
             Self::AllTracks => f.write_str("All Tracks"),
             Self::Radio(name) => write!(f, "{name} Radio"),
+            Self::Playlist(name, _) => write!(f, "{name}"),
             Self::Exclusion(excluded) => f.write_str(&format!("Excluding {excluded}")),
             Self::Artist(artist) => f.write_str(artist),
             Self::Album(album) => f.write_str(album),

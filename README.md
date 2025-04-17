@@ -21,9 +21,12 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Android
     - [ ] Desktop
  - [ ] Playlists 
-    - [ ] Creation
-    - [ ] Playing as queue
-    - [ ] Saving
+    - [x] Creation
+    - [x] Playing as queue
+    - [x] Saving
+    - [x] Adding tracks
+    - [ ] Deletion
+    - [ ] Removing tracks
  - [ ] Auto Playlists
     - [ ] Basics that foobar would have
     - [ ] Sort by audio features
