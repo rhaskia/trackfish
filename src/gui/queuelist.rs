@@ -65,7 +65,14 @@ pub fn TrackItem(selected_queue: Signal<usize>, idx: usize) -> Element {
             img { class: "trackitemicon", loading: "onvisible", src: "/trackimage/{CONTROLLER.read().get_queue(selected_queue()).track(idx)}" }
             span { "{title}" }
             div { flex_grow: 1 }
-            img { class: "trackbutton", src: "/assets/icons/vert.svg" }
+            img { 
+                class: "trackbutton",
+                onclick: move |e| {
+                    e.stop_propagation();
+                    super::TRACKOPTION.set(Some(CONTROLLER.read().get_queue(selected_queue()).track(idx)));
+                },
+                src: "/assets/icons/vert.svg"
+            }
         }
     }
 }

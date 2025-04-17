@@ -5,6 +5,7 @@ pub mod trackview;
 pub mod stream;
 pub mod explorer;
 pub mod input;
+pub mod trackoptions;
 #[cfg(target_os = "android")]
 pub mod media;
 
@@ -15,12 +16,14 @@ pub use trackview::TrackView;
 pub use queuelist::QueueList;
 pub use explorer::{AlbumsList, ArtistList, GenreList};
 pub use input::{key_to_action, Action};
+pub use trackoptions::TrackOptions;
 
 use dioxus::prelude::*;
 use crate::app::MusicController;
 
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 pub const CONTROLLER: GlobalSignal<MusicController> = GlobalSignal::new(|| MusicController::empty());
+pub const TRACKOPTION: GlobalSignal<Option<usize>> = Signal::global(|| None);
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum View {

@@ -1,0 +1,51 @@
+.trackoptionsbg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: rgb(0 0 0 / 48%);
+    width: 100vw;
+    height: 100vw; 
+}
+
+.trackoptions {
+    z-index: 10;
+    background: #1d2021;
+    border: 1px solid #696969;
+    border-radius: 8px;
+    width: 300px;
+    top: calc(50vh - 250px);
+    min-height: 400px;
+    height: fit-content;
+    left: calc(50vw - 150px);
+    position: absolute;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    padding: 10px;
+}
+
+.trackoptions hr {
+    border-color: #696969;
+    margin: 10px 5px;
+}
+
+.trackoptions button {
+    border: none;
+    background: none;
+    width: 100%;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.trackoptions button img {
+    filter: brightness(2);
+    margin-right: 10px;
+}
+
+.trackoptions h3 {
+    margin: 0;
+    font-weight: 500;
+    margin-bottom: 10px;
+}

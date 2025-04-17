@@ -10,7 +10,7 @@
         aspect-ratio: 1;
     }
     
-    .trackoptions {
+    .trackcontrols {
         display: flex;
         flex: 1 1 0;
         padding: 20px;
@@ -35,7 +35,7 @@
         aspect-ratio: 1;
     }
 
-    .trackoptions {
+    .trackcontrols {
         display: flex;
         flex: 1 1 0;
         justify-content: center;
@@ -56,7 +56,7 @@
     flex: 1 1 0;
 }
 
-.trackoptions {
+.trackcontrols {
     display: flex;
     flex-direction: column;
     overflow: hidden;

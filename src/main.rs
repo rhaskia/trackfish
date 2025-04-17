@@ -117,6 +117,9 @@ fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
 
+    #[cfg(target_os = "android")]
+    let mut session = use_signal(|| None);
+
     use_future(|| async {
         match eval(include_str!("../js/mediasession.js")).await {
             Ok(_) => {}
@@ -124,13 +127,8 @@ fn App() -> Element {
         }
     });
 
-    use_memo(move || {
-        info!("{:?}", VIEW.read().current);
-    });
-
     use_future(move || async move {
         let started = Instant::now();
-        info!("hi");
         #[cfg(target_os = "android")]
         {
             //let result = crossbow::Permission::StorageRead.request_async().await;
@@ -138,7 +136,6 @@ fn App() -> Element {
             info!("{result:?}");
         }
 
-        info!("hi");
         let tracks = load_tracks(&CONTROLLER.read().settings.directory);
         if let Ok(t) = tracks {
             tracks_count.set(t.len());
@@ -171,9 +168,6 @@ fn App() -> Element {
             }
         }
     });
-
-    #[cfg(target_os = "android")]
-    let mut session = use_signal(|| None);
 
     #[cfg(target_os = "android")]
     use_future(move || async move {
@@ -210,36 +204,14 @@ fn App() -> Element {
     use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(200).body(&[]).unwrap();
 
-        let id = if let Ok(parsed) = request.uri().path().replace("/trackimage/", "").parse() {
-            parsed
-        } else {
-            responder.respond(r);
-            return;
-        };
+        let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
+            id 
+        } else { responder.respond(r); return; };
 
-        // Retry once free
-        let path = if let Ok(Some(track)) =
-            CONTROLLER.try_read().and_then(|c| Ok(c.get_track(id).cloned()))
-        {
-            track.file
-        } else {
-            responder.respond(r);
-            return;
-        };
-
-        let tag = if let Ok(t) = Tag::read_from_path(path) {
-            t
-        } else {
-            responder.respond(r);
-            return;
-        };
-
-        let mut file = if let Some(picture) = tag.pictures().next() {
-            Cursor::new(picture.data.clone())
-        } else {
-            responder.respond(r);
-            return;
-        };
+        let mut file = CONTROLLER.read().get_track(id).cloned()
+            .and_then(|track| Tag::read_from_path(track.file).ok())
+            .and_then(|tag| tag.pictures().next().cloned())
+            .and_then(|picture| Some(Cursor::new(picture.data))).unwrap();
 
         spawn(async move {
             match get_stream_response(&mut file, &request).await {
@@ -259,6 +231,7 @@ fn App() -> Element {
         document::Link { href: "assets/menubar.css", rel: "stylesheet" }
         document::Link { href: "assets/settings.css", rel: "stylesheet" }
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
+        document::Link { href: "assets/trackoptions.css", rel: "stylesheet" }
         document::Link { href: "assets/queue.css", rel: "stylesheet" }
         
         div {
@@ -280,6 +253,7 @@ fn App() -> Element {
             },
 
             TrackView { }
+            TrackOptions { }
             QueueList { }
             //AllTracks { }
             GenreList { }

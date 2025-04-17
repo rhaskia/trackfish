@@ -51,7 +51,7 @@ pub fn TrackView() -> Element {
                 img { src: "/trackimage/{CONTROLLER.read().current_track_idx()}", loading: "lazy" }
             }
             div {
-                class: "trackoptions",
+                class: "trackcontrols",
                 h3 { "{CONTROLLER.read().current_track_title().unwrap_or_default()}" }
                 span { class: "artistspecifier",
                     for (idx , artist) in CONTROLLER
@@ -116,7 +116,11 @@ pub fn TrackView() -> Element {
                     span { class: "songlength", "{format_seconds(CONTROLLER.read().player.song_length())}" }
                 }
                 div { class: "buttonrow",
-                    button { class: "like-button", class: "svg-button" }
+                    button { 
+                        class: "like-button",
+                        class: "svg-button",
+                        onclick: move |_| super::TRACKOPTION.set(Some(CONTROLLER.read().current_track_idx())),
+                    }
                     button {
                         class: "skipprev-button",
                         class: "svg-button",

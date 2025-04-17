@@ -3,7 +3,7 @@ use super::{
     embed::AutoEncoder,
     track::{Mood, Track, TrackInfo},
     queue::{QueueType, Queue, Listen},
-    utils::{strip_unnessecary},
+    utils::{strip_unnessecary, similar},
 };
 use log::info;
 use ndarray::Array1;
@@ -198,22 +198,21 @@ impl MusicController {
             }
         }
 
-        // for i in 0..self.all_tracks.len() {
-        //     let current_idx = self.current_queue().current();
-        //     if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
-        //         weights *= self.settings.radio_album_penalty;
-        //     }
-        //
-        //     if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
-        //         weights *= self.settings.radio_artist_penalty;
-        //     }
-        // }
+        for i in 0..self.all_tracks.len() {
+            let current_idx = self.current_queue().current();
+            if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
+                weights *= self.settings.radio.album_penalty;
+            }
+
+            if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
+                weights *= self.settings.radio.artist_penalty;
+            }
+        }
 
         for i in &self.current_queue().cached_order {
             weights[*i] = 0.0;
         }
 
-        // TODO: negative weighting for genres in songs skipped early (maybe)
         // TODO: weights for each feature used in weighting
 
         weights
@@ -318,6 +317,11 @@ impl MusicController {
         self.add_queue_at(tracks, QueueType::Artist(artist.clone()), track);
     }
 
+    pub fn start_radio(&mut self, track: usize) {
+        let track_name = self.all_tracks[track].title.clone();
+        self.add_queue_at(vec![track], QueueType::Radio(track_name), track);
+    }
+
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
         if self.shuffle {
             tracks = shuffle_with_first(tracks, track);
@@ -391,6 +395,11 @@ impl MusicController {
         }
 
         self.shuffle = !self.shuffle
+    }
+
+    pub fn play_next(&mut self, track: usize) {
+        let position = self.current_queue().current_track;
+        self.mut_current_queue().cached_order.insert(position + 1, track);
     }
 }
 
