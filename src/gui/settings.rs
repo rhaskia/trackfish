@@ -95,8 +95,9 @@ fn AudioSettings() -> Element {
 #[component]
 fn RadioSettings() -> Element {
     rsx!{
-        div {
+        form {
             class: "settingsmenu",
+            onchange: move |_| CONTROLLER.write().settings.save(),
             h2 { class: "settingsbar", "Radio" }
             SettingsInput {
                 label: "Radio Temperature",

@@ -52,9 +52,9 @@ impl Default for RadioSettings {
             mfcc_weight: 1.0,
             chroma_weight: 1.0,
             spectral_weight: 0.7,
-            energy_weight: 0.5,
-            bpm_weight: 0.2,
-            zcr_weight: 0.2,
+            energy_weight: 0.0,
+            bpm_weight: 0.0,
+            zcr_weight: 0.0,
         }
     }
 }

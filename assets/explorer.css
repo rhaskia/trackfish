@@ -113,7 +113,7 @@
 
 .tracklist .current {
     border-radius: 8px;
-    background: #ffffff11;
+    background: rgb(44 47 48);
 }
 
 .thinitem small {
@@ -131,6 +131,7 @@
     padding: 6px;
     margin: 4px;
     border: 1px solid var(--bg);
+    background: #1d2021;
     width: calc(100% - 20px);
 }
 

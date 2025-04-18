@@ -7,6 +7,13 @@
     --bg: #1d2021;
 }
 
+.noselect {
+  user-select: none;
+  -webkit-user-select: none; 
+  -ms-user-select: none; 
+  pointer-events: auto; 
+}
+
 body {
     position: absolute;
     z-index: -2;

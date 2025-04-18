@@ -12,8 +12,8 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [x] Audio playing, skipping, etc
  - [x] Working track view
  - [x] Proper Album & Artist Views
-    - [ ] More view information (time, artists, etc)
-    - [ ] Track settings (play, play after, start radio)
+    - [x] More view information (time, artists, etc)
+    - [x] Track settings (play, play after, start radio)
  - [ ] Proper Search View
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
@@ -33,19 +33,18 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [ ] Settings
     - [x] Settings View
     - [ ] Audio settings (volume, fade, etc)
-    - [ ] Radio settings (weights, temperature, etc)
+    - [x] Radio settings (weights, temperature, etc)
     - [ ] Library settings
     - [ ] Exceptions for albums, artists from shuffle (?)
     - [ ] View Settings
  - [x] Radio playing system
- - [ ] More Weighting
+ - [x] More Weighting
     - [x] Spectral
     - [x] Chroma
     - [x] MFCCs
     - [x] Zero Crossing Rate
-    - [ ] Energy
-    - [ ] Key
-    - [ ] BPM/Tempo
+    - [x] Energy
+    - [x] BPM/Tempo
  - [ ] Theming (loading of custom css)
  - [ ] Queue Management
     - [x] Switch queues

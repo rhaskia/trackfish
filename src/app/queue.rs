@@ -1,5 +1,6 @@
 use std::time::Instant;
 use std::fmt::Display;
+use log::info;
 
 #[derive(Clone, PartialEq)]
 pub struct Queue {
@@ -68,6 +69,43 @@ impl Queue {
 
     pub fn len(&self) -> usize {
         self.cached_order.len()
+    }
+
+    pub fn swap(&mut self, index_to_move: usize, position: usize) {
+        if index_to_move == position { return; }
+        info!("{index_to_move}, {position}");
+
+        let track = self.cached_order[index_to_move];
+        let moving_current = index_to_move == self.current_track;
+        let mut new_pos = 0;
+
+        if position >= self.current_track && index_to_move < self.current_track {
+            self.current_track -= 1;
+        } else if position <= self.current_track && index_to_move > self.current_track {
+            self.current_track += 1;
+        }
+
+        if position + 1 >= self.cached_order.len() {
+            self.cached_order.remove(index_to_move);
+            self.cached_order.push(track);
+            self.current_track -= 1;
+            new_pos = self.cached_order.len() - 1;
+            self.current_track += 1;
+        } else {
+            if index_to_move > position {
+                self.cached_order.remove(index_to_move);
+                self.cached_order.insert(position, track);
+                new_pos = position;
+            } else {
+                self.cached_order.insert(position + 1, track);
+                self.cached_order.remove(index_to_move);
+                new_pos = position;
+            }
+        }
+
+        if moving_current {
+            self.current_track = new_pos;
+        }
     }
 }
 
