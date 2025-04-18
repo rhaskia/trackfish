@@ -126,11 +126,12 @@ pub fn TracksView(viewtype: View) -> Element {
                         };
                         VIEW.write().open(View::Song);
                     },
-                    img { class: "trackitemicon", src: "/trackimage/{track}", loading: "lazy" }
+                    img { class: "trackitemicon", src: "/trackimage/{track}", loading: "onvisible" }
                     span { "{CONTROLLER.read().get_track(track).unwrap().title}" }
                     div { flex_grow: 1 }
                     img { 
                         class: "trackbutton",
+                        loading: "onvisible",
                         onclick: move |e| {
                             e.stop_propagation();
                             super::TRACKOPTION.set(Some(track));

@@ -55,7 +55,7 @@ pub fn TrackView() -> Element {
 
             // Main track image
             div { class: "imageview",
-                img { src: "/trackimage/{CONTROLLER.read().current_track_idx()}", loading: "lazy" }
+                img { src: "/trackimage/{CONTROLLER.read().current_track_idx()}", loading: "onvisible" }
             }
 
             div {

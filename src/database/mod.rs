@@ -30,7 +30,7 @@ pub fn table_outdated(conn: &Connection, table: &str) -> bool {
         Err(_) => return false,
     };
 
-    let columns_needed = vec!["file_hash", "genre_space", "spectral", "chroma", "energy", "key", "bpm"];
+    let columns_needed = vec!["file_hash", "genre_space", "spectral", "chroma", "energy", "key", "bpm", "zcr"];
 
     if columns_needed.len() != result.column_count() { return false; }
 
@@ -80,7 +80,8 @@ pub fn init_db() -> Result<Connection> {
             chroma BLOB,
             energy FLOAT,
             key INT,
-            bpm INT
+            bpm FLOAT,
+            zcr FLOAT
         ) ", [])?;
 
     Ok(conn)
@@ -137,8 +138,9 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
          spectral,
          energy,
          key,
-         bpm) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![file_hash, genre_blob, mfcc_blob, chroma_blob, spectral_blob, weights.energy, weights.key, weights.bpm])?;
+         bpm,
+         zcr) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![file_hash, genre_blob, mfcc_blob, chroma_blob, spectral_blob, weights.energy, weights.key, weights.bpm, weights.zcr])?;
 
     Ok(())
 }
@@ -171,8 +173,9 @@ pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
     let energy = row.get(5)?;
     let key = row.get(6)?;
     let bpm = row.get(7)?;
+    let zcr = row.get(8)?;
 
-    Ok(TrackInfo { genre_space, mfcc, chroma, spectral, energy, key, bpm })
+    Ok(TrackInfo { genre_space, mfcc, chroma, spectral, energy, key, bpm, zcr })
 }
 
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {

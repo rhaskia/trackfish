@@ -208,7 +208,13 @@ fn App() -> Element {
             id 
         } else { responder.respond(r); return; };
 
-        let mut file = if let Some(file) = CONTROLLER.read().get_track(id).cloned()
+        // responder.respond(r);
+        // return;
+
+        let track = CONTROLLER.try_peek().unwrap().get_track(id).cloned(); 
+        drop(CONTROLLER);
+
+        let mut file = if let Some(file) = track
             .and_then(|track| Tag::read_from_path(track.file).ok())
             .and_then(|tag| tag.pictures().next().cloned())
             .and_then(|picture| Some(Cursor::new(picture.data))) {
@@ -238,9 +244,12 @@ fn App() -> Element {
         document::Link { href: "assets/queue.css", rel: "stylesheet" }
         
         div {
-            class: "loadingpopup",
+            class: "loadingpopupbg",
             hidden: loading_track_weights() == tracks_count(),
-            "Loading weights for track {loading_track_weights} out of {tracks_count} "
+            div {
+                class: "loadingpopup",
+                "Loading weights for track {loading_track_weights} out of {tracks_count} "
+            }
         }
 
         div { class: "mainview",

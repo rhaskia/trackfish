@@ -8,7 +8,7 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { version = "0.6.3", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { path = "../dioxus/packages/dioxus", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8.5"
 tokio = "1.41.1"

@@ -6,6 +6,7 @@ mod zcr;
 pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
+use ndarray::Array1;
 pub use spectral::extract_spectral;
 pub use tempo::extract_tempo;
 pub use zcr::extract_zcr;
@@ -26,11 +27,11 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let mfcc = extract_mfcc(&samples, sample_rate);
     let chroma = extract_mfcc(&samples, sample_rate);
     let spectral = extract_spectral(&samples, sample_rate);
-    let energy = 1.0;
+    let energy = extract_energy(&samples).mean().unwrap_or(0.0);
     let bpm = extract_tempo(&samples, sample_rate);
-    let _zcr = extract_zcr(&samples, sample_rate);
+    let zcr = extract_zcr(&samples, sample_rate);
 
-    TrackInfo { genre_space, mfcc, chroma, spectral, bpm, energy, key: 0 }
+    TrackInfo { genre_space, mfcc, chroma, spectral, bpm, energy, zcr, key: 0 }
 }
 
 pub fn load_samples(file_path: &str, duration: Option<f32>) -> (Vec<f32>, u32) {
@@ -78,3 +79,18 @@ pub fn linear_resample(audio_data: &Vec<f32>, input_rate: usize, output_rate: us
     resampled
 }
 
+fn extract_energy(samples: &Vec<f32>) -> Array1<f32> {
+    let frame_size = 2048;
+    let hop_size = 2048;
+    let mut rms_vals = Vec::new();
+    let mut i = 0;
+
+    while i + frame_size <= samples.len() {
+        let frame = &samples[i..i + frame_size];
+        let rms = (frame.iter().map(|x| x * x).sum::<f32>() / frame.len() as f32).sqrt();
+        rms_vals.push(rms);
+        i += hop_size;
+    }
+
+    Array1::from_vec(rms_vals)
+}
