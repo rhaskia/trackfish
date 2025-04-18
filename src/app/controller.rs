@@ -4,7 +4,7 @@ use super::{
     track::{Mood, Track, TrackInfo},
     queue::{QueueType, Queue, Listen},
     utils::{strip_unnessecary, similar}, playlist::get_playlist_files,
-    settings::{Settings, WeightMode},
+    settings::{Settings, WeightMode, RadioSettings},
     playlist::Playlist,
 };
 use log::info;
@@ -184,7 +184,7 @@ impl MusicController {
         let mut dists: Vec<(usize, f32)> = self
             .track_info
             .iter()
-            .map(|track| genres_dist_from_vec(&track, &space))
+            .map(|track| genres_dist_from_vec(&track, &space, &self.settings.radio))
             .enumerate()
             .collect();
         dists.sort_by(|(_, a), (_, b)| b.total_cmp(a));
@@ -553,6 +553,22 @@ impl MusicController {
     }
 }
 
-pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo) -> f32 {
-    (cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone()) + cosine_similarity(lhs.chroma.clone(), rhs.chroma.clone())) / 2.0
+pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo, settings: &RadioSettings) -> f32 {
+    let mfcc_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
+    let chroma_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
+    let spectral_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
+    let energy_sim = relative_similarity(lhs.energy, rhs.energy).min(1.0) ;
+    let bpm_sim = relative_similarity(lhs.bpm, rhs.bpm).min(1.0);
+    let zcr_sim = relative_similarity(lhs.zcr, rhs.zcr);
+
+    (mfcc_sim * settings.mfcc_weight) + 
+    (chroma_sim * settings.chroma_weight) + 
+    (spectral_sim * settings.mfcc_weight) + 
+    (energy_sim * settings.energy_weight) + 
+    (bpm_sim * settings.bpm_weight) + 
+    (zcr_sim * settings.zcr_weight) 
+}
+
+pub fn relative_similarity(lhs: f32, rhs: f32) -> f32 {
+    1.0 - (((lhs + 0.01) / (rhs + 0.01)) / 2.0).abs()
 }

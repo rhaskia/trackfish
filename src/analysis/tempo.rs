@@ -18,8 +18,8 @@ pub fn extract_tempo(buffer: &Vec<f32>, sample_rate: u32) -> f32 {
         let start = block_index * fft_size;
         let buf = &buffer[start..];
 
-        fft.do_(buf, &mut fft_scratch).unwrap();
-        tempo.do_(&fft_scratch, &mut tempo_scratch).unwrap();
+        // fft.do_(buf, &mut fft_scratch).unwrap();
+        tempo.do_(&buf, &mut tempo_scratch).unwrap();
 
         mean_tempo += tempo.get_bpm();
     }
