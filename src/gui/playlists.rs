@@ -27,7 +27,9 @@ pub fn PlaylistsView() -> Element {
                         class: "playlistitem",
                         onclick: move |_| VIEW.write().playlist = Some(i),
                         img { src: "assets/icons/playlistplay.svg" }
-                        "{CONTROLLER.read().playlists[i].name}"
+                        "{CONTROLLER.read().playlists[i].name}",
+                        div { flex: "1 1 0" },
+                        img { src: "assets/icons/vert.svg" }
                     }
                 }
 

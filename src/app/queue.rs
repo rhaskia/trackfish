@@ -88,9 +88,7 @@ impl Queue {
         if position + 1 >= self.cached_order.len() {
             self.cached_order.remove(index_to_move);
             self.cached_order.push(track);
-            self.current_track -= 1;
             new_pos = self.cached_order.len() - 1;
-            self.current_track += 1;
         } else {
             if index_to_move > position {
                 self.cached_order.remove(index_to_move);

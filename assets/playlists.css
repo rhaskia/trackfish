@@ -10,13 +10,15 @@
     color: #fff;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
     padding: 5px 0;
     gap: 10px;
+    align-items: center;
 }
 
 .playlistitem img {
     filter: brightness(2);
+    height: 30px;
+    width: 30px;
 }
 
 .playlistsview button, .playlistcreator button {
