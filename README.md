@@ -14,7 +14,6 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [x] Proper Album & Artist Views
     - [x] More view information (time, artists, etc)
     - [x] Track settings (play, play after, start radio)
- - [ ] Proper Search View
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
  - [ ] Media notifications/control
@@ -27,13 +26,10 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Adding tracks
     - [ ] Deletion
     - [ ] Removing tracks
- - [ ] Auto Playlists
-    - [ ] Basics that foobar would have
-    - [ ] Sort by audio features
  - [ ] Settings
     - [x] Settings View
-    - [ ] Audio settings (volume, fade, etc)
     - [x] Radio settings (weights, temperature, etc)
+    - [ ] Audio settings (volume, fade, etc)
     - [ ] Library settings
     - [ ] Exceptions for albums, artists from shuffle (?)
     - [ ] View Settings
@@ -45,10 +41,14 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Zero Crossing Rate
     - [x] Energy
     - [x] BPM/Tempo
- - [ ] Theming (loading of custom css)
  - [ ] Queue Management
     - [x] Switch queues
     - [x] Select song in queue
+    - [x] Drag and Drop
     - [ ] Locked Queues/Temp Queues
-    - [ ] Drag and Drop
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
+ - [ ] Proper Search View
+ - [ ] Auto Playlists
+    - [ ] Basics that foobar would have
+    - [ ] Sort by audio features
+ - [ ] Theming (loading of custom css)

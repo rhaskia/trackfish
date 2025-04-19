@@ -208,11 +208,7 @@ fn App() -> Element {
             id 
         } else { responder.respond(r); return; };
 
-        // responder.respond(r);
-        // return;
-
-        let track = CONTROLLER.try_peek().unwrap().get_track(id).cloned(); 
-        drop(CONTROLLER);
+        let track = CONTROLLER.read().get_track(id).cloned(); 
 
         let mut file = if let Some(file) = track
             .and_then(|track| Tag::read_from_path(track.file).ok())
