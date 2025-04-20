@@ -1,4 +1,4 @@
-.trackoptionsbg {
+.optionsbg {
     position: absolute;
     left: 0;
     top: 0;
@@ -8,26 +8,31 @@
 }
 
 .trackoptions {
+    --width: 300px;
+    --height: 400px;
+}
+
+.optionbox {
     z-index: 10;
     background: #1d2021;
     border: 1px solid #696969;
     border-radius: 8px;
-    width: 300px;
-    top: calc(50vh - 250px);
-    min-height: 400px;
+    width: var(--width);
+    top: calc(50vh - (var(--height) / 2));
+    min-height: var(--height);
     height: fit-content;
-    left: calc(50vw - 150px);
+    left: calc(50vw - (var(--width) / 2));
     position: absolute;
     box-shadow: 0 0 2px rgba(0, 0, 0, .32);
     padding: 10px;
 }
 
-.trackoptions hr {
+.optionbox hr {
     border-color: #696969;
     margin: 10px 5px;
 }
 
-.trackoptions button {
+.optionbox button {
     border: none;
     background: none;
     width: 100%;
@@ -39,12 +44,12 @@
     margin: 5px 0;
 }
 
-.trackoptions button img {
+.optionbox button img {
     filter: brightness(2);
     margin-right: 10px;
 }
 
-.trackoptions h3 {
+.optionbox h3 {
     margin: 0;
     font-weight: 500;
     margin-bottom: 10px;

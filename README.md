@@ -24,6 +24,7 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Playing as queue
     - [x] Saving
     - [x] Adding tracks
+    - [ ] Drag and drop
     - [ ] Deletion
     - [ ] Removing tracks
  - [ ] Settings
@@ -44,8 +45,8 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [ ] Queue Management
     - [x] Switch queues
     - [x] Select song in queue
-    - [x] Drag and Drop
-    - [ ] Locked Queues/Temp Queues
+    - [x] Drag and drop
+    - [ ] Locked queues/temp queues
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
  - [ ] Proper Search View
  - [ ] Auto Playlists

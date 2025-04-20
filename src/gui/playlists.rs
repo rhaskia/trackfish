@@ -8,6 +8,7 @@ const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 #[component]
 pub fn PlaylistsView() -> Element {
     let mut playlist_name = use_signal(String::new);
+    let mut playlist_options = use_signal(|| None);
 
     rsx!{
         div {
@@ -29,7 +30,13 @@ pub fn PlaylistsView() -> Element {
                         img { src: "assets/icons/playlistplay.svg" }
                         "{CONTROLLER.read().playlists[i].name}",
                         div { flex: "1 1 0" },
-                        img { src: "assets/icons/vert.svg" }
+                        img { 
+                            onclick: move |e| {
+                                e.stop_propagation();
+                                playlist_options.set(Some(i));
+                            },
+                            src: "assets/icons/vert.svg"
+                        }
                     }
                 }
 
@@ -73,6 +80,10 @@ pub fn PlaylistsView() -> Element {
         if ADD_TO_PLAYLIST.read().is_some() {
             PlaylistAdder {}
         }
+
+        if playlist_options.read().is_some() && VIEW.read().current == View::Playlists {
+            PlaylistOptions { playlist_options }
+        }
     }
 }
 
@@ -111,6 +122,29 @@ pub fn PlaylistAdder() -> Element {
                         CREATING_PLAYLIST.set(true);
                     },
                     "Create a playlist"
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn PlaylistOptions(playlist_options: Signal<Option<usize>>) -> Element { 
+    rsx!{
+        div {
+            class: "optionsbg",
+            onclick: move |_| playlist_options.set(None),
+            div {
+                class: "optionbox",
+                style: "--width: 300px; --height: 200px;",
+                h3 { "{CONTROLLER.read().playlists[playlist_options().unwrap()].name}" }
+                button {
+                    img { src: "assets/icons/export.svg" }
+                    "Export playlist"
+                }
+                button {
+                    img { src: "assets/icons/delete.svg" }
+                    "Delete playlist"
                 }
             }
         }

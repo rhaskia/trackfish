@@ -6,10 +6,10 @@ pub fn TrackOptions() -> Element {
     if let Some(track) = super::TRACKOPTION() {
         rsx!{
             div {
-                class: "trackoptionsbg", 
+                class: "optionsbg", 
                 onclick: move |_| super::TRACKOPTION.set(None),
                 div {
-                    class: "trackoptions",
+                    class: "trackoptions optionbox",
                     h3 { "{CONTROLLER.read().all_tracks[track].title}" }
 
                     button {
@@ -116,7 +116,10 @@ pub fn TrackOptionsExplorerView(track: usize) -> Element {
 pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
     rsx!{
         button {
-            img { src: "assets/icons/info.svg" }
+            onclick: move |_| {
+                CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
+            }
+            img { src: "assets/icons/remove.svg" }
             "Remove from playlist"
         }
     }

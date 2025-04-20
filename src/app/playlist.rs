@@ -72,6 +72,16 @@ impl Playlist {
             tracks
         }
     }
+
+    pub fn remove(&mut self, track: usize) {
+        let position = self.tracks.iter().position(|t| t == track);
+
+        if let Some(position) = position {
+            self.tracks.remove(position);
+        }
+
+        // Edit the playlist file
+    }
 }
 
 pub fn get_playlist_files(dir: &str) -> Result<Vec<String>, io::Error> {
