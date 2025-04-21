@@ -127,6 +127,20 @@ impl MusicController {
         }
     }
 
+    pub fn delete_playlist(&mut self, playlist: usize) {
+        let path = self.playlists[playlist].file.clone();
+        std::fs::remove_file(path);
+        self.playlists.remove(playlist);
+    }
+
+    pub fn save_playlist(&mut self, playlist: usize) {
+        let playlist = self.playlists[playlist].clone();
+        let relative_paths: Vec<String> = playlist.tracks.iter().map(|t| relative_path(&self.all_tracks[*t].file, &self.settings.directory)).collect();
+        
+        let file = String::from("#EXTM3U\n#PLAYLIST:") + &playlist.name + "\n" + &relative_paths.join("\n\n");
+        std::fs::write(&(self.settings.directory.clone() + "/" + &playlist.file), file).unwrap();
+    }
+
     pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
         let track = &self.all_tracks[track_idx];
         let file_hash = hash_filename(&track.file);
@@ -428,7 +442,7 @@ impl MusicController {
         info!("{file}");
         self.playlists[playlist].tracks.push(track);
         self.playlists[playlist].track_paths.push(file);
-        self.playlists[playlist].save(&self.settings.directory);
+        self.save_playlist(playlist);
     }
 }
 

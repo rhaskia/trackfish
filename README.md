@@ -25,8 +25,8 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Saving
     - [x] Adding tracks
     - [ ] Drag and drop
-    - [ ] Deletion
-    - [ ] Removing tracks
+    - [x] Deletion
+    - [x] Removing tracks
  - [ ] Settings
     - [x] Settings View
     - [x] Radio settings (weights, temperature, etc)

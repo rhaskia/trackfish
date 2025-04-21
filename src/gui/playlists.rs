@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::app::playlist::Playlist;
-use super::{CONTROLLER, VIEW, View, ADD_TO_PLAYLIST};
+use super::{CONTROLLER, VIEW, View, ADD_TO_PLAYLIST, Confirmation};
 use super::explorer::TracksView;
     
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
@@ -9,6 +9,7 @@ const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 pub fn PlaylistsView() -> Element {
     let mut playlist_name = use_signal(String::new);
     let mut playlist_options = use_signal(|| None);
+    let mut deleting_playlist = use_signal(|| None);
 
     rsx!{
         div {
@@ -82,7 +83,15 @@ pub fn PlaylistsView() -> Element {
         }
 
         if playlist_options.read().is_some() && VIEW.read().current == View::Playlists {
-            PlaylistOptions { playlist_options }
+            PlaylistOptions { playlist_options, deleting_playlist }
+        }
+
+        if deleting_playlist.read().is_some() {
+            Confirmation {
+                label: "Delete playlist {CONTROLLER.read().playlists[deleting_playlist().unwrap()].name}?",
+                confirm: move |_| CONTROLLER.write().delete_playlist(deleting_playlist().unwrap()),
+                cancel: move |_| deleting_playlist.set(None),
+            }
         }
     }
 }
@@ -129,20 +138,21 @@ pub fn PlaylistAdder() -> Element {
 }
 
 #[component]
-pub fn PlaylistOptions(playlist_options: Signal<Option<usize>>) -> Element { 
+pub fn PlaylistOptions(playlist_options: Signal<Option<usize>>, deleting_playlist: Signal<Option<usize>>) -> Element { 
     rsx!{
         div {
             class: "optionsbg",
             onclick: move |_| playlist_options.set(None),
             div {
                 class: "optionbox",
-                style: "--width: 300px; --height: 200px;",
+                style: "--width: 300px; --height: 50px;",
                 h3 { "{CONTROLLER.read().playlists[playlist_options().unwrap()].name}" }
                 button {
                     img { src: "assets/icons/export.svg" }
                     "Export playlist"
                 }
                 button {
+                    onclick: move |_| deleting_playlist.set(playlist_options()),
                     img { src: "assets/icons/delete.svg" }
                     "Delete playlist"
                 }

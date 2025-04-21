@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::{io, fs};
 use log::info;
+use super::controller::relative_path;
 use super::utils::strip_unnessecary;
 use crate::app::Track;
 
@@ -20,13 +21,6 @@ impl Playlist {
             tracks: Vec::new(),
             track_paths: Vec::new(),
         }
-    }
-
-    pub fn save(&self, dir: &str) {
-        std::fs::write(&(dir.to_string() + "/" + &self.file), &format!("#EXTM3U
-#PLAYLIST:{}
-{}
-        ", self.name, self.track_paths.join("\n"))).unwrap();
     }
 
     pub fn load(dir: &str, playlist_file: &str, all_tracks: &Vec<Track>) -> Self {
@@ -74,13 +68,11 @@ impl Playlist {
     }
 
     pub fn remove(&mut self, track: usize) {
-        let position = self.tracks.iter().position(|t| t == track);
+        let position = self.tracks.iter().position(|t| *t == track);
 
         if let Some(position) = position {
             self.tracks.remove(position);
         }
-
-        // Edit the playlist file
     }
 }
 

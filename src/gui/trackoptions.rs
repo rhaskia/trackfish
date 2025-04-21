@@ -118,7 +118,8 @@ pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
         button {
             onclick: move |_| {
                 CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
-            }
+                CONTROLLER.write().save_playlist(VIEW.read().playlist.unwrap());
+            },
             img { src: "assets/icons/remove.svg" }
             "Remove from playlist"
         }

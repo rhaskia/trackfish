@@ -7,6 +7,7 @@ pub mod explorer;
 pub mod input;
 pub mod trackoptions;
 pub mod playlists;
+mod confirm;
 #[cfg(target_os = "android")]
 pub mod media;
 
@@ -19,6 +20,7 @@ pub use explorer::{AlbumsList, ArtistList, GenreList};
 pub use input::{key_to_action, Action};
 pub use trackoptions::TrackOptions;
 pub use playlists::PlaylistsView;
+pub use confirm::Confirmation;
 
 use dioxus::prelude::*;
 use crate::app::MusicController;
