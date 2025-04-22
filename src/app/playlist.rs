@@ -14,10 +14,10 @@ pub struct Playlist {
 }
 
 impl Playlist {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, dir: String) -> Self {
         Playlist {
             name: name.clone(), 
-            file: strip_unnessecary(&name) + ".m3u",
+            file: dir + &strip_unnessecary(&name) + ".m3u",
             tracks: Vec::new(),
             track_paths: Vec::new(),
         }

@@ -1,3 +1,9 @@
+.playlistsview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 .playlistsview h3 {
     margin: 0 1px;
 }

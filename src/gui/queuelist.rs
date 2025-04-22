@@ -165,7 +165,7 @@ pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
             onclick: move |_| queue_editing.set(None),
             div {
                 class: "optionbox",
-                style: "--width: 300px; --height: 400px;",
+                style: "--width: 300px; --height: 100px;",
                 h3 { "{CONTROLLER.read().queues[queue_editing().unwrap()].queue_type}" }
                 button {
                     onclick: move |_| CONTROLLER.write().remove_queue(queue_editing.unwrap()),

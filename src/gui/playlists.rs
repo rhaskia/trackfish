@@ -15,7 +15,7 @@ pub fn PlaylistsView() -> Element {
     rsx! {
         div {
             class: "playlistsview",
-            hidden: VIEW.read().current != View::Playlists,
+            display: if VIEW.read().current != View::Playlists { "none" },
             div {
                 padding: "10px",
                 hidden: VIEW.read().playlist.is_some(),
@@ -63,7 +63,8 @@ pub fn PlaylistsView() -> Element {
                         }
                         button {
                             onclick: move |_| {
-                                CONTROLLER.write().playlists.push(Playlist::new(playlist_name()));
+                                let dir = CONTROLLER.write().settings.directory.clone();
+                                CONTROLLER.write().playlists.push(Playlist::new(playlist_name(), dir));
                                 CREATING_PLAYLIST.set(false);
                                 playlist_name.set(String::new());
                             },
@@ -132,11 +133,10 @@ pub fn PlaylistAdder() -> Element {
     rsx! {
         div {
             class: "playlistadderbg",
+            onclick: move |_| ADD_TO_PLAYLIST.set(None),
             div {
                 class: "playlistadder",
                 h3 { "Add {CONTROLLER.read().all_tracks[ADD_TO_PLAYLIST().unwrap()].title} to a playlist" }
-
-                hr {}
 
                 for i in 0..CONTROLLER.read().playlists.len() {
                     // Add to certain playlist

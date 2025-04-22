@@ -327,12 +327,20 @@ impl MusicController {
 
     pub fn queue_to_playlist(&mut self, queue: usize) {
         let queue = self.queues[queue].clone();
-        let mut playlist = Playlist::new(format!("{}", queue.queue_type));
+        let mut playlist = Playlist::new(format!("{}", queue.queue_type), self.settings.directory.clone());
         playlist.tracks = queue.cached_order;
         self.playlists.push(playlist);
         self.save_playlist(self.playlists.len() - 1);
 
         // TODO replace queue with playlist queue?
+    }
+
+    pub fn add_tracks_to_queue(&mut self, queue: usize, tracks: Vec<usize>) {
+        self.queues[queue].cached_order.extend(tracks);
+    }
+
+    pub fn add_tracks_to_playlist(&mut self, playlist: usize, tracks: Vec<usize>) {
+        self.playlists[playlist].tracks.extend(tracks);
     }
 }
 
