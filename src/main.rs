@@ -5,6 +5,7 @@ pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
 use crate::document::eval;
+use dioxus::mobile::RequestAsyncResponder;
 use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
 use id3::Tag;
@@ -123,13 +124,7 @@ fn App() -> Element {
     #[cfg(target_os = "android")]
     let mut session = use_signal(|| None);
 
-    use_future(|| async {
-        match eval(include_str!("../js/mediasession.js")).await {
-            Ok(_) => {}
-            Err(err) => log::error!("{err:?}"),
-        }
-    });
-
+    // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
         #[cfg(target_os = "android")]
@@ -172,6 +167,7 @@ fn App() -> Element {
         }
     });
 
+    // Start up media session
     #[cfg(target_os = "android")]
     use_future(move || async move {
         use crate::media::{MediaMsg, MEDIA_MSG_TX};
@@ -197,6 +193,7 @@ fn App() -> Element {
         }
     });
 
+    // Update mediasession as needed
     #[cfg(target_os = "android")]
     use_effect(move || {
         if let Some(ref mut session) = *session.write() {
@@ -220,38 +217,7 @@ fn App() -> Element {
         }
     });
 
-    use_asset_handler("trackimage", move |request, responder| {
-        let r = Response::builder().status(404).body(&[]).unwrap();
-
-        let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
-            id
-        } else {
-            responder.respond(r);
-            return;
-        };
-
-        let track = CONTROLLER.read().get_track(id).cloned();
-
-        let mut file = if let Some(file) = track
-            .and_then(|track| Tag::read_from_path(track.file).ok())
-            .and_then(|tag| tag.pictures().next().cloned())
-            .and_then(|picture| Some(Cursor::new(picture.data)))
-        {
-            file
-        } else {
-            responder.respond(r);
-            return;
-        };
-
-        spawn(async move {
-            match get_stream_response(&mut file, &request).await {
-                Ok(response) => {
-                    responder.respond(response);
-                }
-                Err(err) => error!("Error: {:?}", err),
-            }
-        });
-    });
+    use_asset_handler("trackimage", asset_handler);
 
     rsx! {
         document::Link { href: "assets/style.css", rel: "stylesheet" }
@@ -273,15 +239,6 @@ fn App() -> Element {
         }
 
         div { class: "mainview", tabindex: 0, autofocus: true,
-            // onkeydown: move |e| match e.data().key() {
-            //     Key::Character(c) => match c.as_str() {
-            //         "L" => VIEW.write().current.shift_down(),
-            //         "H" => VIEW.write().current.shift_up(),
-            //         _ => {}
-            //     },
-            //     _ => {}
-            // },
-
             TrackView {}
             TrackOptions {}
             QueueList {}
@@ -348,4 +305,37 @@ pub fn MenuBar() -> Element {
             }
         }
     }
+}
+
+pub fn asset_handler(request: http::Request<Vec<u8>>, responder: RequestAsyncResponder) {
+    let r = Response::builder().status(404).body(&[]).unwrap();
+
+    let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
+        id
+    } else {
+        responder.respond(r);
+        return;
+    };
+
+    let track = CONTROLLER.read().get_track(id).cloned();
+
+    let mut file = if let Some(file) = track
+        .and_then(|track| Tag::read_from_path(track.file).ok())
+        .and_then(|tag| tag.pictures().next().cloned())
+        .and_then(|picture| Some(Cursor::new(picture.data)))
+    {
+        file
+    } else {
+        responder.respond(r);
+        return;
+    };
+
+    spawn(async move {
+        match get_stream_response(&mut file, &request).await {
+            Ok(response) => {
+                responder.respond(response);
+            }
+            Err(err) => error!("Error: {:?}", err),
+        }
+    });
 }

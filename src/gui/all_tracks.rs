@@ -38,7 +38,6 @@ pub fn AllTracks() -> Element {
                 "{display_time(total_time())} total duration"
             }
             div { class: "tracklist",
-                // extremely slow to load all tracks
                 for i in 0..CONTROLLER.read().all_tracks.len().min(100) {
                     div {
                         class: "trackitem",
@@ -93,7 +92,6 @@ pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Ele
     rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
-            div { "{matches:?}" }
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
                     img { src: "assets/icons/search.svg" }

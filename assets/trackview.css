@@ -146,27 +146,3 @@
 .progressrow input {
     flex: 1 1 0;
 }
-
-.shuffle-button {
-    background-image: url("icons/shuffle.svg");
-}
-
-.shuffle-on {
-    background-image: url("icons/shuffleon.svg");
-}
-
-.like-button {
-    background-image: url("icons/vert.svg");
-}
-
-.playpause {
-    background-image: url("icons/play.svg");
-}
-
-.pause {
-    background-image: url("icons/pause.svg") !important;
-}
-
-.skip-button {
-    background-image: url("icons/skip.svg");
-}

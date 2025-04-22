@@ -25,7 +25,7 @@
 .searchtracks {
     overflow-x: hidden;
     overflow-y: scroll;
-    max-height: calc(100% - 20px);
+    max-height: calc(100% - 40px);
 }
 
 .searchbar {
@@ -55,7 +55,6 @@
     position: absolute;
     height: 90%;
     width: 100%;
-    margin-top: 5%;
 }
 
 .artists, .albums {

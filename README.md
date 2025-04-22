@@ -16,6 +16,8 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Track settings (play, play after, start radio)
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
+ - [x] All tracks search
+ - [ ] Search for albums/artists/genres
  - [ ] Media notifications/control
     - [x] Android
     - [ ] Desktop

@@ -135,30 +135,28 @@ pub fn TrackView() -> Element {
                 // Track controls
                 div { class: "buttonrow",
                     button {
-                        class: "like-button",
                         class: "svg-button",
-                        // Open track options for current track
+                        background_image: "url(assets/icons/vert.svg)",
                         onclick: move |_| *TRACKOPTION.write() = Some(CONTROLLER.read().current_track_idx()),
                     }
                     button {
-                        class: "skipprev-button",
                         class: "svg-button",
+                        background_image: "url(assets/icons/skipprevious.svg)",
                         onclick: skipback,
                     }
                     button {
-                        class: "svg-button playpause",
+                        class: "svg-button",
+                        background_image: if CONTROLLER.read().playing() { "url(assets/icons/pause.svg)" } else { "url(assets/icons/play.svg)" },
                         onclick: move |_| CONTROLLER.write().toggle_playing(),
-                        class: if CONTROLLER.read().playing() { "pause" },
                     }
                     button {
-                        class: "skip-button",
                         class: "svg-button",
+                        background_image: "url(assets/icons/skip.svg)",
                         onclick: skip,
                     }
                     button {
-                        class: "shuffle-button",
                         class: "svg-button",
-                        class: if CONTROLLER.read().shuffle { "shuffle-on" },
+                        background_image: if CONTROLLER.read().shuffle { "url(assets/icons/shuffleon.svg)" } else { "url(assets/icons/shuffle.svg)" },
                         onclick: move |_| CONTROLLER.write().toggle_shuffle(),
                     }
                 }

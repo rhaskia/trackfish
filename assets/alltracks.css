@@ -10,3 +10,8 @@
     height: 24px;
     filter: brightness(2);
 }
+
+.trackitem img {
+    aspect-ratio: 1;
+    object-fit: cover;
+}

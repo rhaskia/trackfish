@@ -1,11 +1,3 @@
-.search-button {
-    background-image: url("icons/search.svg")
-}
-
-.settings-button {
-    background-image: url("icons/settings.svg")
-}
-
 .menubar {
     border-top: 1px solid var(--accent);
 }
