@@ -14,6 +14,7 @@ pub fn QueueList() -> Element {
     let mut grab_y = use_signal(|| 0.0);
     let mut hovering_over = use_signal(|| 0);
     let mut queue_height = use_signal(|| 0.0);
+    let mut queue_editing = use_signal(|| None);
 
     use_effect(move || {
         selected_queue.set(CONTROLLER.read().current_queue);
@@ -107,15 +108,25 @@ pub fn QueueList() -> Element {
             onclick: move_queue_item.clone(),
 
             div {
-                class: "selectwrapper queueselectwrapper",
-                select {
-                    class: "queueselect",
-                    onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
-                    for i in 0..CONTROLLER.read().queues.len() {
-                        option { value: "{i}", selected: i == selected_queue(),
-                            "{CONTROLLER.read().queues[i].queue_type}"
+                class: "queuebar",
+                div {
+                    class: "selectwrapper queueselectwrapper",
+                    select {
+                        class: "queueselect",
+                        onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
+                        for i in 0..CONTROLLER.read().queues.len() {
+                            option { value: "{i}", selected: i == selected_queue(),
+                                "{CONTROLLER.read().queues[i].queue_type}"
+                            }
                         }
                     }
+                }
+                img {
+                    onclick: move |e| {
+                        e.stop_propagation();
+                        queue_editing.set(Some(selected_queue()));
+                    },
+                    src: "assets/icons/vert.svg",
                 }
             }
             span {
@@ -136,6 +147,35 @@ pub fn QueueList() -> Element {
                         }
                     }
                     TrackItem { selected_queue, idx, current_dragging, mouse_y, grab_y, move_queue_item }
+                }
+            }
+        }
+
+        if queue_editing.read().is_some() {
+            QueueOptions { queue_editing }
+        }
+    }
+}
+
+#[component]
+pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
+    rsx!{
+        div {
+            class: "optionsbg",
+            onclick: move |_| queue_editing.set(None),
+            div {
+                class: "optionbox",
+                style: "--width: 300px; --height: 400px;",
+                h3 { "{CONTROLLER.read().queues[queue_editing().unwrap()].queue_type}" }
+                button {
+                    onclick: move |_| CONTROLLER.write().remove_queue(queue_editing.unwrap()),
+                    img { src: "assets/icons/remove.svg" }
+                    "Remove queue"
+                }
+                button {
+                    onclick: move |_| CONTROLLER.write().queue_to_playlist(queue_editing.unwrap()),
+                    img { src: "assets/icons/export.svg" }
+                    "Save as playlist"
                 }
             }
         }

@@ -19,12 +19,11 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [ ] Media notifications/control
     - [x] Android
     - [ ] Desktop
- - [ ] Playlists 
+ - [x] Playlists 
     - [x] Creation
     - [x] Playing as queue
     - [x] Saving
     - [x] Adding tracks
-    - [ ] Drag and drop
     - [x] Deletion
     - [x] Removing tracks
  - [ ] Settings
@@ -47,6 +46,7 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Select song in queue
     - [x] Drag and drop
     - [ ] Locked queues/temp queues
+    - [ ] Add track list to queue
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
  - [ ] Proper Search View
  - [ ] Auto Playlists

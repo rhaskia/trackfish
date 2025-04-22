@@ -1,8 +1,8 @@
-use dioxus::prelude::*;
-use crate::app::playlist::Playlist;
-use super::{CONTROLLER, VIEW, View, ADD_TO_PLAYLIST, Confirmation};
 use super::explorer::TracksView;
-    
+use super::{Confirmation, View, ADD_TO_PLAYLIST, CONTROLLER, VIEW};
+use crate::app::playlist::Playlist;
+use dioxus::prelude::*;
+
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
 #[component]
@@ -10,8 +10,9 @@ pub fn PlaylistsView() -> Element {
     let mut playlist_name = use_signal(String::new);
     let mut playlist_options = use_signal(|| None);
     let mut deleting_playlist = use_signal(|| None);
+    let mut renaming_playlist = use_signal(|| None);
 
-    rsx!{
+    rsx! {
         div {
             class: "playlistsview",
             hidden: VIEW.read().current != View::Playlists,
@@ -31,7 +32,7 @@ pub fn PlaylistsView() -> Element {
                         img { src: "assets/icons/playlistplay.svg" }
                         "{CONTROLLER.read().playlists[i].name}",
                         div { flex: "1 1 0" },
-                        img { 
+                        img {
                             onclick: move |e| {
                                 e.stop_propagation();
                                 playlist_options.set(Some(i));
@@ -41,7 +42,7 @@ pub fn PlaylistsView() -> Element {
                     }
                 }
 
-                button { 
+                button {
                     onclick: move |_| CREATING_PLAYLIST.set(true),
                     "Create new playlist"
                 }
@@ -56,7 +57,7 @@ pub fn PlaylistsView() -> Element {
                         onclick: |e| e.stop_propagation(),
                         label { "Playlist Name:" }
                         input {
-                            onchange: move |e| playlist_name.set(e.data().value()), 
+                            onchange: move |e| playlist_name.set(e.data().value()),
                             r#type: "text",
                             value: "{playlist_name}",
                         }
@@ -83,7 +84,11 @@ pub fn PlaylistsView() -> Element {
         }
 
         if playlist_options.read().is_some() && VIEW.read().current == View::Playlists {
-            PlaylistOptions { playlist_options, deleting_playlist }
+            PlaylistOptions { playlist_options, deleting_playlist, renaming_playlist }
+        }
+
+        if renaming_playlist.read().is_some() {
+            PlaylistRename { renaming_playlist }
         }
 
         if deleting_playlist.read().is_some() {
@@ -91,6 +96,32 @@ pub fn PlaylistsView() -> Element {
                 label: "Delete playlist {CONTROLLER.read().playlists[deleting_playlist().unwrap()].name}?",
                 confirm: move |_| CONTROLLER.write().delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
+            }
+        }
+    }
+}
+
+#[component]
+pub fn PlaylistRename(mut renaming_playlist: Signal<Option<usize>>) -> Element {
+    let mut new_name = use_signal(String::new);
+    rsx!{
+        div {
+            class: "optionsbg",
+            onclick: move |_| renaming_playlist.set(None),
+            div {
+                class: "playlistadder",
+                input {
+                    r#type: "text",
+                    onclick: |e| e.stop_propagation(),
+                    onchange: move |e| new_name.set(e.data.value()),
+                }
+                button {
+                    onclick: move |_| {
+                        CONTROLLER.write().playlists[renaming_playlist().unwrap()].name = new_name();
+                        CONTROLLER.write().save_playlist(renaming_playlist().unwrap());
+                    },
+                    "Rename"
+                }
             }
         }
     }
@@ -118,13 +149,13 @@ pub fn PlaylistAdder() -> Element {
                     }
                 }
 
-                // Only show extra separator if there are playlist buttons 
+                // Only show extra separator if there are playlist buttons
                 if !CONTROLLER.read().playlists.is_empty() {
                     hr {}
                 }
 
                 // Sends user to playlist creation menu
-                button { 
+                button {
                     onclick: move |_| {
                         ADD_TO_PLAYLIST.set(None);
                         VIEW.write().current = View::Playlists;
@@ -138,8 +169,12 @@ pub fn PlaylistAdder() -> Element {
 }
 
 #[component]
-pub fn PlaylistOptions(playlist_options: Signal<Option<usize>>, deleting_playlist: Signal<Option<usize>>) -> Element { 
-    rsx!{
+pub fn PlaylistOptions(
+    playlist_options: Signal<Option<usize>>,
+    deleting_playlist: Signal<Option<usize>>,
+    renaming_playlist: Signal<Option<usize>>,
+) -> Element {
+    rsx! {
         div {
             class: "optionsbg",
             onclick: move |_| playlist_options.set(None),
@@ -147,6 +182,11 @@ pub fn PlaylistOptions(playlist_options: Signal<Option<usize>>, deleting_playlis
                 class: "optionbox",
                 style: "--width: 300px; --height: 50px;",
                 h3 { "{CONTROLLER.read().playlists[playlist_options().unwrap()].name}" }
+                button {
+                    onclick: move |_| renaming_playlist.set(playlist_options()),
+                    img { src: "assets/icons/edit.svg" }
+                    "Rename playlist"
+                }
                 button {
                     img { src: "assets/icons/export.svg" }
                     "Export playlist"

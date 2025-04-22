@@ -30,6 +30,7 @@
 
 .queueselectwrapper {
     min-height: 35px;
+    width: 100%;
 }
 
 .dragging {
@@ -47,4 +48,13 @@
     height: 40px;
     margin: 6px;
     padding: 4px;
+}
+
+.queuebar {
+    display: flex;
+    width: calc(100% - 5px);
+}
+
+.queuebar img {
+    filter: brightness(2.0);
 }

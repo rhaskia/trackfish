@@ -5,7 +5,7 @@ use super::{
     queue::{QueueType, Queue, Listen},
     utils::{strip_unnessecary, similar}, playlist::get_playlist_files,
     settings::{Settings, WeightMode, RadioSettings},
-    playlist::Playlist,
+    playlist::{Playlist, self},
 };
 use log::info;
 use ndarray::Array1;
@@ -138,7 +138,7 @@ impl MusicController {
         let relative_paths: Vec<String> = playlist.tracks.iter().map(|t| relative_path(&self.all_tracks[*t].file, &self.settings.directory)).collect();
         
         let file = String::from("#EXTM3U\n#PLAYLIST:") + &playlist.name + "\n" + &relative_paths.join("\n\n");
-        std::fs::write(&(self.settings.directory.clone() + "/" + &playlist.file), file).unwrap();
+        std::fs::write(&playlist.file, file).unwrap();
     }
 
     pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
@@ -316,6 +316,23 @@ impl MusicController {
             .filter(|(_, track)| track.matches(queue_type.clone()))
             .map(|(index, _)| index)
             .collect()
+    }
+
+    pub fn remove_queue(&mut self, queue: usize) {
+        if self.current_queue == queue && self.current_queue != 0 {
+            self.current_queue -= 1;
+        }
+        self.queues.remove(queue);
+    }
+
+    pub fn queue_to_playlist(&mut self, queue: usize) {
+        let queue = self.queues[queue].clone();
+        let mut playlist = Playlist::new(format!("{}", queue.queue_type));
+        playlist.tracks = queue.cached_order;
+        self.playlists.push(playlist);
+        self.save_playlist(self.playlists.len() - 1);
+
+        // TODO replace queue with playlist queue?
     }
 }
 
