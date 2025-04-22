@@ -204,29 +204,29 @@ impl MusicController {
         dists.sort_by(|(_, a), (_, b)| b.total_cmp(a));
 
         let mut min = 1.0;
+        let mut count = 0;
+        let amount = 20;
+        let temperature = 10.0;
         for (rank, (song, distance)) in dists.iter().enumerate() {
+            if count == 50 { break; }
             if rank == 0 { continue; }
-            weights[*song] = 10.0 / rank as f32;
-            if *distance < min { min = *distance; }
+            if self.current_queue().cached_order.contains(song) {
+                continue;
+            }
+
+            let norm = (amount - count) as f32 / amount as f32;
+            weights[*song] = 1.0 / ((norm * temperature - (temperature / 3.0)).exp() + 1.05) + 0.05;
+            if weights[*song].is_sign_negative() { info!("{song}, {rank}, {distance}"); }
+            count += 1;
         }
 
-        weights.clamp(0.0, 100.0);
-        weights = weights.pow2();
-
-        // weights = (weights - min) / (1.0 - min);
-
-        // let grad = -7.0;
-        // let cutoff = 98.8;
-        // weights *= 100.0;
-        //weights = 1.0 / (((weights * grad) + cutoff).exp() + 1.0);
-
-        
         for weight in &mut weights {
-            if weight.is_nan() {
+            if weight.is_nan() || weight.is_sign_negative() {
                 *weight = 0.0;
+                info!("NaN weight found");
             }
         }
-
+        
         for i in 0..self.all_tracks.len() {
             let current_idx = self.current_queue().current();
             if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
@@ -236,10 +236,6 @@ impl MusicController {
             if self.all_tracks[current_idx].shared_artists(&self.all_tracks[i]) > 0 {
                 weights *= self.settings.radio.artist_penalty;
             }
-        }
-
-        for i in &self.current_queue().cached_order {
-            weights[*i] = 0.0;
         }
 
         // TODO: weights for each feature used in weighting

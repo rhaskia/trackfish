@@ -202,7 +202,7 @@ fn App() -> Element {
     });
 
     use_asset_handler("trackimage", move |request, responder| {
-        let r = Response::builder().status(200).body(&[]).unwrap();
+        let r = Response::builder().status(404).body(&[]).unwrap();
 
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
             id 
@@ -263,7 +263,7 @@ fn App() -> Element {
             TrackView { }
             TrackOptions { }
             QueueList { }
-            AllTracks { }
+            //AllTracks { }
             GenreList { }
             ArtistList { }
             AlbumsList { }
