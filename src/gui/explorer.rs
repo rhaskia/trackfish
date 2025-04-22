@@ -202,15 +202,21 @@ pub fn AlbumsList() -> Element {
 
                 for i in 0..albums.read().len() {
                     div {
-                        class: "thinitem",
+                        class: "albumitem",
                         onclick: move |_| set_album(albums.read()[i].0.clone()),
-                        if albums.read()[i].0.is_empty() {
-                            span { "Unknown Album" }
-                        } else {
-                            span { "{albums.read()[i].0}" }
+                        img { 
+                            loading: "onvisible",
+                            src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].0.clone())}"
                         }
-                        br {}
-                        small { "{albums.read()[i].1} songs" }
+                        div {
+                            class: "albuminfo",
+                            if albums.read()[i].0.is_empty() {
+                                span { "Unknown Album" }
+                            } else {
+                                span { "{albums.read()[i].0}" }
+                            }
+                            small { "{albums.read()[i].1} songs" }
+                        }
                     }
                 }
             }

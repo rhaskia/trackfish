@@ -22,6 +22,41 @@
     padding: 10px;
 }
 
+.albumitem {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1 1 140px;
+    aspect-ratio: 0.8;
+    border: 1px solid #3b3a3a;
+    border-radius: 8px;
+}
+
+#albumlist {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+}
+
+.albumitem img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.albumitem span {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.albuminfo {
+    padding: 5px;
+} 
+
 .searchtracks {
     overflow-x: hidden;
     overflow-y: scroll;

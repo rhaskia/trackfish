@@ -569,6 +569,17 @@ impl MusicController {
 
 // Small functions
 impl MusicController {
+    pub fn get_album_artwork(&self, album: String) -> usize {
+        for (i, track) in self.all_tracks.iter().enumerate() {
+            if strip_unnessecary(&track.album) == strip_unnessecary(&album) {
+                return i;
+            }
+        }
+
+        // As far as I know no one has millions of songs so this works
+        return usize::MAX;
+    }
+
     pub fn toggle_playing(&mut self) {
         self.player.toggle_playing();
     }

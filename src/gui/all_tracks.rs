@@ -41,7 +41,7 @@ pub fn AllTracks() -> Element {
                 for i in 0..CONTROLLER.read().all_tracks.len().min(100) {
                     div {
                         class: "trackitem",
-                        id: "trackitem-{i}",
+                        id: "alltracks-trackitem-{i}",
                         onclick: move |_| {
                             CONTROLLER.write().add_all_queue(i);
                             VIEW.write().current = View::Song;
@@ -62,18 +62,21 @@ pub fn AllTracks() -> Element {
                 }
             }
             if is_searching() {
-                TracksSearch { tracks, is_searching }
+                TracksSearch { tracks, is_searching, id_prefix: "alltracks" }
             }
         }
     }
 }
 
 #[component]
-pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Element {
+pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>, id_prefix: String) -> Element {
     let mut search = use_signal(String::new);
+    let id_prefix = use_signal(|| id_prefix);
+    
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
+
         if search.is_empty() {
             log::info!("searching {search}");
             Vec::new()
@@ -108,7 +111,7 @@ pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Ele
                             class: "trackitem",
                             onclick: move |_| {
                                 document::eval(
-                                    &format!("document.getElementById('trackitem-{}').scrollIntoView();", track),
+                                    &format!("document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();", track),
                                 );
                             },
                             img { src: "/trackimage/{track}" }
