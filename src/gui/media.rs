@@ -1,24 +1,25 @@
+use jni::objects::GlobalRef;
 use jni::objects::JClass;
 use jni::objects::JObject;
 use jni::objects::JValue;
 use jni::sys::jint;
-use jni::JNIEnv;
-use log::info;
-use jni::JavaVM;
 use jni::AttachGuard;
-use jni::objects::GlobalRef;
+use jni::JNIEnv;
+use jni::JavaVM;
+use log::info;
 
 use super::CONTROLLER;
 
-use tokio::sync::mpsc::{unbounded_channel, UnboundedSender, UnboundedReceiver};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
-pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> = Lazy::new(|| Mutex::new(None));
+pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> =
+    Lazy::new(|| Mutex::new(None));
 
 #[derive(Debug)]
 pub enum MediaMsg {
-    Play, 
+    Play,
     Pause,
     Next,
     Previous,
@@ -45,7 +46,9 @@ impl MediaSession {
         let class_ctx = env.find_class("android/content/Context").unwrap();
         let context = unsafe { JObject::from_raw(ctx.context().cast()) };
 
-        let media_session_class = env.find_class("android/media/session/MediaSession").unwrap();
+        let media_session_class = env
+            .find_class("android/media/session/MediaSession")
+            .unwrap();
 
         let tag = env.new_string("MusicService").unwrap();
         let mut media_session = env
@@ -56,35 +59,40 @@ impl MediaSession {
             )
             .unwrap();
 
-        let class_loader = env.call_method(
-            &context,
-            "getClassLoader",
-            "()Ljava/lang/ClassLoader;",
-            &[],
-        ).unwrap().l().unwrap();
+        let class_loader = env
+            .call_method(&context, "getClassLoader", "()Ljava/lang/ClassLoader;", &[])
+            .unwrap()
+            .l()
+            .unwrap();
 
         let binding = env.new_string("dev.dioxus.main.MediaCallback").unwrap();
 
-        let callback_class = env.call_method(
-            &class_loader,
-            "loadClass",
-            "(Ljava/lang/String;)Ljava/lang/Class;",
-            &[JValue::Object(&binding)],
-        )
-        .unwrap().l().unwrap();
+        let callback_class = env
+            .call_method(
+                &class_loader,
+                "loadClass",
+                "(Ljava/lang/String;)Ljava/lang/Class;",
+                &[JValue::Object(&binding)],
+            )
+            .unwrap()
+            .l()
+            .unwrap();
 
         let callback_class = JClass::from(callback_class);
 
         let callback = env.new_object(callback_class, "()V", &[]).unwrap();
 
         let binding = env.new_string("dev.dioxus.main.MediaHelper").unwrap();
-        let class = env.call_method(
-            &class_loader,
-            "loadClass",
-            "(Ljava/lang/String;)Ljava/lang/Class;",
-            &[JValue::Object(&binding)],
-        )
-        .unwrap().l().unwrap();
+        let class = env
+            .call_method(
+                &class_loader,
+                "loadClass",
+                "(Ljava/lang/String;)Ljava/lang/Class;",
+                &[JValue::Object(&binding)],
+            )
+            .unwrap()
+            .l()
+            .unwrap();
         let class = JClass::from(class);
 
         env.call_static_method(
@@ -92,7 +100,8 @@ impl MediaSession {
             "setMediaCallback",
             "(Landroid/media/session/MediaSession;Landroid/media/session/MediaSession$Callback;)V",
             &[JValue::Object(&media_session), JValue::Object(&callback)],
-        ).unwrap();
+        )
+        .unwrap();
 
         let flag_handles_media_buttons = 1;
         let flag_handles_transport_controls = 2;
@@ -102,13 +111,24 @@ impl MediaSession {
 
         env.call_method(&media_session, "setFlags", "(I)V", &[JValue::Int(flags)]);
 
-        let is_active = env.call_method(&media_session, "isActive", "()Z", &[]).unwrap().z().unwrap();
+        let is_active = env
+            .call_method(&media_session, "isActive", "()Z", &[])
+            .unwrap()
+            .z()
+            .unwrap();
 
         if !is_active {
-            env.call_method(&media_session, "setActive", "(Z)V", &[JValue::Bool(1)]).unwrap();
+            env.call_method(&media_session, "setActive", "(Z)V", &[JValue::Bool(1)])
+                .unwrap();
         }
 
-        update_playback_state(&mut env, &mut media_session, android_media_constants::STATE_PAUSED, 0).unwrap();
+        update_playback_state(
+            &mut env,
+            &mut media_session,
+            android_media_constants::STATE_PAUSED,
+            0,
+        )
+        .unwrap();
 
         update_metadata(
             &mut env,
@@ -125,11 +145,17 @@ impl MediaSession {
 
         Self {
             media_session: env.new_global_ref(media_session).unwrap(),
-            callback: env.new_global_ref(callback).unwrap()
+            callback: env.new_global_ref(callback).unwrap(),
         }
     }
 
-    pub fn update_metadata(&mut self, title: &str, artist: &str, length: i64, image_bytes: Option<Vec<u8>>) {
+    pub fn update_metadata(
+        &mut self,
+        title: &str,
+        artist: &str,
+        length: i64,
+        image_bytes: Option<Vec<u8>>,
+    ) {
         let ctx = ndk_context::android_context();
         let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
         let mut env = vm.attach_current_thread().unwrap();
@@ -139,8 +165,8 @@ impl MediaSession {
             let byte_array = env.byte_array_from_slice(&image_bytes).unwrap();
 
             let bitmap_factory = env.find_class("android/graphics/BitmapFactory").unwrap();
-            Some(env
-                .call_static_method(
+            Some(
+                env.call_static_method(
                     bitmap_factory,
                     "decodeByteArray",
                     "([BII)Landroid/graphics/Bitmap;",
@@ -149,11 +175,25 @@ impl MediaSession {
                         JValue::Int(0),
                         JValue::Int(image_bytes.len() as i32),
                     ],
-                ).unwrap()
-                .l().unwrap())
-        } else { None };
+                )
+                .unwrap()
+                .l()
+                .unwrap(),
+            )
+        } else {
+            None
+        };
 
-        update_metadata(&mut env, &self.media_session, None, title, artist, length, bitmap.as_ref()).unwrap();
+        update_metadata(
+            &mut env,
+            &self.media_session,
+            None,
+            title,
+            artist,
+            length,
+            bitmap.as_ref(),
+        )
+        .unwrap();
         show_media_notification(&mut env, &context, &self.media_session, bitmap.as_ref()).unwrap();
     }
 
@@ -162,42 +202,67 @@ impl MediaSession {
         let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
         let mut env = vm.attach_current_thread().unwrap();
 
-        let state = if paused { android_media_constants::STATE_PAUSED } else { android_media_constants::STATE_PLAYING };
+        let state = if paused {
+            android_media_constants::STATE_PAUSED
+        } else {
+            android_media_constants::STATE_PLAYING
+        };
         update_playback_state(&mut env, &mut self.media_session, state, progress).unwrap();
     }
 }
 
 #[no_mangle]
-pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPlay(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPlay(
+    _env: JNIEnv,
+    _class: JClass,
+) {
     log::info!("Rust received Play");
     send_media_msg(MediaMsg::Play)
 }
 
 #[no_mangle]
-pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPause(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPause(
+    _env: JNIEnv,
+    _class: JClass,
+) {
     log::info!("Rust received Pause");
     send_media_msg(MediaMsg::Pause)
 }
 
 #[no_mangle]
-pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnNext(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnNext(
+    _env: JNIEnv,
+    _class: JClass,
+) {
     log::info!("Rust received Next");
     send_media_msg(MediaMsg::Next)
 }
 
 #[no_mangle]
-pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPrevious(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPrevious(
+    _env: JNIEnv,
+    _class: JClass,
+) {
     log::info!("Rust received Previous");
     send_media_msg(MediaMsg::Previous)
 }
 
 #[no_mangle]
-pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(_env: JNIEnv, _class: JClass, pos: jint) {
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(
+    _env: JNIEnv,
+    _class: JClass,
+    pos: jint,
+) {
     log::info!("Rust received Seek To {:?}", pos);
     send_media_msg(MediaMsg::SeekTo(pos.into()));
 }
 
-pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JObject, bitmap: Option<&JObject>) -> jni::errors::Result<()> {
+pub fn show_media_notification(
+    env: &mut JNIEnv,
+    context: &JObject,
+    session: &JObject,
+    bitmap: Option<&JObject>,
+) -> jni::errors::Result<()> {
     let channel_id = env.new_string("media_channel")?;
     let channel_name = env.new_string("Media Controls")?;
     let importance = 3;
@@ -214,7 +279,11 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
     )?;
 
     let notif_service_str = env
-        .get_static_field("android/content/Context", "NOTIFICATION_SERVICE", "Ljava/lang/String;")?
+        .get_static_field(
+            "android/content/Context",
+            "NOTIFICATION_SERVICE",
+            "Ljava/lang/String;",
+        )?
         .l()?;
 
     let notification_manager = env
@@ -242,17 +311,19 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
     )?;
 
     let pi_class = env.find_class("android/app/PendingIntent")?;
-    let pending_intent = env.call_static_method(
-        pi_class,
-        "getBroadcast",
-        "(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;",
-        &[
-            JValue::Object(&context),
-            JValue::Int(0),
-            JValue::Object(&play_intent),
-            JValue::Int(0x04000000), // FLAG_IMMUTABLE
-        ],
-    )?.l()?;
+    let pending_intent = env
+        .call_static_method(
+            pi_class,
+            "getBroadcast",
+            "(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;",
+            &[
+                JValue::Object(&context),
+                JValue::Int(0),
+                JValue::Object(&play_intent),
+                JValue::Int(0x04000000), // FLAG_IMMUTABLE
+            ],
+        )?
+        .l()?;
 
     let builder_class = env.find_class("android/app/Notification$Builder")?;
     let builder = env.new_object(
@@ -264,33 +335,52 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
     let title = env.new_string("Track Title")?;
     let artist = env.new_string("Artist Name")?;
 
-    env.call_method(&builder, "setContentTitle", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;", &[JValue::Object(&JObject::from(title))])?;
-    env.call_method(&builder, "setContentText", "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;", &[JValue::Object(&JObject::from(artist))])?;
+    env.call_method(
+        &builder,
+        "setContentTitle",
+        "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;",
+        &[JValue::Object(&JObject::from(title))],
+    )?;
+    env.call_method(
+        &builder,
+        "setContentText",
+        "(Ljava/lang/CharSequence;)Landroid/app/Notification$Builder;",
+        &[JValue::Object(&JObject::from(artist))],
+    )?;
 
     let icon_name = env.new_string("ic_notification")?; // your drawable name
     let def_type = env.new_string("drawable")?;
     let def_package = env.new_string("com.example.Trackfish")?; // your actual package
 
-    let resources = env.call_method(
-        &context,
-        "getResources",
-        "()Landroid/content/res/Resources;",
-        &[],
-    )?.l()?;
+    let resources = env
+        .call_method(
+            &context,
+            "getResources",
+            "()Landroid/content/res/Resources;",
+            &[],
+        )?
+        .l()?;
 
     // int id = getResources().getIdentifier("ic_notification", "drawable", "com.example.Trackfish");
-    let icon_id = env.call_method(
-        &resources,
-        "getIdentifier",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
-        &[
-            JValue::Object(&JObject::from(icon_name)),
-            JValue::Object(&JObject::from(def_type)),
-            JValue::Object(&JObject::from(def_package)),
-        ],
-    )?.i()?;
-    
-    env.call_method(&builder, "setSmallIcon", "(I)Landroid/app/Notification$Builder;", &[JValue::Int(icon_id)])?;
+    let icon_id = env
+        .call_method(
+            &resources,
+            "getIdentifier",
+            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
+            &[
+                JValue::Object(&JObject::from(icon_name)),
+                JValue::Object(&JObject::from(def_type)),
+                JValue::Object(&JObject::from(def_package)),
+            ],
+        )?
+        .i()?;
+
+    env.call_method(
+        &builder,
+        "setSmallIcon",
+        "(I)Landroid/app/Notification$Builder;",
+        &[JValue::Int(icon_id)],
+    )?;
 
     if let Some(bitmap) = bitmap {
         env.call_method(
@@ -315,7 +405,14 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
 
     let style_class = env.find_class("android/app/Notification$MediaStyle")?;
     let media_style = env.new_object(style_class, "()V", &[])?;
-    let session_token = env.call_method(session, "getSessionToken", "()Landroid/media/session/MediaSession$Token;", &[])?.l()?;
+    let session_token = env
+        .call_method(
+            session,
+            "getSessionToken",
+            "()Landroid/media/session/MediaSession$Token;",
+            &[],
+        )?
+        .l()?;
 
     env.call_method(
         &media_style,
@@ -331,7 +428,9 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
         &[JValue::Object(&media_style)],
     )?;
 
-    let notification = env.call_method(builder, "build", "()Landroid/app/Notification;", &[])?.l()?;
+    let notification = env
+        .call_method(builder, "build", "()Landroid/app/Notification;", &[])?
+        .l()?;
 
     env.call_method(
         &notification_manager,
@@ -345,7 +444,11 @@ pub fn show_media_notification(env: &mut JNIEnv, context: &JObject, session: &JO
 
 fn try_to_get_audio_focus(env: &mut JNIEnv, context: &JObject) -> jni::errors::Result<jint> {
     let audio_service_field = env
-        .get_static_field("android/content/Context", "AUDIO_SERVICE", "Ljava/lang/String;")?
+        .get_static_field(
+            "android/content/Context",
+            "AUDIO_SERVICE",
+            "Ljava/lang/String;",
+        )?
         .l()?;
 
     let audio_manager_obj = env
@@ -382,7 +485,7 @@ fn update_playback_state(
     env: &mut JNIEnv,
     media_session: &JObject,
     m_state: i32,
-    position: i64
+    position: i64,
 ) -> jni::errors::Result<()> {
     let builder_class = env.find_class("android/media/session/PlaybackState$Builder")?;
     let builder = env.new_object(builder_class, "()V", &[])?;
@@ -410,11 +513,21 @@ fn update_playback_state(
         &builder,
         "setState",
         "(IJF)Landroid/media/session/PlaybackState$Builder;",
-        &[JValue::Int(m_state), JValue::Long(position), JValue::Float(playback_speed)],
+        &[
+            JValue::Int(m_state),
+            JValue::Long(position),
+            JValue::Float(playback_speed),
+        ],
     )?;
 
-    let playback_state =
-        env.call_method(&builder, "build", "()Landroid/media/session/PlaybackState;", &[])?.l()?;
+    let playback_state = env
+        .call_method(
+            &builder,
+            "build",
+            "()Landroid/media/session/PlaybackState;",
+            &[],
+        )?
+        .l()?;
 
     env.call_method(
         &media_session,
@@ -455,7 +568,11 @@ pub fn update_metadata<'a>(
     macro_rules! put_string {
         ($key_field:expr, $value:expr) => {{
             let key = env
-                .get_static_field("android/media/MediaMetadata", $key_field, "Ljava/lang/String;")?
+                .get_static_field(
+                    "android/media/MediaMetadata",
+                    $key_field,
+                    "Ljava/lang/String;",
+                )?
                 .l()?;
             let value = env.new_string($value)?;
             env.call_method(
@@ -471,7 +588,10 @@ pub fn update_metadata<'a>(
     put_string!("METADATA_KEY_DISPLAY_SUBTITLE", artist);
 
     if let Some(icon_uri) = display_icon_uri {
-        put_string!("METADATA_KEY_DISPLAY_ICON_URI", "android.R.drawable.ic_media_play");
+        put_string!(
+            "METADATA_KEY_DISPLAY_ICON_URI",
+            "android.R.drawable.ic_media_play"
+        );
     }
 
     put_string!("METADATA_KEY_TITLE", title);
@@ -503,8 +623,14 @@ pub fn update_metadata<'a>(
         )?;
     }
 
-    let metadata =
-        env.call_method(&metadata_builder, "build", "()Landroid/media/MediaMetadata;", &[])?.l()?;
+    let metadata = env
+        .call_method(
+            &metadata_builder,
+            "build",
+            "()Landroid/media/MediaMetadata;",
+            &[],
+        )?
+        .l()?;
 
     env.call_method(
         &session,

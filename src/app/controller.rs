@@ -1,22 +1,24 @@
 use super::{
     audio::AudioPlayer,
     embed::AutoEncoder,
+    playlist::get_playlist_files,
+    playlist::Playlist,
+    queue::{Listen, Queue, QueueType},
+    settings::{RadioSettings, Settings, WeightMode},
     track::{Mood, Track, TrackInfo},
-    queue::{QueueType, Queue, Listen},
-    utils::{strip_unnessecary, similar}, playlist::get_playlist_files,
-    settings::{Settings, WeightMode, RadioSettings},
-    playlist::{Playlist, self},
+    utils::{similar, strip_unnessecary},
 };
+use crate::analysis::{generate_track_info, utils::cosine_similarity};
+use crate::database::{hash_filename, save_track_weights};
 use log::info;
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
-use std::time::Instant;
-use crate::database::{init_db, save_track_weights, hash_filename, row_to_weights};
-use rusqlite::{params, Rows, Connection};
+use rand::thread_rng;
+use rusqlite::Connection;
 use std::collections::HashMap;
-use crate::analysis::{generate_track_info, utils::cosine_similarity};
 use std::path::PathBuf;
+use std::time::Instant;
 
 #[derive(PartialEq)]
 pub struct MusicController {
@@ -41,12 +43,12 @@ pub struct MusicController {
 impl MusicController {
     pub fn empty() -> Self {
         Self {
-            all_tracks: vec!(),
-            track_info: vec!(),
+            all_tracks: vec![],
+            track_info: vec![],
             artists: HashMap::new(),
             genres: HashMap::new(),
             albums: HashMap::new(),
-            listens: vec!(),
+            listens: vec![],
             current_started: Instant::now(),
             current_queue: 0,
             queues: vec![Queue::all()],
@@ -60,15 +62,17 @@ impl MusicController {
 
     pub fn new(all_tracks: Vec<Track>, _directory: String) -> Self {
         let mut rng = thread_rng();
-        let current_playing =
-            if all_tracks.len() > 0 { rng.gen_range(0..all_tracks.len()) } else { 0 };
+        let current_playing = if all_tracks.len() > 0 {
+            rng.gen_range(0..all_tracks.len())
+        } else {
+            0
+        };
 
         let encoder = AutoEncoder::new().unwrap();
-
         let started = std::time::SystemTime::now();
-        let cache = init_db().unwrap();
 
-        let (mut albums, mut artists, mut genres) = (HashMap::new(), HashMap::new(), HashMap::new());
+        let (mut albums, mut artists, mut genres) =
+            (HashMap::new(), HashMap::new(), HashMap::new());
 
         for track in &all_tracks {
             for genre in track.genres.clone() {
@@ -90,7 +94,11 @@ impl MusicController {
             listens: Vec::new(),
             queues: vec![Queue::radio(
                 current_playing,
-                all_tracks.get(current_playing).cloned().unwrap_or_default().title,
+                all_tracks
+                    .get(current_playing)
+                    .cloned()
+                    .unwrap_or_default()
+                    .title,
             )],
             current_queue: 0,
             track_info: Vec::new(),
@@ -119,7 +127,7 @@ impl MusicController {
     }
 
     pub fn load_playlists(&mut self) {
-        let files = get_playlist_files(&self.settings.directory).unwrap(); 
+        let files = get_playlist_files(&self.settings.directory).unwrap();
 
         for file in files {
             let playlist = Playlist::load(&self.settings.directory, &file, &self.all_tracks);
@@ -129,19 +137,31 @@ impl MusicController {
 
     pub fn delete_playlist(&mut self, playlist: usize) {
         let path = self.playlists[playlist].file.clone();
-        std::fs::remove_file(path);
+        std::fs::remove_file(path).unwrap();
         self.playlists.remove(playlist);
     }
 
     pub fn save_playlist(&mut self, playlist: usize) {
         let playlist = self.playlists[playlist].clone();
-        let relative_paths: Vec<String> = playlist.tracks.iter().map(|t| relative_path(&self.all_tracks[*t].file, &self.settings.directory)).collect();
-        
-        let file = String::from("#EXTM3U\n#PLAYLIST:") + &playlist.name + "\n" + &relative_paths.join("\n\n");
+        let relative_paths: Vec<String> = playlist
+            .tracks
+            .iter()
+            .map(|t| relative_path(&self.all_tracks[*t].file, &self.settings.directory))
+            .collect();
+
+        let file = String::from("#EXTM3U\n#PLAYLIST:")
+            + &playlist.name
+            + "\n"
+            + &relative_paths.join("\n\n");
         std::fs::write(&playlist.file, file).unwrap();
     }
 
-    pub fn load_weight(&mut self, cache: &Connection, weights: &HashMap<String, TrackInfo>, track_idx: usize) -> bool {
+    pub fn load_weight(
+        &mut self,
+        cache: &Connection,
+        weights: &HashMap<String, TrackInfo>,
+        track_idx: usize,
+    ) -> bool {
         let track = &self.all_tracks[track_idx];
         let file_hash = hash_filename(&track.file);
         if weights.contains_key(&file_hash) {
@@ -174,14 +194,21 @@ impl MusicController {
     pub fn get_space(&mut self) -> TrackInfo {
         match self.settings.radio.weight_mode {
             WeightMode::First => self.track_info[self.current_queue().cached_order[0]].clone(),
-            WeightMode::Last => self.track_info[*self.current_queue().cached_order.iter().last().unwrap()].clone(),
+            WeightMode::Last => {
+                self.track_info[*self.current_queue().cached_order.iter().last().unwrap()].clone()
+            }
             WeightMode::Average => {
                 let mut tracks = Vec::new();
 
                 // Introduce count later?
                 let count = self.current_queue().cached_order.len();
                 for i in (count.max(10) - 10)..count {
-                    tracks.push(self.track_info.get(self.current_queue().cached_order[i]).cloned().unwrap_or_default());
+                    tracks.push(
+                        self.track_info
+                            .get(self.current_queue().cached_order[i])
+                            .cloned()
+                            .unwrap_or_default(),
+                    );
                 }
 
                 TrackInfo::average(tracks)
@@ -203,20 +230,25 @@ impl MusicController {
             .collect();
         dists.sort_by(|(_, a), (_, b)| b.total_cmp(a));
 
-        let mut min = 1.0;
         let mut count = 0;
         let amount = 20;
         let temperature = 10.0;
         for (rank, (song, distance)) in dists.iter().enumerate() {
-            if count == 50 { break; }
-            if rank == 0 { continue; }
+            if count == 50 {
+                break;
+            }
+            if rank == 0 {
+                continue;
+            }
             if self.current_queue().cached_order.contains(song) {
                 continue;
             }
 
             let norm = (amount - count) as f32 / amount as f32;
             weights[*song] = 1.0 / ((norm * temperature - (temperature / 3.0)).exp() + 1.05) + 0.05;
-            if weights[*song].is_sign_negative() { info!("{song}, {rank}, {distance}"); }
+            if weights[*song].is_sign_negative() {
+                info!("{song}, {rank}, {distance}");
+            }
             count += 1;
         }
 
@@ -226,10 +258,13 @@ impl MusicController {
                 info!("NaN weight found");
             }
         }
-        
+
         for i in 0..self.all_tracks.len() {
             let current_idx = self.current_queue().current();
-            if similar(&self.all_tracks[current_idx].album, &self.all_tracks[i].album) {
+            if similar(
+                &self.all_tracks[current_idx].album,
+                &self.all_tracks[i].album,
+            ) {
                 weights *= self.settings.radio.album_penalty;
             }
 
@@ -276,7 +311,11 @@ impl MusicController {
         let current_queue = &mut self.queues[self.current_queue];
 
         // next song exists in queue
-        if let Some(next) = current_queue.cached_order.get(current_queue.current_track + 1).cloned() {
+        if let Some(next) = current_queue
+            .cached_order
+            .get(current_queue.current_track + 1)
+            .cloned()
+        {
             current_queue.current_track += 1;
             self.play_track(next);
             return;
@@ -327,7 +366,10 @@ impl MusicController {
 
     pub fn queue_to_playlist(&mut self, queue: usize) {
         let queue = self.queues[queue].clone();
-        let mut playlist = Playlist::new(format!("{}", queue.queue_type), self.settings.directory.clone());
+        let mut playlist = Playlist::new(
+            format!("{}", queue.queue_type),
+            self.settings.directory.clone(),
+        );
         playlist.tracks = queue.cached_order;
         self.playlists.push(playlist);
         self.save_playlist(self.playlists.len() - 1);
@@ -348,7 +390,8 @@ impl MusicController {
 impl MusicController {
     pub fn add_artist_queue(&mut self, artist: String) {
         let tracks = self.get_tracks_where(|track| track.artists.contains(&artist));
-        self.queues.push(Queue::new(QueueType::Artist(artist), tracks));
+        self.queues
+            .push(Queue::new(QueueType::Artist(artist), tracks));
         self.current_queue = self.queues.len() - 1;
     }
 
@@ -373,9 +416,11 @@ impl MusicController {
     }
 
     pub fn start_playlist_at(&mut self, playlist: usize, track: usize) {
-        self.add_queue_at(self.playlists[playlist].tracks.clone(),
+        self.add_queue_at(
+            self.playlists[playlist].tracks.clone(),
             QueueType::Playlist(self.playlists[playlist].name.clone(), playlist),
-            track);
+            track,
+        );
     }
 
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
@@ -394,7 +439,7 @@ impl MusicController {
                 self.play_track(track);
                 self.play();
                 info!("{}, {}", self.queues[i].current(), track);
-                return;    
+                return;
             }
         }
 
@@ -429,15 +474,19 @@ impl MusicController {
                 let current = queue.cached_order[queue.current_track];
 
                 match queue.queue_type {
-                    QueueType::Radio(_) => {},
-                    QueueType::Album(_) => queue.cached_order.sort_by(|a, b| self.all_tracks[*a].trackno.cmp(&self.all_tracks[*b].trackno)),
+                    QueueType::Radio(_) => {}
+                    QueueType::Album(_) => queue.cached_order.sort_by(|a, b| {
+                        self.all_tracks[*a]
+                            .trackno
+                            .cmp(&self.all_tracks[*b].trackno)
+                    }),
                     _ => queue.cached_order.sort_by(|a, b| a.cmp(b)),
                 }
-                
+
                 // Keep same track playing
                 let new_idx = queue.cached_order.iter().position(|n| *n == current);
                 queue.current_track = new_idx.unwrap_or(0);
-            } 
+            }
         } else {
             for queue in &mut self.queues {
                 if let QueueType::Radio(_) = queue.queue_type {
@@ -445,7 +494,8 @@ impl MusicController {
                     continue;
                 }
 
-                queue.cached_order = shuffle_with_first(queue.cached_order.clone(), queue.current());
+                queue.cached_order =
+                    shuffle_with_first(queue.cached_order.clone(), queue.current());
                 queue.current_track = 0;
             }
         }
@@ -455,7 +505,9 @@ impl MusicController {
 
     pub fn play_next(&mut self, track: usize) {
         let position = self.current_queue().current_track;
-        self.mut_current_queue().cached_order.insert(position + 1, track);
+        self.mut_current_queue()
+            .cached_order
+            .insert(position + 1, track);
     }
 
     pub fn add_to_playlist(&mut self, playlist: usize, track: usize) {
@@ -572,7 +624,11 @@ impl MusicController {
 
     pub fn next_up(&self) -> Option<Track> {
         let current_queue = &self.queues[self.current_queue];
-        Some(self.all_tracks.get(*current_queue.cached_order.get(0)?)?.clone())
+        Some(
+            self.all_tracks
+                .get(*current_queue.cached_order.get(0)?)?
+                .clone(),
+        )
     }
 
     pub fn get_queue(&self, idx: usize) -> &Queue {
@@ -592,16 +648,16 @@ pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo, settings: &RadioSe
     let mfcc_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
     let chroma_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
     let spectral_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
-    let energy_sim = relative_similarity(lhs.energy, rhs.energy).min(1.0) ;
+    let energy_sim = relative_similarity(lhs.energy, rhs.energy).min(1.0);
     let bpm_sim = relative_similarity(lhs.bpm, rhs.bpm).min(1.0);
     let zcr_sim = relative_similarity(lhs.zcr, rhs.zcr);
 
-    (mfcc_sim * settings.mfcc_weight) + 
-    (chroma_sim * settings.chroma_weight) + 
-    (spectral_sim * settings.mfcc_weight) + 
-    (energy_sim * settings.energy_weight) + 
-    (bpm_sim * settings.bpm_weight) + 
-    (zcr_sim * settings.zcr_weight) 
+    (mfcc_sim * settings.mfcc_weight)
+        + (chroma_sim * settings.chroma_weight)
+        + (spectral_sim * settings.mfcc_weight)
+        + (energy_sim * settings.energy_weight)
+        + (bpm_sim * settings.bpm_weight)
+        + (zcr_sim * settings.zcr_weight)
 }
 
 pub fn relative_similarity(lhs: f32, rhs: f32) -> f32 {

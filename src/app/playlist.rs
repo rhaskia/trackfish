@@ -1,9 +1,8 @@
-use std::path::PathBuf;
-use std::{io, fs};
-use log::info;
-use super::controller::relative_path;
 use super::utils::strip_unnessecary;
 use crate::app::Track;
+use log::info;
+use std::path::PathBuf;
+use std::{fs, io};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Playlist {
@@ -16,7 +15,7 @@ pub struct Playlist {
 impl Playlist {
     pub fn new(name: String, dir: String) -> Self {
         Playlist {
-            name: name.clone(), 
+            name: name.clone(),
             file: dir + &strip_unnessecary(&name) + ".m3u",
             tracks: Vec::new(),
             track_paths: Vec::new(),
@@ -25,7 +24,7 @@ impl Playlist {
 
     pub fn load(dir: &str, playlist_file: &str, all_tracks: &Vec<Track>) -> Self {
         let path = PathBuf::from(playlist_file);
-        let file = playlist_file.to_string(); 
+        let file = playlist_file.to_string();
         let mut name = path.file_stem().unwrap().to_str().unwrap().to_string();
         let mut track_paths = Vec::new();
         let mut tracks = Vec::new();
@@ -45,25 +44,28 @@ impl Playlist {
                     PathBuf::from(line)
                 } else if canon_path.exists() {
                     canon_path
-                } else { continue };
+                } else {
+                    continue;
+                };
 
                 if path.is_file() {
-                    let idx = all_tracks.iter().position(|track: &Track| PathBuf::from(&track.file) == path);
+                    let idx = all_tracks
+                        .iter()
+                        .position(|track: &Track| PathBuf::from(&track.file) == path);
                     if let Some(idx) = idx {
                         tracks.push(idx);
                     }
                 } else {
                     // TODO file playlists or not idk
                 }
-
             }
         }
 
         Self {
-            name, 
+            name,
             file,
             track_paths,
-            tracks
+            tracks,
         }
     }
 
@@ -87,7 +89,7 @@ pub fn get_playlist_files(dir: &str) -> Result<Vec<String>, io::Error> {
             true => {
                 if path_is_playlist(path) {
                     files.push(filename.into());
-                } 
+                }
             }
             false => {
                 let mut dir_files = get_playlist_files(&filename)?;
@@ -100,5 +102,9 @@ pub fn get_playlist_files(dir: &str) -> Result<Vec<String>, io::Error> {
 }
 
 fn path_is_playlist(path: PathBuf) -> bool {
-    path.extension().unwrap_or_default().to_str().unwrap_or_default() == "m3u"
+    path.extension()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default()
+        == "m3u"
 }

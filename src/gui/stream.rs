@@ -1,7 +1,7 @@
+use http::Response;
 use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
-use http::Response;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::AssetRequest;
@@ -98,14 +98,18 @@ pub async fn get_stream_response(
             let boundary_sep = format!("\r\n--{boundary}\r\n");
             let boundary_closer = format!("\r\n--{boundary}\r\n");
 
-            resp = resp.header(CONTENT_TYPE, format!("multipart/byteranges; boundary={boundary}"));
+            resp = resp.header(
+                CONTENT_TYPE,
+                format!("multipart/byteranges; boundary={boundary}"),
+            );
 
             for (end, start) in ranges {
                 // a new range is being written, write the range boundary
                 buf.write_all(boundary_sep.as_bytes()).await?;
 
                 // write the needed headers `Content-Type` and `Content-Range`
-                buf.write_all(format!("{CONTENT_TYPE}: image/png\r\n").as_bytes()).await?;
+                buf.write_all(format!("{CONTENT_TYPE}: image/png\r\n").as_bytes())
+                    .await?;
                 buf.write_all(format!("{CONTENT_RANGE}: bytes {start}-{end}/{len}\r\n").as_bytes())
                     .await?;
 

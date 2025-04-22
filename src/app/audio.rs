@@ -1,5 +1,5 @@
 use log::info;
-use rodio::{Decoder, OutputStream, Sink, OutputStreamHandle, Source};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
 use std::time::Duration;
@@ -21,36 +21,49 @@ impl AudioPlayer {
         let _stream = OutputStream::try_default();
         let sink = if let Ok(ref _stream) = _stream {
             Sink::try_new(&_stream.1).ok()
-        } else { None };
+        } else {
+            None
+        };
 
-        AudioPlayer { _stream: _stream.ok(), sink, current_song_len: 1.0 }
+        AudioPlayer {
+            _stream: _stream.ok(),
+            sink,
+            current_song_len: 1.0,
+        }
     }
 
     pub fn try_new_sink(&mut self) -> Option<&Sink> {
         if self.sink.is_some() {
             return self.sink.as_ref();
         }
-        
+
         let _stream = OutputStream::try_default();
         let sink = if let Ok(ref _stream) = _stream {
             Sink::try_new(&_stream.1).ok()
-        } else { None };
+        } else {
+            None
+        };
 
         self._stream = _stream.ok();
         self.sink = sink;
 
         self.sink.as_ref()
-    } 
+    }
 
     pub fn play_track(&mut self, file_path: &str) {
         info!("Playing track: {file_path:?}");
         let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
-        self.current_song_len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
+        self.current_song_len = source
+            .total_duration()
+            .unwrap_or(Duration::ZERO)
+            .as_secs_f64();
 
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         let was_paused = sink.is_paused();
         sink.clear();
@@ -65,7 +78,9 @@ impl AudioPlayer {
     pub fn toggle_playing(&mut self) {
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         if sink.is_paused() {
             sink.play();
@@ -77,7 +92,9 @@ impl AudioPlayer {
     pub fn play(&mut self) {
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         sink.play();
     }
@@ -85,7 +102,9 @@ impl AudioPlayer {
     pub fn pause(&mut self) {
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         sink.pause();
     }
@@ -93,7 +112,9 @@ impl AudioPlayer {
     pub fn playing(&self) -> bool {
         let sink = if let Some(sink) = &self.sink {
             sink
-        } else { return false };
+        } else {
+            return false;
+        };
 
         !sink.is_paused()
     }
@@ -101,7 +122,9 @@ impl AudioPlayer {
     pub fn progress_percent(&self) -> f64 {
         let sink = if let Some(sink) = &self.sink {
             sink
-        } else { return 0.0 };
+        } else {
+            return 0.0;
+        };
 
         sink.get_pos().as_secs_f64() / self.current_song_len
     }
@@ -109,7 +132,9 @@ impl AudioPlayer {
     pub fn progress_secs(&self) -> f64 {
         let sink = if let Some(sink) = &self.sink {
             sink
-        } else { return 0.0 };
+        } else {
+            return 0.0;
+        };
 
         sink.get_pos().as_secs_f64()
     }
@@ -117,7 +142,9 @@ impl AudioPlayer {
     pub fn track_ended(&self) -> bool {
         let sink = if let Some(sink) = &self.sink {
             sink
-        } else { return false };
+        } else {
+            return false;
+        };
 
         sink.empty()
     }
@@ -129,7 +156,9 @@ impl AudioPlayer {
     pub fn set_pos(&mut self, pos: f64) {
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         let _ = sink.try_seek(Duration::from_secs_f64(pos));
     }
@@ -137,7 +166,9 @@ impl AudioPlayer {
     pub fn set_volume(&mut self, volume: f32) {
         let sink = if let Some(sink) = self.try_new_sink() {
             sink
-        } else { return };
+        } else {
+            return;
+        };
 
         sink.set_volume(volume)
     }

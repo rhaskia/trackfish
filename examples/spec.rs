@@ -7,5 +7,9 @@ fn main() {
     let mean = spec.sum() / spec.len() as f32;
     println!("{spec}");
 
-    std::fs::write("./spec.txt", spec.map(|weight| weight.to_string()).to_vec().join("\n")).unwrap();
+    std::fs::write(
+        "./spec.txt",
+        spec.map(|weight| weight.to_string()).to_vec().join("\n"),
+    )
+    .unwrap();
 }

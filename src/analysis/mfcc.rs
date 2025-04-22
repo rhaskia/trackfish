@@ -1,5 +1,5 @@
+use aubio::{FFT, MFCC};
 use ndarray::Array1;
-use aubio::{MFCC, FFT};
 
 pub fn extract_mfcc(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {
     let fft_size = 1024;
@@ -36,4 +36,3 @@ pub fn extract_mfcc(buffer: &Vec<f32>, sample_rate: u32) -> Array1<f32> {
 
     Array1::from_vec(mean_mfcc)
 }
-

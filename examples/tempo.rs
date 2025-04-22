@@ -1,4 +1,4 @@
-use trackfish::analysis::{extract_tempo, load_samples, extract_zcr};
+use trackfish::analysis::{extract_tempo, extract_zcr, load_samples};
 
 fn main() {
     let (samples, sample_rate) = load_samples("E:/music/911 [xkDabM0Cy-E].mp3", None);

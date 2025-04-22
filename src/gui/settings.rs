@@ -1,9 +1,8 @@
-use dioxus::prelude::*;
-use crate::app::MusicController;
-use super::{View, VIEW};
-use std::fmt::{Display, Formatter};
-use log::info;
 use super::CONTROLLER;
+use super::{View, VIEW};
+use dioxus::prelude::*;
+use log::info;
+use std::fmt::{Display, Formatter};
 
 #[component]
 pub fn Settings() -> Element {
@@ -15,7 +14,7 @@ pub fn Settings() -> Element {
         extended_list.set(false);
     };
 
-    rsx!{
+    rsx! {
         div {
             display: if VIEW.read().current != View::Settings { "none" },
             class: "settingsview",
@@ -23,9 +22,7 @@ pub fn Settings() -> Element {
                 class: "settingslistbutton",
                 onclick: move |_| extended_list.set(!extended_list()),
             }
-            div {
-                class: "settingslist", 
-                class: if !extended_list() { "closed" },
+            div { class: "settingslist", class: if !extended_list() { "closed" },
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
@@ -46,9 +43,15 @@ pub fn Settings() -> Element {
                 }
             }
             match settings_menu() {
-                SettingsMenu::Radio => rsx!{ RadioSettings { } },
-                SettingsMenu::Library => rsx!{ LibrarySettings { } },
-                SettingsMenu::Audio => rsx!{ AudioSettings { } },
+                SettingsMenu::Radio => rsx! {
+                    RadioSettings {}
+                },
+                SettingsMenu::Library => rsx! {
+                    LibrarySettings {}
+                },
+                SettingsMenu::Audio => rsx! {
+                    AudioSettings {}
+                },
             }
         }
     }
@@ -58,7 +61,7 @@ pub fn Settings() -> Element {
 enum SettingsMenu {
     Radio,
     Audio,
-    Library
+    Library,
 }
 
 impl Display for SettingsMenu {
@@ -73,19 +76,17 @@ impl Display for SettingsMenu {
 
 #[component]
 fn AudioSettings() -> Element {
-    rsx!{
-        div {
-            class: "settingsmenu",
+    rsx! {
+        div { class: "settingsmenu",
             h2 { class: "settingsbar", "Audio" }
-            div {
-                class: "settingbox",
-                span { "Volume" } 
+            div { class: "settingbox",
+                span { "Volume" }
                 input {
                     r#type: "range",
                     max: "1",
                     step: "0.01",
                     value: "{CONTROLLER.read().settings.volume}",
-                    oninput: move |e| CONTROLLER.write().set_volume(e.parsed::<f32>().unwrap())
+                    oninput: move |e| CONTROLLER.write().set_volume(e.parsed::<f32>().unwrap()),
                 }
             }
         }
@@ -94,7 +95,7 @@ fn AudioSettings() -> Element {
 
 #[component]
 fn RadioSettings() -> Element {
-    rsx!{
+    rsx! {
         form {
             class: "settingsmenu",
             onchange: move |_| CONTROLLER.write().settings.save(),
@@ -105,73 +106,79 @@ fn RadioSettings() -> Element {
                 oninput: move |e: Event<FormData>| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap()),
                 value: "{CONTROLLER.read().settings.radio.temp}",
             }
-            div {
-                class: "settingbox",
+            div { class: "settingbox",
                 span { "Track features to use" }
-                div {
-                    class: "selectwrapper",
-                    select {
-                        class: "settingsselect",
-                        onchange: |e| info!("{e:?}"),
-                        option {
-                            "First"
-                        }
-                        option {
-                            "Last"
-                        }
-                        option {
-                            "Average"
-                        }
+                div { class: "selectwrapper",
+                    select { class: "settingsselect", onchange: |e| info!("{e:?}"),
+                        option { "First" }
+                        option { "Last" }
+                        option { "Average" }
                     }
                 }
             }
             SettingsInput {
                 label: "Same artist penalty",
                 max: "1.0",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.artist_penalty}",
             }
             SettingsInput {
                 max: "1.0",
                 label: "Same album penalty",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.album_penalty}",
             }
             hr {}
             SettingsInput {
                 max: "2.0",
                 label: "MFCC weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.mfcc_weight}",
             }
             SettingsInput {
                 max: "2.0",
                 label: "Chroma weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.chroma_weight}",
             }
             SettingsInput {
                 max: "2.0",
                 label: "Spectral weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.spectral_weight}",
             }
             SettingsInput {
                 max: "2.0",
                 label: "Energy weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.energy_weight}",
             }
             SettingsInput {
                 max: "2.0",
                 label: "BPM weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.bpm_weight}",
             }
             SettingsInput {
                 max: "2.0",
                 label: "ZCR weight",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap(),
+                oninput: move |e: Event<FormData>| {
+                    CONTROLLER.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap();
+                },
                 value: "{CONTROLLER.read().settings.radio.zcr_weight}",
             }
         }
@@ -179,13 +186,16 @@ fn RadioSettings() -> Element {
 }
 
 #[component]
-fn SettingsInput(max: String, label: String, value: String, oninput: Callback<Event<FormData>>) -> Element {
-    rsx!{
-        div {
-            class: "settingbox",
+fn SettingsInput(
+    max: String,
+    label: String,
+    value: String,
+    oninput: Callback<Event<FormData>>,
+) -> Element {
+    rsx! {
+        div { class: "settingbox",
             span { "{label}" }
-            div {
-                class: "settingsinput",
+            div { class: "settingsinput",
                 input {
                     r#type: "range",
                     max,
@@ -193,11 +203,7 @@ fn SettingsInput(max: String, label: String, value: String, oninput: Callback<Ev
                     value: value.clone(),
                     oninput,
                 }
-                input {
-                    class: "smalltextinput",
-                    r#type: "text",
-                    value,
-                }
+                input { class: "smalltextinput", r#type: "text", value }
             }
         }
     }
@@ -205,14 +211,12 @@ fn SettingsInput(max: String, label: String, value: String, oninput: Callback<Ev
 
 #[component]
 fn LibrarySettings() -> Element {
-    rsx!{
-        div {
-            class: "settingsmenu",
+    rsx! {
+        div { class: "settingsmenu",
             h2 { class: "settingsbar", "Library" }
-            div {
-                class: "settingbox",
+            div { class: "settingbox",
                 span { "Music Directory" }
-                input { 
+                input {
                     r#type: "text",
                     value: "{CONTROLLER.read().settings.directory}",
                     onchange: move |e| CONTROLLER.write().set_directory(e.value()),

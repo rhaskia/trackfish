@@ -1,10 +1,8 @@
+use super::{View, CONTROLLER, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
-use crate::app::MusicController;
+use log::info;
 use std::time::Duration;
 use tokio::time;
-use log::info;
-use super::{View, VIEW, CONTROLLER};
-use super::input::{key_to_action, Action};
 
 #[component]
 pub fn TrackView() -> Element {
@@ -22,13 +20,14 @@ pub fn TrackView() -> Element {
         progress.set(0.0);
         info!("{:?}", CONTROLLER.read().current_track());
     };
-    
+
     use_future(move || async move {
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
             if !progress_held() {
                 *progress.write() = CONTROLLER.read().player.progress_secs();
-                if CONTROLLER.read().player.track_ended() && CONTROLLER.read().all_tracks.len() > 0 {
+                if CONTROLLER.read().player.track_ended() && CONTROLLER.read().all_tracks.len() > 0
+                {
                     CONTROLLER.write().skip();
                 }
             }
@@ -36,30 +35,25 @@ pub fn TrackView() -> Element {
     });
 
     rsx! {
-        div { class: "trackview",
-            // Keyboard track controls
-            // Need to move higher in app
-            onkeydown: move |e| match key_to_action(e) {
-                Some(Action::Skip) => CONTROLLER.write().skip(),
-                Some(Action::SkipPrevious) => CONTROLLER.write().skipback(),
-                Some(Action::PauseToggle) => CONTROLLER.write().toggle_playing(),
-                _ => {},
-            },
-
+        div {
+            class: "trackview",
             display: if VIEW.read().current != View::Song { "none" },
 
             // Background image blur
-            div { class: "trackblur",
-                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})" 
+            div {
+                class: "trackblur",
+                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
             }
 
             // Main track image
             div { class: "imageview",
-                img { src: "/trackimage/{CONTROLLER.read().current_track_idx()}", loading: "onvisible" }
+                img {
+                    src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
+                    loading: "onvisible",
+                }
             }
 
-            div {
-                class: "trackcontrols",
+            div { class: "trackcontrols",
                 h3 { "{CONTROLLER.read().current_track_title().unwrap_or_default()}" }
 
                 // Song artist list
@@ -76,10 +70,10 @@ pub fn TrackView() -> Element {
                         if idx > 0 {
                             ", "
                         }
-                        span { 
+                        span {
                             onclick: move |_| {
                                 VIEW.write().open(View::Artists);
-                                VIEW.write().artist = Some(artist.clone()); 
+                                VIEW.write().artist = Some(artist.clone());
                             },
                             "{artist}"
                         }
@@ -91,7 +85,9 @@ pub fn TrackView() -> Element {
                     class: "albumspecifier",
                     // Open album view on click
                     onclick: move |_| {
-                        VIEW.write().album = Some(CONTROLLER.read().current_track_album().unwrap_or_default().to_string());
+                        VIEW.write().album = Some(
+                            CONTROLLER.read().current_track_album().unwrap_or_default().to_string(),
+                        );
                         VIEW.write().open(View::Albums);
                     },
                     "{CONTROLLER.read().current_track_album().unwrap_or_default()}"
@@ -101,11 +97,11 @@ pub fn TrackView() -> Element {
                 span { class: "genresspecifier",
                     if let Some(genres) = CONTROLLER.read().current_track_genres() {
                         for genre in genres.iter().cloned() {
-                            span { 
+                            span {
                                 // Open genre view on click
                                 onclick: move |_| {
                                     VIEW.write().open(View::Genres);
-                                    VIEW.write().genre = Some(genre.clone()); 
+                                    VIEW.write().genre = Some(genre.clone());
                                 },
                                 "{genre}"
                             }
@@ -131,16 +127,18 @@ pub fn TrackView() -> Element {
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),
                     }
-                    span { class: "songlength", "{format_seconds(CONTROLLER.read().player.song_length())}" }
+                    span { class: "songlength",
+                        "{format_seconds(CONTROLLER.read().player.song_length())}"
+                    }
                 }
 
                 // Track controls
                 div { class: "buttonrow",
-                    button { 
+                    button {
                         class: "like-button",
                         class: "svg-button",
                         // Open track options for current track
-                        onclick: move |_| super::TRACKOPTION.set(Some(CONTROLLER.read().current_track_idx())),
+                        onclick: move |_| *TRACKOPTION.write() = Some(CONTROLLER.read().current_track_idx()),
                     }
                     button {
                         class: "skipprev-button",

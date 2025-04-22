@@ -1,6 +1,5 @@
+use aubio::{SpecDesc, SpecShape, FFT};
 use ndarray::Array1;
-use aubio::{SpecShape, FFT, SpecDesc};
-use log::info;
 
 pub fn extract_spectral(buffer: &Vec<f32>, _sample_rate: u32) -> Array1<f32> {
     let fft_size = 1024;

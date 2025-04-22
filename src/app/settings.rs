@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use log::info;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub struct Settings {
@@ -28,16 +28,16 @@ pub struct RadioSettings {
 pub enum WeightMode {
     #[default]
     First,
-    Average, 
-    Last
+    Average,
+    Last,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { 
+        Self {
             volume: 1.0,
             directory: Self::default_audio_dir(),
-            radio: RadioSettings::default()
+            radio: RadioSettings::default(),
         }
     }
 }
@@ -61,7 +61,7 @@ impl Default for RadioSettings {
 
 impl Settings {
     pub fn dir() -> PathBuf {
-        if cfg!(target_os = "android") { 
+        if cfg!(target_os = "android") {
             cache_dir::get_cache_dir().unwrap()
         } else {
             dirs::config_dir().unwrap().join("trackfish/")
@@ -71,13 +71,13 @@ impl Settings {
     pub fn default_audio_dir() -> String {
         if cfg!(target_os = "android") {
             "/storage/emulated/0/Music".to_string()
-        } else { 
+        } else {
             match dirs::audio_dir() {
                 Some(dir) => dir.display().to_string(),
                 None => {
                     let dir = match std::env::consts::OS {
                         "linux" => "~/Music",
-                        _ => ""
+                        _ => "",
                     };
                     let _ = std::fs::create_dir(dir);
                     dir.to_string()

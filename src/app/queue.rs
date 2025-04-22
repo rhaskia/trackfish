@@ -1,6 +1,6 @@
-use std::time::Instant;
-use std::fmt::Display;
 use log::info;
+use std::fmt::Display;
+use std::time::Instant;
 
 #[derive(Clone, PartialEq)]
 pub struct Queue {
@@ -20,10 +20,7 @@ impl Queue {
         }
     }
 
-    pub fn new_from_pos(
-        queue_type: QueueType,
-        current_track: usize,
-    ) -> Self {
+    pub fn new_from_pos(queue_type: QueueType, current_track: usize) -> Self {
         Self {
             queue_type,
             current_track,
@@ -72,7 +69,9 @@ impl Queue {
     }
 
     pub fn swap(&mut self, index_to_move: usize, position: usize) {
-        if index_to_move == position { return; }
+        if index_to_move == position {
+            return;
+        }
         info!("{index_to_move}, {position}");
 
         let track = self.cached_order[index_to_move];
@@ -151,7 +150,11 @@ impl Listen {
     pub fn new(id: usize, start: Instant, total_len: f64, progress: f64) -> Self {
         let time = start.elapsed();
         let percentage = time.as_secs_f64() / total_len;
-        Self { id, start, progress, percentage }
+        Self {
+            id,
+            start,
+            progress,
+            percentage,
+        }
     }
 }
-

@@ -1,7 +1,6 @@
-use dioxus::prelude::*;
-use crate::app::MusicController;
-use crate::app::utils::strip_unnessecary;
 use super::{View, VIEW};
+use crate::app::utils::strip_unnessecary;
+use dioxus::prelude::*;
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -17,21 +16,24 @@ use super::CONTROLLER;
 pub fn AllTracks() -> Element {
     let mut is_searching = use_signal(|| false);
     let tracks = use_memo(move || (0..CONTROLLER.read().all_tracks.len()).collect::<Vec<usize>>());
-    let total_time = use_memo(move || CONTROLLER.read().all_tracks.iter().map(|t| t.len).sum::<f64>() as u64);
+    let total_time = use_memo(move || {
+        CONTROLLER
+            .read()
+            .all_tracks
+            .iter()
+            .map(|t| t.len)
+            .sum::<f64>() as u64
+    });
 
-    rsx!{
+    rsx! {
         div {
             class: "alltracksview",
             display: if VIEW.read().current != View::AllTracks { "none" },
-            div {
-                class: "searchbar",
-                onclick: move |_| is_searching.set(true),
+            div { class: "searchbar", onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }
                 div { class: "pseudoinput" }
             }
-            div {
-                color: "white",
-                padding: "10px",
+            div { color: "white", padding: "10px",
                 "{CONTROLLER.read().all_tracks.len()} songs / "
                 "{display_time(total_time())} total duration"
             }
@@ -45,13 +47,17 @@ pub fn AllTracks() -> Element {
                             CONTROLLER.write().add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
-                        img { class: "trackitemicon", loading: "onvisible", src: "/trackimage/{i}" }
+                        img {
+                            class: "trackitemicon",
+                            loading: "onvisible",
+                            src: "/trackimage/{i}",
+                        }
                         span { "{CONTROLLER.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }
-                        img { 
+                        img {
                             class: "trackbutton",
                             loading: "onvisible",
-                            src: "/assets/icons/vert.svg"
+                            src: "/assets/icons/vert.svg",
                         }
                     }
                 }
@@ -73,23 +79,23 @@ pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Ele
             log::info!("searching {search}");
             Vec::new()
         } else {
-            tracks.read().iter()
-                .filter(|t| strip_unnessecary(&CONTROLLER.read().all_tracks[**t].title).starts_with(&search))
+            tracks
+                .read()
+                .iter()
+                .filter(|t| {
+                    strip_unnessecary(&CONTROLLER.read().all_tracks[**t].title).starts_with(&search)
+                })
                 .cloned()
                 .collect::<Vec<usize>>()
         }
     });
 
     rsx! {
-        div { 
-            class: "searchholder",
-            onclick: move |_| is_searching.set(false),
+        div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
             div { "{matches:?}" }
-            div {
-                class: "searchpopup",
-                div {
-                    class: "searchpopupbar",
+            div { class: "searchpopup",
+                div { class: "searchpopupbar",
                     img { src: "assets/icons/search.svg" }
                     input {
                         value: search,
@@ -98,16 +104,14 @@ pub fn TracksSearch(tracks: Memo<Vec<usize>>, is_searching: Signal<bool>) -> Ele
                         oninput: move |e| search.set(e.value()),
                     }
                 }
-                div {
-                    class: "searchtracks",
+                div { class: "searchtracks",
                     for track in matches() {
                         div {
                             class: "trackitem",
-                            onclick: move |_| { 
-                                document::eval(&format!(
-                                    "document.getElementById('trackitem-{}').scrollIntoView();",
-                                    track
-                                ));
+                            onclick: move |_| {
+                                document::eval(
+                                    &format!("document.getElementById('trackitem-{}').scrollIntoView();", track),
+                                );
                             },
                             img { src: "/trackimage/{track}" }
                             span { "{CONTROLLER.read().all_tracks[track].title}" }

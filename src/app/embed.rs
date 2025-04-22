@@ -14,7 +14,7 @@ pub struct AutoEncoder {
     encoder_biases: Array1<f32>,
     decoder_weights: Array2<f32>,
     decoder_biases: Array1<f32>,
-    genre_index: Vec<String>
+    genre_index: Vec<String>,
 }
 
 impl AutoEncoder {
@@ -24,7 +24,11 @@ impl AutoEncoder {
         let decoder_weights = Array2::<f32>::read_npy(&D_WEIGHTS[..])?;
         let decoder_biases = Array1::<f32>::read_npy(&D_BIASES[..])?;
 
-        let genre_index = G_LIST.to_string().split("\n").map(|genre| genre.trim().to_string()).collect();
+        let genre_index = G_LIST
+            .to_string()
+            .split("\n")
+            .map(|genre| genre.trim().to_string())
+            .collect();
 
         Ok(AutoEncoder {
             genre_index,
@@ -39,7 +43,7 @@ impl AutoEncoder {
         assert_eq!(self.encoder_weights.shape()[0], input.len());
         assert_eq!(self.encoder_biases.len(), self.encoder_weights.shape()[1]);
         let mut result = input.dot(&self.encoder_weights) + self.encoder_biases.clone();
-        
+
         // ReLu Activation
         result = result.clamp(0.0, 1_000_000.0);
 

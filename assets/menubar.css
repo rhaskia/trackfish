@@ -1,31 +1,3 @@
-.songview-button {
-    background-image: url("icons/song.svg");
-}
-
-.queue-button {
-    background-image: url("icons/queue.svg");
-}
-
-.alltracks-button {
-    background-image: url("icons/folder.svg");
-}
-
-.album-button {
-    background-image: url("icons/album.svg");
-}
-
-.artist-button {
-    background-image: url("icons/artist.svg");
-}
-
-.genres-button {
-    background-image: url("icons/genres.svg");
-}
-
-.playlists-button {
-    background-image: url("icons/playlist.svg")
-}
-
 .search-button {
     background-image: url("icons/search.svg")
 }
