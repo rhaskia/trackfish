@@ -39,6 +39,7 @@ impl Track {
             QueueType::Genre(_) => todo!(),
             QueueType::Union(_) => todo!(),
             QueueType::Exclusion(_) => todo!(),
+            QueueType::Playlist(_, _) => todo!(),
         }
     }
 
@@ -303,6 +304,7 @@ pub struct TrackInfo {
     pub energy: f32,
     pub key: i32,
     pub bpm: f32,
+    pub zcr: f32,
 }
 
 impl TrackInfo {
@@ -321,6 +323,7 @@ impl TrackInfo {
             energy: tracks.iter().map(|t| t.energy).sum::<f32>() / count,
             key: tracks.iter().map(|t| t.key).sum::<i32>() / count as i32,
             bpm: tracks.iter().map(|t| t.bpm).sum::<f32>() / count,
+            zcr: tracks.iter().map(|t| t.zcr).sum::<f32>() / count,
         }
     }
 }
@@ -335,6 +338,7 @@ impl Default for TrackInfo {
             energy: 0.0,
             key: 0,
             bpm: 0.0,
+            zcr: 0.0,
         }
     }
 }

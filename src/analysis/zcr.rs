@@ -1,4 +1,4 @@
-pub fn extract_zcr(buffer: &Vec<f32>, _sample_rate: u32) -> usize {
+pub fn extract_zcr(buffer: &Vec<f32>, sample_rate: u32) -> f32 {
     let zero_threshold = 0.0001;
     let mut count = 0;
     let mut last_sign = sign(buffer[0]);
@@ -16,7 +16,7 @@ pub fn extract_zcr(buffer: &Vec<f32>, _sample_rate: u32) -> usize {
         last_sign = sign(buffer[i]);
     }
 
-    count
+    (count as f32) / (buffer.len() as f32 / (sample_rate as f32))
 }
 
 fn sign(value: f32) -> usize {

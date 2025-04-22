@@ -1,0 +1,103 @@
+.playlistsview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.playlistsview h3 {
+    margin: 0 1px;
+}
+
+.playlistsview hr {
+    border-color: dimgrey;
+}
+
+.playlistitem {
+    color: #fff;
+    display: flex;
+    flex-direction: row;
+    padding: 5px 0;
+    gap: 10px;
+    align-items: center;
+}
+
+.playlistitem img {
+    filter: brightness(2);
+    height: 30px;
+    width: 30px;
+}
+
+.playlistsview button, .playlistcreator button {
+    background: #1d2021;
+    color: white;
+    border: 1px solid dimgrey;
+    border-radius: 4px;
+}
+
+.playlistcreatorbg, .playlistadderbg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: rgb(0 0 0 / 48%);
+    width: 100vw;
+    height: 100vw; 
+}
+
+.playlistcreator {
+    z-index: 10;
+    background: #1d2021;
+    border: 1px solid #696969;
+    border-radius: 8px;
+    width: 300px;
+    top: calc(50vh - 50px);
+    min-height: 50px;
+    height: fit-content;
+    left: calc(50vw - 150px);
+    position: absolute;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    padding: 10px;
+}
+
+.playlistcreator label {
+    margin-right: 10px;
+    color: white;
+}
+
+.playlistcreator button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.playlistadder {
+    z-index: 10;
+    background: #1d2021;
+    border: 1px solid #696969;
+    border-radius: 8px;
+    width: 300px;
+    top: calc(50vh - 50px);
+    min-height: 50px;
+    height: fit-content;
+    left: calc(50vw - 150px);
+    position: absolute;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    padding: 10px;
+}
+
+.playlistadder h3 {
+    margin: 5px;
+}
+
+.playlistadder hr {
+    border-color: dimgrey;
+    margin: 0;
+}
+
+.playlistadder button {
+    width: 100%;
+    border: 1px solid dimgrey;
+    border-radius: 4px;
+    background: #1d2021;
+    color: white;
+    padding: 4px;
+    margin: 4px 0;
+}

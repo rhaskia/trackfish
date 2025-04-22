@@ -22,6 +22,10 @@
     background-image: url("icons/genres.svg");
 }
 
+.playlists-button {
+    background-image: url("icons/playlist.svg")
+}
+
 .search-button {
     background-image: url("icons/search.svg")
 }

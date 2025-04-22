@@ -7,6 +7,13 @@
     --bg: #1d2021;
 }
 
+.noselect {
+  user-select: none;
+  -webkit-user-select: none; 
+  -ms-user-select: none; 
+  pointer-events: auto; 
+}
+
 body {
     position: absolute;
     z-index: -2;
@@ -30,6 +37,30 @@ span, p, small, h1, h2, h3 {
 
 svg {
     filter: brightness(8);
+}
+
+.loadingpopup {
+    z-index: 10;
+    background: #1d2021;
+    border: 1px solid #696969;
+    border-radius: 8px;
+    width: 320px;
+    top: calc(50vh - 100px);
+    height: fit-content;
+    left: calc(50vw - 160px);
+    position: absolute;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .32);
+    padding: 10px;
+    color: white;
+}
+
+.loadingpopupbg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: rgb(0 0 0 / 48%);
+    width: 100vw;
+    height: 100vw; 
 }
 
 .mainview {

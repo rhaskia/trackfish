@@ -12,41 +12,44 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [x] Audio playing, skipping, etc
  - [x] Working track view
  - [x] Proper Album & Artist Views
-    - [ ] More view information (time, artists, etc)
-    - [ ] Track settings (play, play after, start radio)
- - [ ] Proper Search View
+    - [x] More view information (time, artists, etc)
+    - [x] Track settings (play, play after, start radio)
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
  - [ ] Media notifications/control
     - [x] Android
     - [ ] Desktop
- - [ ] Playlists 
-    - [ ] Creation
-    - [ ] Playing as queue
-    - [ ] Saving
- - [ ] Auto Playlists
-    - [ ] Basics that foobar would have
-    - [ ] Sort by audio features
+ - [x] Playlists 
+    - [x] Creation
+    - [x] Playing as queue
+    - [x] Saving
+    - [x] Adding tracks
+    - [x] Deletion
+    - [x] Removing tracks
  - [ ] Settings
     - [x] Settings View
+    - [x] Radio settings (weights, temperature, etc)
     - [ ] Audio settings (volume, fade, etc)
-    - [ ] Radio settings (weights, temperature, etc)
     - [ ] Library settings
     - [ ] Exceptions for albums, artists from shuffle (?)
     - [ ] View Settings
  - [x] Radio playing system
- - [ ] More Weighting
+ - [x] More Weighting
     - [x] Spectral
     - [x] Chroma
     - [x] MFCCs
     - [x] Zero Crossing Rate
-    - [ ] Energy
-    - [ ] Key
-    - [ ] BPM/Tempo
- - [ ] Theming (loading of custom css)
+    - [x] Energy
+    - [x] BPM/Tempo
  - [ ] Queue Management
     - [x] Switch queues
     - [x] Select song in queue
-    - [ ] Locked Queues/Temp Queues
-    - [ ] Drag and Drop
+    - [x] Drag and drop
+    - [x] Add track list to queue
+    - [ ] Locked queues/temp queues
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
+ - [ ] Proper Search View
+ - [ ] Auto Playlists
+    - [ ] Basics that foobar would have
+    - [ ] Sort by audio features
+ - [ ] Theming (loading of custom css)

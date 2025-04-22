@@ -1,34 +1,40 @@
 use dioxus::prelude::*;
-use super::CONTROLLER;
-use super::{View, VIEW};
+use super::{View, VIEW, ADD_TO_PLAYLIST, CONTROLLER};
 
 #[component]
 pub fn TrackOptions() -> Element {
     if let Some(track) = super::TRACKOPTION() {
         rsx!{
             div {
-                class: "trackoptionsbg", 
+                class: "optionsbg", 
                 onclick: move |_| super::TRACKOPTION.set(None),
                 div {
-                    class: "trackoptions",
-                    //onclick: |e| e.stop_propagation(),
+                    class: "trackoptions optionbox",
                     h3 { "{CONTROLLER.read().all_tracks[track].title}" }
+
                     button {
                         img { src: "assets/icons/info.svg" }
                         "Track Information"
                     }
+
+                    // View separate options
                     match VIEW.read().current {
                         View::Song => rsx!{ TrackOptionsExplorerView { track } },
                         View::Queue => rsx!{ TrackOptionsQueueView { track } },
+                        View::Playlists => rsx!{ TrackOptionsPlaylistsView { track } },
                         _ => rsx!{ TrackOptionsExplorerView { track } }
                     }
+
                     hr {}
+
+                    // Various track options
                     button {
                         onclick: move |_| CONTROLLER.write().start_radio(track),
                         img { src: "assets/icons/radio.svg" }
                         "Start radio"
                     }
                     button {
+                        onclick: move |_| ADD_TO_PLAYLIST.set(Some(track)),
                         img { src: "assets/icons/playlistadd.svg" }
                         "Add to a playlist"
                     }
@@ -49,7 +55,7 @@ pub fn TrackOptions() -> Element {
                     hr {}
                     button {
                         onclick: move |_| {
-                            let artist = CONTROLLER.read().current_track().unwrap().artists[0].clone();
+                            let artist = CONTROLLER.read().all_tracks[track].artists[0].clone();
                             VIEW.write().open(View::Artists);
                             VIEW.write().artist = Some(artist.clone()); 
                         },
@@ -58,7 +64,7 @@ pub fn TrackOptions() -> Element {
                     }
                     button {
                         onclick: move |_| {
-                            let album = CONTROLLER.read().current_track().unwrap().album.clone();
+                            let album = CONTROLLER.read().all_tracks[track].album.clone();
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(album.clone()); 
                         },
@@ -103,5 +109,19 @@ pub fn TrackOptionsTrackView(track: usize) -> Element {
 pub fn TrackOptionsExplorerView(track: usize) -> Element {
     rsx!{
         span {}
+    }
+}
+
+#[component]
+pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
+    rsx!{
+        button {
+            onclick: move |_| {
+                CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
+                CONTROLLER.write().save_playlist(VIEW.read().playlist.unwrap());
+            },
+            img { src: "assets/icons/remove.svg" }
+            "Remove from playlist"
+        }
     }
 }

@@ -95,29 +95,15 @@ fn AudioSettings() -> Element {
 #[component]
 fn RadioSettings() -> Element {
     rsx!{
-        div {
+        form {
             class: "settingsmenu",
+            onchange: move |_| CONTROLLER.write().settings.save(),
             h2 { class: "settingsbar", "Radio" }
-            div {
-                class: "settingbox",
-                span {
-                    "Radio Temperature"
-                }
-                div {
-                    class: "settingsinput",
-                    input {
-                        r#type: "range",
-                        max: "2.0",
-                        step: "0.01",
-                        value: "{CONTROLLER.read().settings.radio.temp}",
-                        oninput: move |e| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap())
-                    }
-                    input {
-                        class: "smalltextinput",
-                        r#type: "text",
-                        value: "{CONTROLLER.read().settings.radio.temp}",
-                    }
-                }
+            SettingsInput {
+                label: "Radio Temperature",
+                max: "2.0",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap()),
+                value: "{CONTROLLER.read().settings.radio.temp}",
             }
             div {
                 class: "settingbox",
@@ -139,42 +125,78 @@ fn RadioSettings() -> Element {
                     }
                 }
             }
-            div {
-                class: "settingbox",
-                span { "Same artist penalty" }
-                div {
-                    class: "settingsinput",
-                    input {
-                        r#type: "range",
-                        max: "1.0",
-                        step: "0.01",
-                        value: "{CONTROLLER.read().settings.radio.artist_penalty}",
-                        oninput: move |e| CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
-                    }
-                    input {
-                        class: "smalltextinput",
-                        r#type: "text",
-                        value: "{CONTROLLER.read().settings.radio.artist_penalty}",
-                    }
-                }
+            SettingsInput {
+                label: "Same artist penalty",
+                max: "1.0",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.artist_penalty}",
             }
+            SettingsInput {
+                max: "1.0",
+                label: "Same album penalty",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.album_penalty}",
+            }
+            hr {}
+            SettingsInput {
+                max: "2.0",
+                label: "MFCC weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.mfcc_weight}",
+            }
+            SettingsInput {
+                max: "2.0",
+                label: "Chroma weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.chroma_weight}",
+            }
+            SettingsInput {
+                max: "2.0",
+                label: "Spectral weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.spectral_weight}",
+            }
+            SettingsInput {
+                max: "2.0",
+                label: "Energy weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.energy_weight}",
+            }
+            SettingsInput {
+                max: "2.0",
+                label: "BPM weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.bpm_weight}",
+            }
+            SettingsInput {
+                max: "2.0",
+                label: "ZCR weight",
+                oninput: move |e: Event<FormData>| CONTROLLER.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap(),
+                value: "{CONTROLLER.read().settings.radio.zcr_weight}",
+            }
+        }
+    }
+}
+
+#[component]
+fn SettingsInput(max: String, label: String, value: String, oninput: Callback<Event<FormData>>) -> Element {
+    rsx!{
+        div {
+            class: "settingbox",
+            span { "{label}" }
             div {
-                class: "settingbox",
-                span { "Same album penalty" }
-                div {
-                    class: "settingsinput",
-                    input {
-                        r#type: "range",
-                        max: "1.0",
-                        step: "0.01",
-                        value: "{CONTROLLER.read().settings.radio.album_penalty}",
-                        oninput: move |e| CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap(),
-                    }
-                    input {
-                        class: "smalltextinput",
-                        r#type: "text",
-                        value: "{CONTROLLER.read().settings.radio.album_penalty}",
-                    }
+                class: "settingsinput",
+                input {
+                    r#type: "range",
+                    max,
+                    step: "0.01",
+                    value: value.clone(),
+                    oninput,
+                }
+                input {
+                    class: "smalltextinput",
+                    r#type: "text",
+                    value,
                 }
             }
         }

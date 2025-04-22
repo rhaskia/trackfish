@@ -15,6 +15,13 @@ pub struct RadioSettings {
     pub weight_mode: WeightMode,
     pub album_penalty: f32,
     pub artist_penalty: f32,
+
+    pub mfcc_weight: f32,
+    pub chroma_weight: f32,
+    pub spectral_weight: f32,
+    pub energy_weight: f32,
+    pub bpm_weight: f32,
+    pub zcr_weight: f32,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Default)]
@@ -41,7 +48,13 @@ impl Default for RadioSettings {
             temp: 0.7,
             album_penalty: 0.2,
             artist_penalty: 0.7,
-            weight_mode: WeightMode::default()
+            weight_mode: WeightMode::default(),
+            mfcc_weight: 1.0,
+            chroma_weight: 1.0,
+            spectral_weight: 0.7,
+            energy_weight: 0.0,
+            bpm_weight: 0.0,
+            zcr_weight: 0.0,
         }
     }
 }
