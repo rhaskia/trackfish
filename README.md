@@ -45,8 +45,8 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Switch queues
     - [x] Select song in queue
     - [x] Drag and drop
+    - [x] Add track list to queue
     - [ ] Locked queues/temp queues
-    - [ ] Add track list to queue
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
  - [ ] Proper Search View
  - [ ] Auto Playlists

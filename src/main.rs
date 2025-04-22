@@ -263,7 +263,7 @@ fn App() -> Element {
             TrackView { }
             TrackOptions { }
             QueueList { }
-            //AllTracks { }
+            AllTracks { }
             GenreList { }
             ArtistList { }
             AlbumsList { }
