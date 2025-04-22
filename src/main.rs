@@ -217,7 +217,38 @@ fn App() -> Element {
         }
     });
 
-    use_asset_handler("trackimage", asset_handler);
+    use_asset_handler("trackimage",  |request, responder| {
+        let r = Response::builder().status(404).body(&[]).unwrap();
+
+        let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
+            id
+        } else {
+            responder.respond(r);
+            return;
+        };
+
+        let track = CONTROLLER.read().get_track(id).cloned();
+
+        let mut file = if let Some(file) = track
+            .and_then(|track| Tag::read_from_path(track.file).ok())
+            .and_then(|tag| tag.pictures().next().cloned())
+            .and_then(|picture| Some(Cursor::new(picture.data)))
+        {
+            file
+        } else {
+            responder.respond(r);
+            return;
+        };
+
+        spawn(async move {
+            match get_stream_response(&mut file, &request).await {
+                Ok(response) => {
+                    responder.respond(response);
+                }
+                Err(err) => error!("Error: {:?}", err),
+            }
+        });
+    });
 
     rsx! {
         document::Link { href: "assets/style.css", rel: "stylesheet" }
@@ -305,37 +336,4 @@ pub fn MenuBar() -> Element {
             }
         }
     }
-}
-
-pub fn asset_handler(request: http::Request<Vec<u8>>, responder: RequestAsyncResponder) {
-    let r = Response::builder().status(404).body(&[]).unwrap();
-
-    let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
-        id
-    } else {
-        responder.respond(r);
-        return;
-    };
-
-    let track = CONTROLLER.read().get_track(id).cloned();
-
-    let mut file = if let Some(file) = track
-        .and_then(|track| Tag::read_from_path(track.file).ok())
-        .and_then(|tag| tag.pictures().next().cloned())
-        .and_then(|picture| Some(Cursor::new(picture.data)))
-    {
-        file
-    } else {
-        responder.respond(r);
-        return;
-    };
-
-    spawn(async move {
-        match get_stream_response(&mut file, &request).await {
-            Ok(response) => {
-                responder.respond(response);
-            }
-            Err(err) => error!("Error: {:?}", err),
-        }
-    });
 }
