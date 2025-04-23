@@ -27,12 +27,14 @@
     flex-direction: column;
     overflow: hidden;
     flex: 1 1 140px;
-    aspect-ratio: 0.8;
+    max-width: 190px;
+    aspect-ratio: fit-content;
     border: 1px solid #3b3a3a;
     border-radius: 8px;
+    box-shadow: 0 0 4px 1px #000000bd;
 }
 
-#albumlist {
+.albumsholder {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -55,6 +57,8 @@
 
 .albuminfo {
     padding: 5px;
+    display: flex;
+    flex-direction: column;
 } 
 
 .searchtracks {
@@ -159,7 +163,8 @@
 }
 
 .trackitem {
-    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
     display: flex;
     flex-direction: row; 
     padding: 6px;
