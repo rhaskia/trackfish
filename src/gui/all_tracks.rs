@@ -36,29 +36,23 @@ pub fn AllTracks() -> Element {
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
     let mut scroll = use_signal(|| 0);
 
-    use_effect(move || {
+    use_future(move || async move {
         let mut js = eval(
             r#"
-            document.addEventListener('mousemove', function(event) {
-                let container = document.getElementById('alltrackslist');
+            new ResizeObserver(() => {
+                let container = document.getElementById("alltrackslist");
                 dioxus.send(container.offsetHeight);
-            });
-            addEventListener('resize', function(event) {
-                let container = document.getElementById('alltrackslist');
-                dioxus.send((container.offsetHeight);
-            });
+            }).observe(document.getElementById("alltrackslist"));
         "#,
         );
 
-        spawn(async move {
-            loop {
-                let height = js.recv::<usize>().await;
-                if let Ok(height) = height {
-                    window_size.set(height);
-                    info!("{height}");
-                }
+        loop {
+            let height = js.recv::<usize>().await;
+            if let Ok(height) = height {
+                window_size.set(height);
+                info!("{height}");
             }
-        });
+        }
     });
 
     use_effect(move || {
@@ -79,7 +73,6 @@ pub fn AllTracks() -> Element {
                     if new_index != start_index() {
                         start_index.set(new_index);
                     }
-                info!("hi");
                 }
             }
         });

@@ -276,7 +276,7 @@ fn App() -> Element {
             AllTracks {}
             GenreList {}
             ArtistList {}
-            AlbumsList {}
+            //AlbumsList {}
             PlaylistsView {}
             Settings {}
         }
