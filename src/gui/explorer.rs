@@ -186,33 +186,33 @@ pub fn AlbumsList() -> Element {
     let mut window_size = use_signal(|| 0);
     let mut items_per_row = use_signal(|| 5);
     let mut row_height = use_signal(|| 1);
-    const BUFFER_ROWS: usize = 1;
+    const BUFFER_ROWS: usize = 3;
 
     let mut start_index = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / row_height() + BUFFER_ROWS);
-    let end_index = use_memo(move || (start_index() + rows_in_view() * items_per_row()).min(albums.read().len()));
+    let end_index = use_memo(move || (start_index() + (rows_in_view() * items_per_row())).min(albums.read().len()));
     let mut scroll = use_signal(|| 0);
 
     use_effect(move || {
         let mut js = eval(
             r#"
-            let container = document.getElementById('albumlist');
-            console.log(container);
-            container.addEventListener('scroll', function(event) {
+            new ResizeObserver(() => {
+                let container = document.getElementById("albumlist");
+                console.log([container.offsetHeight, container.offsetWidth]);
                 dioxus.send([container.offsetHeight, container.offsetWidth]);
-            }
-        "#);
+            }).observe(document.getElementById("albumlist"));
+        "#,
+        );
 
         spawn(async move {
             loop {
-                let size = js.recv::<[usize; 2]>().await;
-                info!("{size:?}");
-                if let Ok([height, width]) = size {
+                let size = js.recv::<(usize, usize)>().await;
+                if let Ok((height, width)) = size {
+                    if height == 0 || width == 0 { continue; }
                     window_size.set(height);
                     items_per_row.set(width / 150);
                     let item_width = (width - 10) / items_per_row() - 5;
                     row_height.set(item_width + 48);
-                    info!("{items_per_row}");
                 }
             }
         });
@@ -232,10 +232,9 @@ pub fn AlbumsList() -> Element {
             loop {
                 let scroll_top = js.recv::<usize>().await;
                 if let Ok(scroll_top) = scroll_top {
-                    let new_index = (scroll_top as f32 / row_height() as f32).floor() as usize * items_per_row();
+                    let new_index = (scroll_top as f32 / row_height() as f32).floor() as usize;
                     if new_index != start_index() {
-                        start_index.set(new_index);
-                        info!("{start_index}");
+                        start_index.set((new_index.max(1) - 1) * items_per_row());
                     }
                 }
             }
@@ -267,7 +266,7 @@ pub fn AlbumsList() -> Element {
                 div {
                     class: "albumsholder",
                     position: "absolute",
-                    top: "{row_height() * start_index()}px",
+                    top: "{row_height() * start_index() / items_per_row()}px",
 
                     for i in start_index()..end_index() {
                         div {
