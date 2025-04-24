@@ -219,7 +219,6 @@ impl MusicController {
     pub fn get_weights(&mut self) -> Array1<f32> {
         info!("{}", self.current_queue().current());
         let space = self.get_space();
-        println!("{:?}", space);
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);
         let mut dists: Vec<(usize, f32)> = self

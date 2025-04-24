@@ -210,7 +210,7 @@ pub fn AlbumsList() -> Element {
                 if let Ok((height, width)) = size {
                     if height == 0 || width == 0 { continue; }
                     window_size.set(height);
-                    items_per_row.set(width / 150);
+                    items_per_row.set((width / 150).max(3));
                     let item_width = (width - 10) / items_per_row() - 5;
                     row_height.set(item_width + 48);
                 }

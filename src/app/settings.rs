@@ -102,7 +102,6 @@ impl Settings {
 
     pub fn exists() -> bool {
         let dir = Self::dir().join("settings.toml");
-        println!("{}", dir.exists());
         dir.exists()
     }
 
