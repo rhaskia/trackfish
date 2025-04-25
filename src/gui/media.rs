@@ -7,6 +7,7 @@ use jni::AttachGuard;
 use jni::JNIEnv;
 use jni::JavaVM;
 use log::info;
+use jni::sys::jobject;
 
 use super::CONTROLLER;
 
@@ -15,6 +16,9 @@ use std::sync::Mutex;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
 pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> =
+    Lazy::new(|| Mutex::new(None));
+
+pub static NOTIFICATION: Lazy<Mutex<Option<GlobalRef>>> =
     Lazy::new(|| Mutex::new(None));
 
 #[derive(Debug)]
@@ -107,8 +111,6 @@ impl MediaSession {
         let flag_handles_transport_controls = 2;
         let flags = flag_handles_media_buttons | flag_handles_transport_controls;
 
-        try_to_get_audio_focus(&mut env, &context);
-
         env.call_method(&media_session, "setFlags", "(I)V", &[JValue::Int(flags)]);
 
         let is_active = env
@@ -141,7 +143,7 @@ impl MediaSession {
         )
         .unwrap();
 
-        show_media_notification(&mut env, &context, &media_session, None).unwrap();
+        show_media_notification(&mut env, &context, &media_session, None, true).unwrap();
 
         Self {
             media_session: env.new_global_ref(media_session).unwrap(),
@@ -194,17 +196,20 @@ impl MediaSession {
             bitmap.as_ref(),
         )
         .unwrap();
-        show_media_notification(&mut env, &context, &self.media_session, bitmap.as_ref()).unwrap();
+        show_media_notification(&mut env, &context, &self.media_session, bitmap.as_ref(), false).unwrap();
     }
 
     pub fn update_state(&mut self, paused: bool, progress: i64) {
         let ctx = ndk_context::android_context();
         let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
         let mut env = vm.attach_current_thread().unwrap();
+        let context = unsafe { JObject::from_raw(ctx.context().cast()) };
 
         let state = if paused {
+            try_to_get_audio_focus(&mut env, &context);
             android_media_constants::STATE_PAUSED
         } else {
+            // TODO let focus go
             android_media_constants::STATE_PLAYING
         };
         update_playback_state(&mut env, &mut self.media_session, state, progress).unwrap();
@@ -257,11 +262,87 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(
     send_media_msg(MediaMsg::SeekTo(pos.into()));
 }
 
+#[no_mangle]
+pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_getNotification<'a>(
+    mut env: JNIEnv,
+    _class: JClass,
+    _context: JObject,
+) -> jobject {
+    let lock = NOTIFICATION.lock().unwrap();
+
+    if let Some(global_ref) = &*lock {
+        info!("{global_ref:?}");
+        **global_ref.as_obj()
+    } else {
+        info!("failed to get notification");
+        env.throw_new("java/lang/IllegalStateException", "Notification not initialized").unwrap();
+        *JObject::null()
+    }
+}
+
+pub fn start_audio_service(env: &mut JNIEnv, context: &JObject) -> jni::errors::Result<()> {
+    let intent_class = env.find_class("android/content/Intent")?;
+    let intent = env.new_object(intent_class, "()V", &[])?;
+
+    let class_loader = env
+        .call_method(&context, "getClassLoader", "()Ljava/lang/ClassLoader;", &[])
+        .unwrap()
+        .l()
+        .unwrap();
+
+    let binding = env.new_string("dev.dioxus.main.MediaCallback").unwrap();
+
+    let callback_class = env
+        .call_method(
+            &class_loader,
+            "loadClass",
+            "(Ljava/lang/String;)Ljava/lang/Class;",
+            &[JValue::Object(&binding)],
+        )
+        .unwrap()
+        .l()
+        .unwrap();
+
+    let callback_class = JClass::from(callback_class);
+
+    let callback = env.new_object(callback_class, "()V", &[]).unwrap();
+
+    let binding = env.new_string("dev.dioxus.main.RustAudioService").unwrap();
+    let class = env
+        .call_method(
+            &class_loader,
+            "loadClass",
+            "(Ljava/lang/String;)Ljava/lang/Class;",
+            &[JValue::Object(&binding)],
+        )
+        .unwrap()
+        .l()
+        .unwrap();
+    let service_class = JClass::from(class);
+
+    env.call_method(
+        &intent,
+        "setClass",
+        "(Landroid/content/Context;Ljava/lang/Class;)Landroid/content/Intent;",
+        &[JValue::Object(&context), JValue::Object(&service_class.into())],
+    )?;
+
+    env.call_method(
+        context,
+        "startForegroundService",
+        "(Landroid/content/Intent;)Landroid/content/ComponentName;",
+        &[JValue::Object(&intent)],
+    )?;
+
+    Ok(())
+}
+
 pub fn show_media_notification(
     env: &mut JNIEnv,
     context: &JObject,
     session: &JObject,
     bitmap: Option<&JObject>,
+    creating: bool,
 ) -> jni::errors::Result<()> {
     let channel_id = env.new_string("media_channel")?;
     let channel_name = env.new_string("Media Controls")?;
@@ -432,12 +513,19 @@ pub fn show_media_notification(
         .call_method(builder, "build", "()Landroid/app/Notification;", &[])?
         .l()?;
 
+    *NOTIFICATION.lock().unwrap() = Some(env.new_global_ref(&notification)?);
     env.call_method(
         &notification_manager,
         "notify",
         "(ILandroid/app/Notification;)V",
         &[JValue::Int(1), JValue::Object(&notification)],
     )?;
+
+    if creating {
+        start_audio_service(env, context);
+    } else {
+
+    }
 
     Ok(())
 }

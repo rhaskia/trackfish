@@ -5,6 +5,12 @@ import android.media.session.PlaybackState
 import android.util.Log
 import android.os.Handler
 import android.os.Looper
+import android.app.*
+import android.content.Intent
+import android.os.IBinder
+import androidx.core.app.NotificationCompat
+import android.app.Notification
+import android.content.Context
 
 class MediaCallback : MediaSession.Callback() {
     override fun onPlay() {
@@ -40,8 +46,24 @@ object MediaHelper {
 	}
 }
 
+class RustAudioService : Service() {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notification = getNotification(this)
+	
+        startForeground(1, notification)
+
+	Log.d("AudioService", "Service started and notification displayed.")
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+}
+
+external fun getNotification(context: Context): Notification
+
 external fun nativeOnPlay()
 external fun nativeOnPause()
 external fun nativeOnNext()
 external fun nativeOnPrevious()
 external fun nativeOnSeekTo(pos: Long)
+

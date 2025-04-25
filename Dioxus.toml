@@ -18,7 +18,7 @@ category = "Music"
 
 [bundle.android]
 #permissions = ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "MANAGE_EXTERNAL_STORAGE", "READ_MEDIA_AUDIO"]
-permissions = ["READ_MEDIA_AUDIO", "POST_NOTIFICATIONS"]
+permissions = ["READ_MEDIA_AUDIO", "POST_NOTIFICATIONS", "FOREGROUND_SERVICE"]
 
 [bundle.windows]
 icon_path = "assets/icons/icon256.png"
