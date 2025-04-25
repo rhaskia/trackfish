@@ -4,7 +4,13 @@ This is a music player, made for offline usage while not having to sacrifice onl
 It works just as well as any other music player would (apart from a big lacking in settings/search right now), but the main feature of it is the radio system.
 Using ~tags on your mp3/wav/other files (which you may need to tag using picard/onetagger/yourself~ audio features, the application weights songs by how "close" they are to one another, so your massive music collection doesn't leave you skipping over and over again as you try to get to certain songs.
 
-# Compiling on Android
+# Compiling
+On desktop you will need the dioxus-cli, and to install the following packages:
+Linux: WebkitGtk, xdotool
+Windows: WebView2 (packaged with Edge),
+and aubio on all platforms
+
+## Android
 You will need to copy the android folder into `.\target\dx\trackfish\release\android\app\app\src\main\` before building the app. 
 You will also need to use my modified version of the dioxus-cli, branch manifest.
 
