@@ -129,6 +129,15 @@ fn App() -> Element {
     #[cfg(target_os = "android")]
     let mut session = use_signal(|| None);
 
+    use_future(|| async move {
+        std::thread::spawn(|| {
+            loop {
+                info!("Still playing...");
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        });
+    });
+
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();

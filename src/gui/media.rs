@@ -40,6 +40,7 @@ fn send_media_msg(msg: MediaMsg) {
 pub struct MediaSession {
     media_session: GlobalRef,
     callback: GlobalRef,
+    wakelock: WakeLock,
 }
 
 impl MediaSession {
@@ -145,9 +146,12 @@ impl MediaSession {
 
         show_media_notification(&mut env, &context, &media_session, None, true).unwrap();
 
+        let wakelock = WakeLock::acquire(&mut env, &context).unwrap();
+
         Self {
             media_session: env.new_global_ref(media_session).unwrap(),
             callback: env.new_global_ref(callback).unwrap(),
+            wakelock,
         }
     }
 
@@ -216,6 +220,62 @@ impl MediaSession {
     }
 }
 
+use jni::objects::JString;
+
+pub struct WakeLock {
+    wakelock: GlobalRef,
+}
+
+impl WakeLock {
+    pub fn acquire(env: &mut JNIEnv, context: &JObject) -> jni::errors::Result<Self> {
+        let power_service = env.get_static_field(
+            "android/content/Context",
+            "POWER_SERVICE",
+            "Ljava/lang/String;",
+        )?.l()?;
+
+        let power_manager = env.call_method(
+            context,
+            "getSystemService",
+            "(Ljava/lang/String;)Ljava/lang/Object;",
+            &[(&power_service).into()],
+        )?.l()?;
+
+        let tag: JString = env.new_string("RustWakeLock")?;
+
+        let partial_wake_lock: jint = env.get_static_field(
+            "android/os/PowerManager",
+            "PARTIAL_WAKE_LOCK",
+            "I",
+        )?.i()?;
+
+        let wakelock = env.call_method(
+            power_manager,
+            "newWakeLock",
+            "(ILjava/lang/String;)Landroid/os/PowerManager$WakeLock;",
+            &[partial_wake_lock.into(), (&tag).into()],
+        )?.l()?;
+
+        env.call_method(
+            &wakelock,
+            "acquire",
+            "()V",
+            &[],
+        )?;
+
+        let wakelock_global = env.new_global_ref(wakelock)?;
+
+        Ok(WakeLock {
+            wakelock: wakelock_global,
+        })
+    }
+
+    pub fn release(&mut self, env: &mut JNIEnv) -> jni::errors::Result<()> {
+        env.call_method(self.wakelock.as_obj(), "release", "()V", &[])?;
+        Ok(())
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPlay(
     _env: JNIEnv,
@@ -261,6 +321,8 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(
     log::info!("Rust received Seek To {:?}", pos);
     send_media_msg(MediaMsg::SeekTo(pos.into()));
 }
+use std::thread;
+
 
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_getNotification<'a>(
@@ -268,6 +330,7 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_getNotification<'a>(
     _class: JClass,
     _context: JObject,
 ) -> jobject {
+    info!("notification accessed");
     let lock = NOTIFICATION.lock().unwrap();
 
     if let Some(global_ref) = &*lock {
@@ -523,8 +586,6 @@ pub fn show_media_notification(
 
     if creating {
         start_audio_service(env, context);
-    } else {
-
     }
 
     Ok(())
