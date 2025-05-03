@@ -76,11 +76,9 @@ fn load_image() -> Icon {
 
 #[cfg(not(target_os = "android"))]
 fn init() {
-    if cfg!(debug_assertations) {
-        LogTracer::init().expect("Failed to initialize LogTracer");
+    LogTracer::init().expect("Failed to initialize LogTracer");
 
-        dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
-    }
+    dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
 
     let window = WindowBuilder::new()
         .with_title("TrackFish")
@@ -128,15 +126,6 @@ fn App() -> Element {
 
     #[cfg(target_os = "android")]
     let mut session = use_signal(|| None);
-
-    use_future(|| async move {
-        std::thread::spawn(|| {
-            loop {
-                info!("Still playing...");
-                std::thread::sleep(std::time::Duration::from_secs(1));
-            }
-        });
-    });
 
     // Load in all tracks
     use_future(move || async move {

@@ -8,6 +8,7 @@
     .imageview {
         height: calc(100% - 40px);
         aspect-ratio: 1;
+        margin: auto;
     }
     
     .trackcontrols {
@@ -32,6 +33,7 @@
         width: calc(100% - 40px);
         max-height: 50vh;
         overflow: hidden;
+        margin: 30px auto auto auto;
         aspect-ratio: 1;
     }
 
@@ -86,7 +88,6 @@
 
 .imageview {
     margin: auto;
-    margin-top: 30px;
     aspect-ratio: 1;
     display: flex;
     justify-content: center;

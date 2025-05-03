@@ -1,8 +1,5 @@
-pub mod all_tracks;
-mod confirm;
+pub mod confirm;
 pub mod explorer;
-#[cfg(target_os = "android")]
-pub mod media;
 pub mod playlists;
 pub mod queuelist;
 pub mod settings;
@@ -10,9 +7,11 @@ pub mod stream;
 pub mod trackoptions;
 pub mod trackview;
 
-pub use all_tracks::AllTracks;
+#[cfg(target_os = "android")]
+pub mod media;
+
 pub use confirm::Confirmation;
-pub use explorer::{AlbumsList, ArtistList, GenreList};
+pub use explorer::{AlbumsList, ArtistList, GenreList, AllTracks};
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;

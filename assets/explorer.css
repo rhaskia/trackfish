@@ -108,6 +108,7 @@
     flex-direction: column;
     overflow-y: scroll;
     overflow-x: hidden;
+    width: 100%;
 }
 
 .tracksviewheader {
