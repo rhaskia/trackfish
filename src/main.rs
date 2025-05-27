@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
- use tokio::sync::mpsc::unbounded_channel;
+use tokio::sync::mpsc::unbounded_channel;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
