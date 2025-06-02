@@ -11,7 +11,7 @@ pub mod trackview;
 pub mod media;
 
 pub use confirm::Confirmation;
-pub use explorer::{AlbumsList, ArtistList, GenreList, AllTracks};
+pub use explorer::*;
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;

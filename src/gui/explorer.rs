@@ -2,11 +2,13 @@ pub mod albums;
 pub mod artists;
 pub mod alltracks;
 pub mod genres;
+pub mod search;
 
 pub use albums::AlbumsList;
 pub use artists::ArtistList;
 pub use alltracks::AllTracks;
 pub use genres::GenreList;
+pub use search::{SearchView, TracksSearch};
 
 use super::CONTROLLER;
 use super::{View, TRACKOPTION, VIEW};

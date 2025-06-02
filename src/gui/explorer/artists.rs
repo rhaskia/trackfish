@@ -25,11 +25,9 @@ pub fn ArtistList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Artists { "none" },
-            div {
-                class: "searchbar",
-                display: if VIEW.read().artist.is_some() { "none" },
+            div { class: "searchbar", onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }
-                input {}
+                div { class: "pseudoinput" }
             }
             div {
                 id: "artistlist",

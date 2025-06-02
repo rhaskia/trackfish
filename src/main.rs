@@ -264,6 +264,7 @@ fn App() -> Element {
         document::Link { href: "assets/trackview.css", rel: "stylesheet" }
         document::Link { href: "assets/trackoptions.css", rel: "stylesheet" }
         document::Link { href: "assets/queue.css", rel: "stylesheet" }
+
         div {
             class: "loadingpopupbg",
             hidden: loading_track_weights() == tracks_count(),
@@ -281,6 +282,7 @@ fn App() -> Element {
             ArtistList {}
             AlbumsList {}
             PlaylistsView {}
+            SearchView {}
             Settings {}
         }
 
