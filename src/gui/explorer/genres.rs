@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 use super::TracksSearch;
+use crate::app::utils::strip_unnessecary;
 
 #[component]
 pub fn GenreList() -> Element {
@@ -39,7 +40,7 @@ pub fn GenreList() -> Element {
                     if genres.read()[i].1 > 1 {
                         div {
                             class: "thinitem",
-                            id: "genre-{i}",
+                            id: "genre-{genres.read()[i].0}",
                             onclick: move |_| set_genre(genres.read()[i].0.clone()),
                             if genres.read()[i].0.is_empty() {
                                 "Unknown Genres"
@@ -54,12 +55,15 @@ pub fn GenreList() -> Element {
             if VIEW.read().genre.is_some() {
                 TracksView { viewtype: View::Genres }
             }
+            if is_searching() {
+                GenreSearch { is_searching, genres }
+            }
         }
     }
 }
 
 #[component]
-pub fn GenreSearch(is_searching: Signal<bool>) -> Element {
+pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize)>>) -> Element {
     let mut search = use_signal(String::new);
     
     let matches = use_memo(move || {
@@ -69,14 +73,14 @@ pub fn GenreSearch(is_searching: Signal<bool>) -> Element {
         if search.is_empty() {
             Vec::new()
         } else {
-            tracks
+            genres
                 .read()
                 .iter()
+                .map(|t| t.0.clone())
                 .filter(|t| {
-                    strip_unnessecary(&CONTROLLER.read().genres[**t]).starts_with(&search)
+                    strip_unnessecary(&t).starts_with(&search)
                 })
-                .cloned()
-                .collect::<Vec<usize>>()
+                .collect::<Vec<String>>()
         }
     });
 
@@ -94,16 +98,15 @@ pub fn GenreSearch(is_searching: Signal<bool>) -> Element {
                     }
                 }
                 div { class: "searchtracks",
-                    for track in matches() {
+                    for genre in matches() {
                         div {
                             class: "trackitem",
                             onclick: move |_| {
                                 document::eval(
-                                    &format!("document.getElementById('genre-{}').scrollIntoView();", track),
+                                    &format!("document.getElementById('genre-{}').scrollIntoView();", genre),
                                 );
                             },
-                            img { src: "/trackimage/{track}" }
-                            span { "{CONTROLLER.read().all_tracks[track].title}" }
+                            span { "{genre}" }
                         }
                     }
                 }

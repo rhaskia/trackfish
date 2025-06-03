@@ -5,6 +5,7 @@ use super::TracksView;
 #[component]
 pub fn ArtistList() -> Element {
     let mut artists = use_signal(|| Vec::new());
+    let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
         let mut artists_unsorted = CONTROLLER
