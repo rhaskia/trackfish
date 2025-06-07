@@ -82,6 +82,7 @@ pub fn TracksView(viewtype: View) -> Element {
         loop {
             let height = js.recv::<usize>().await;
             if let Ok(height) = height {
+                if height == 0 { continue; } // Stops app freezing on opening a different view 
                 window_size.set(height);
                 info!("Window Height {height}");
             }
@@ -92,7 +93,6 @@ pub fn TracksView(viewtype: View) -> Element {
         let mut js = eval(
             &format!(r#"
             let container = document.getElementById('tracksview-{0}');
-            console.log(container);
             container.addEventListener('scroll', function(event) {{
                 dioxus.send(container.scrollTop);
             }});

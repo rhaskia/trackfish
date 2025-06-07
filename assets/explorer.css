@@ -175,6 +175,12 @@
     width: calc(100% - 20px);
 }
 
+.searchviewresults {
+    height: 100%;
+    padding: 10px;
+    overflow: hidden scroll;
+}
+
 .trackitemicon {
     height: 40px;
     width: 40px;

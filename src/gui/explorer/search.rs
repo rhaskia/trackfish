@@ -5,15 +5,73 @@ use crate::app::utils::strip_unnessecary;
 
 #[component]
 pub fn SearchView() -> Element {
+    let mut search = use_signal(String::new);
+    
+    let genres = use_memo(move || {
+        let search = strip_unnessecary(&search.read());
+        log::info!("searching {search}");
+
+        if search.is_empty() {
+            Vec::new()
+        } else {
+            CONTROLLER
+                .read()
+                .genres
+                .iter()
+                .map(|t| t.0.clone())
+                .filter(|t| {
+                    strip_unnessecary(&t).starts_with(&search)
+                })
+                .collect::<Vec<String>>()
+        }
+    });
+
+    let tracks = use_memo(move || {
+        let search = strip_unnessecary(&search.read());
+        log::info!("searching {search}");
+
+        if search.is_empty() {
+            Vec::new()
+        } else {
+            (0..CONTROLLER.read().all_tracks.len())
+                .filter(|t| {
+                    strip_unnessecary(&CONTROLLER.read().all_tracks[*t].title).starts_with(&search)
+                })
+                .collect::<Vec<usize>>()
+        }
+    });
+
     rsx!{
         div {
             class: "searchview",
+            height: "calc(100vh - 50px)",
+            overflow: "hidden",
             display: if VIEW.read().current != View::Search { "none" },
             div {
                 class: "searchbar",
-                display: if VIEW.read().genre.is_some() { "none" },
                 img { src: "assets/icons/search.svg" }
-                input {}
+                input {
+                    oninput: move |e| search.set(e.value()),
+                    value: search,
+                }
+            }
+            div {
+                class: "searchviewresults",
+                h3 { "{tracks.read().len()} tracks" }
+                for track in tracks() {
+                    div {
+                        class: "trackitem",
+                        img { class: "trackitemicon", src: "/trackimage/{track}" }
+                        span { "{CONTROLLER.read().all_tracks[track].title}" }
+                    }
+                }
+                h3 { "{genres.read().len()} Genres" }
+                for genre in genres() {
+                    div {
+                        class: "thinitem",
+                        "{genre}"
+                    }
+                }
             }
         }
     }

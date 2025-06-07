@@ -100,7 +100,7 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                 div { class: "searchtracks",
                     for genre in matches() {
                         div {
-                            class: "trackitem",
+                            class: "thinitem",
                             onclick: move |_| {
                                 document::eval(
                                     &format!("document.getElementById('genre-{}').scrollIntoView();", genre),
