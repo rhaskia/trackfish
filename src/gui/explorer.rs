@@ -83,7 +83,7 @@ pub fn TracksView(viewtype: View) -> Element {
             let height = js.recv::<usize>().await;
             if let Ok(height) = height {
                 window_size.set(height);
-                info!("Widnow Height {height}");
+                info!("Window Height {height}");
             }
         }
     });
@@ -91,7 +91,6 @@ pub fn TracksView(viewtype: View) -> Element {
     use_effect(move || {
         let mut js = eval(
             &format!(r#"
-            r#"
             let container = document.getElementById('tracksview-{0}');
             console.log(container);
             container.addEventListener('scroll', function(event) {{
