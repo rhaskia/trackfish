@@ -2,7 +2,7 @@ use ndarray::{Array1, Array2};
 use ndarray_npy::ReadNpyExt;
 use rustfft::{num_complex::Complex, FftPlanner};
 
-const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../chroma.npy");
+const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../../../chroma.npy");
 
 pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
     let frame_size = 2048;

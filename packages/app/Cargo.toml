@@ -1,0 +1,28 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[features]
+desktop = ["aubio/pkg-config"]
+mobile = ["aubio/bindgen"]
+
+[dependencies]
+aubio = { version = "0.2.1"}
+rustfft = "6.2.0"
+rodio = { workspace = true }
+ndarray = { workspace = true }
+ndarray-npy = { workspace = true }
+toml = { workspace = true }
+dirs = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true}
+rusqlite = { workspace = true }
+cache-dir = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+id3 = { workspace = true }
+tracing = { workspace = true }
+tracing-log = { workspace = true }

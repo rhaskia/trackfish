@@ -1,26 +1,5 @@
-pub mod confirm;
-pub mod explorer;
-pub mod playlists;
-pub mod queuelist;
-pub mod settings;
-pub mod stream;
-pub mod trackoptions;
-pub mod trackview;
-
-#[cfg(target_os = "android")]
-pub mod media;
-
-pub use confirm::Confirmation;
-pub use explorer::*;
-pub use playlists::PlaylistsView;
-pub use queuelist::QueueList;
-pub use settings::Settings;
-pub use stream::get_stream_response;
-pub use trackoptions::TrackOptions;
-pub use trackview::TrackView;
-
-use crate::app::MusicController;
 use dioxus::prelude::*;
+use app::MusicController;
 
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 pub const CONTROLLER: GlobalSignal<MusicController> =

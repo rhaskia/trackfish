@@ -5,8 +5,8 @@ use rusqlite::{
     Connection, OptionalExtension, Result, Row, ToSql,
 };
 
-use crate::app::settings::Settings;
-use crate::app::track::{Mood, Track, TrackInfo};
+use crate::settings::Settings;
+use crate::track::{Mood, Track, TrackInfo};
 use ndarray::Array1;
 
 pub fn hash_filename(name: &str) -> String {

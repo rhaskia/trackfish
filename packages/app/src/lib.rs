@@ -1,11 +1,12 @@
 pub mod audio;
 pub mod controller;
-pub mod embed;
 pub mod playlist;
 pub mod queue;
 pub mod settings;
 pub mod track;
 pub mod utils;
+pub mod database;
+pub mod analysis;
 
 pub use controller::MusicController;
-pub use track::{load_tracks, Track};
+pub use track::{load_tracks, Track, TrackInfo};

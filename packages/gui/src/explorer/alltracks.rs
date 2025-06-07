@@ -1,5 +1,5 @@
-use super::{View, VIEW};
-use crate::app::utils::strip_unnessecary;
+use crate::{View, VIEW};
+use app::utils::strip_unnessecary;
 use dioxus::prelude::*;
 use dioxus::document::eval;
 use log::info;

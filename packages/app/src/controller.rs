@@ -1,6 +1,6 @@
 use super::{
     audio::AudioPlayer,
-    embed::AutoEncoder,
+    analysis::embed::AutoEncoder,
     playlist::get_playlist_files,
     playlist::Playlist,
     queue::{Listen, Queue, QueueType},

@@ -1,11 +1,29 @@
 #![windows_subsystem = "windows"]
 
-pub mod analysis;
-pub mod app;
-pub mod database;
-pub mod gui;
+pub mod view;
+pub mod confirm;
+pub mod explorer;
+pub mod playlists;
+pub mod queuelist;
+pub mod settings;
+pub mod stream;
+pub mod trackoptions;
+pub mod trackview;
 
-use crate::database::{init_db, row_to_weights};
+#[cfg(target_os = "android")]
+pub mod media;
+
+pub use confirm::Confirmation;
+pub use explorer::*;
+pub use playlists::PlaylistsView;
+pub use queuelist::QueueList;
+pub use settings::Settings;
+pub use trackoptions::TrackOptions;
+pub use trackview::TrackView;
+pub use view::{View, VIEW, CONTROLLER, TRACKOPTION, ADD_TO_PLAYLIST};
+
+use dioxus::prelude::*;
+use app::database::{init_db, row_to_weights};
 use crate::document::eval;
 use dioxus::mobile::RequestAsyncResponder;
 use dioxus::{mobile::WindowBuilder, prelude::*};
@@ -18,6 +36,7 @@ use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
 use tokio::sync::mpsc::unbounded_channel;
+use stream::get_stream_response;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
@@ -29,7 +48,6 @@ use app::{
     track::{load_tracks, TrackInfo},
     MusicController,
 };
-use gui::*;
 
 fn main() {
     // Hook panics into the logger to see them on android
@@ -65,7 +83,7 @@ fn init() {
 use dioxus::mobile::tao::window::Icon;
 
 fn load_image() -> Icon {
-    let png = &include_bytes!("../assets/icons/icon256.png")[..];
+    let png = &include_bytes!("../../../assets/icons/icon256.png")[..];
     let header = minipng::decode_png_header(png).expect("bad PNG");
     let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
     let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");

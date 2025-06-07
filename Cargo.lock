@@ -96,6 +96,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
+name = "app"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aubio",
+ "cache-dir",
+ "dirs",
+ "id3",
+ "log",
+ "ndarray",
+ "ndarray-npy",
+ "rand 0.8.5",
+ "rodio",
+ "rusqlite",
+ "rustfft",
+ "serde",
+ "toml",
+ "tracing",
+ "tracing-log",
+]
+
+[[package]]
 name = "arbitrary"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2657,9 +2679,9 @@ dependencies = [
 
 [[package]]
 name = "id3"
-version = "1.16.2"
+version = "1.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "472295f55960dd48e38c89442fa5d5423f5cf0ed2c665485be78e129231a39e9"
+checksum = "aadb14a5ba1a0d58ecd4a29bfc9b8f1d119eee24aa01a62c1ec93eb9630a1d86"
 dependencies = [
  "bitflags 2.9.1",
  "byteorder",
@@ -5441,34 +5463,26 @@ dependencies = [
 
 [[package]]
 name = "trackfish"
-version = "0.2.1"
+version = "0.1.0"
 dependencies = [
  "android_logger",
  "anyhow",
- "aubio",
- "cache-dir",
+ "app",
  "crossbow",
  "crossbow-android",
  "dioxus",
  "dioxus-logger 0.6.2",
- "dirs",
  "http",
  "http-range",
  "id3",
  "jni 0.21.1",
  "log",
  "minipng",
- "ndarray",
- "ndarray-npy",
  "ndk-context",
- "once_cell",
  "rand 0.8.5",
- "rodio",
  "rusqlite",
- "rustfft",
  "serde",
  "tokio",
- "toml",
  "tracing",
  "tracing-android",
  "tracing-log",

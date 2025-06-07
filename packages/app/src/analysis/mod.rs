@@ -2,18 +2,17 @@ mod chroma;
 mod mfcc;
 mod spectral;
 mod tempo;
-pub mod utils;
 mod zcr;
+pub mod embed;
+pub mod utils;
 pub use chroma::extract_chroma;
 pub use mfcc::extract_mfcc;
 pub use spectral::extract_spectral;
 pub use tempo::extract_tempo;
 pub use zcr::extract_zcr;
+pub use embed::AutoEncoder;
+use super::{Track, TrackInfo};
 
-use crate::app::{
-    embed::AutoEncoder,
-    track::{Track, TrackInfo},
-};
 use log::info;
 use ndarray::Array1;
 use rodio::{Decoder, Source};

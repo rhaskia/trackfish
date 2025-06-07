@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 
 #[component]

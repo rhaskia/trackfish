@@ -1,0 +1,41 @@
+[package]
+name = "trackfish"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.android]
+android_version = 33
+target_sdk_version = 33
+min_sdk_version = 26
+
+build_targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]
+
+[features]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop", "app/desktop"]
+mobile = ["dioxus/mobile", "app/mobile"]
+
+[dependencies]
+dioxus = { path = "../../../dioxus/packages/dioxus", features = ["mobile", "hooks", "html", "signals"] }
+app = { workspace = true }
+anyhow = { workspace = true }
+http = "1.2.0"
+http-range = "0.1.5"
+dioxus-logger = "0.6.1"
+minipng = "0.1.1"
+rand = { workspace = true }
+serde = { workspace = true }
+log = { workspace = true }
+tokio = "1.41.1"
+rusqlite = { workspace = true }
+id3 = { workspace = true }
+tracing-log = { workspace = true }
+tracing = { workspace = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"
+ndk-context = "0.1.1"
+tracing-android = "0.2.0"
+android_logger = "0.15"
+crossbow = "0.2.3"
+crossbow-android = "0.2.3"

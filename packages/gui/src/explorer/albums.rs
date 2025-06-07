@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 use dioxus::document::eval;
-use crate::app::utils::strip_unnessecary;
+use app::utils::strip_unnessecary;
 
 #[component]
 pub fn AlbumsList() -> Element {
@@ -89,12 +89,9 @@ pub fn AlbumsList() -> Element {
             autofocus: true,
             onkeydown: move |e| log::info!("{e:?}"),
             onclick: move |_| is_searching.set(false),
-            div {
-                class: "searchbar",
-                onclick: move |_| is_searching.set(true),
-                display: if VIEW.read().album.is_some() { "none" },
+            div { class: "searchbar", onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }
-                input {}
+                div { class: "pseudoinput" }
             }
             div {
                 id: "albumlist",

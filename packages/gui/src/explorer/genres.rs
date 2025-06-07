@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 use super::TracksSearch;
-use crate::app::utils::strip_unnessecary;
+use app::utils::strip_unnessecary;
 
 #[component]
 pub fn GenreList() -> Element {

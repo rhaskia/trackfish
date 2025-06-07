@@ -1,49 +1,25 @@
-[package]
-name = "trackfish"
-version = "0.2.1"
-edition = "2021"
+[workspace]
+members = ["packages/gui", "packages/app"]
+default-members = ["packages/gui"]
+resolver = "3"
 
-[lib]
-name = "trackfish"
-edition = "2021"
-
-[dependencies]
-dioxus = { path = "../dioxus/packages/dioxus", features = ["mobile", "hooks", "html", "signals"] }
+[workspace.dependencies]
 id3 = "1.15.0"
 rand = "0.8"
-tokio = "1.41.1"
-http = "1.2.0"
-http-range = "0.1.5"
-dioxus-logger = "0.6.1"
 anyhow = "1.0.94"
 log = "0.4.22"
 ndarray = "0.16"
 ndarray-npy = "0.9"
-tracing = "0.1.41"
-tracing-log = "0.2.0"
-rodio = { version = "0.20", features = ["cpal-shared-stdcxx"]}
 toml = "0.8.19"
 serde = { version = "1", features = ["derive"]}
 dirs = "6.0.0"
 rusqlite = { version = "0.35", features = ["bundled", "array"] }
-aubio = { version = "0.2.1"}
-rustfft = "6.2.0"
-minipng = "0.1.1"
 cache-dir = "0.1.8"
 once_cell = "1.21.3"
-
-[target.'cfg(target_os = "android")'.dependencies]
-jni = "0.21.1"
-ndk-context = "0.1.1"
-tracing-android = "0.2.0"
-android_logger = "0.15"
-crossbow = "0.2.3"
-crossbow-android = "0.2.3"
-
-[features]
-web = ["dioxus/web"]
-desktop = ["dioxus/desktop", "aubio/pkg-config"]
-mobile = ["dioxus/mobile", "aubio/bindgen"]
+rodio = { version = "0.20", features = ["cpal-shared-stdcxx"]}
+app = { path = "./packages/app/" }
+tracing = "0.1.41"
+tracing-log = "0.2.0"
 
 [profile]
 [profile.dev]
@@ -57,10 +33,3 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
-
-[package.metadata.android]
-android_version = 33
-target_sdk_version = 33
-min_sdk_version = 26
-
-build_targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]

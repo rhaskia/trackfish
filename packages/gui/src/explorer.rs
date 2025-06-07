@@ -10,9 +10,8 @@ pub use alltracks::AllTracks;
 pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
-use super::CONTROLLER;
-use super::{View, TRACKOPTION, VIEW};
-use crate::app::utils::similar;
+use crate::{CONTROLLER, View, TRACKOPTION, VIEW};
+use app::utils::similar;
 use dioxus::prelude::*;
 use log::info;
 use dioxus::document::eval;

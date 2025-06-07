@@ -1,6 +1,6 @@
 use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, CONTROLLER, VIEW};
-use crate::app::playlist::Playlist;
+use app::playlist::Playlist;
 use dioxus::prelude::*;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
