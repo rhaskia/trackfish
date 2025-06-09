@@ -6,12 +6,36 @@ use crate::app::utils::strip_unnessecary;
 #[component]
 pub fn SearchView() -> Element {
     let mut search = use_signal(String::new);
+    let clean_search = use_memo(move || strip_unnessecary(&search.read()));
     
-    let genres = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
-        log::info!("searching {search}");
+    let tracks = use_memo(move || {
+        if clean_search().is_empty() {
+            Vec::new()
+        } else {
+            (0..CONTROLLER.read().all_tracks.len())
+                .filter(|t| {
+                    strip_unnessecary(&CONTROLLER.read().all_tracks[*t].title).starts_with(&clean_search())
+                })
+                .collect::<Vec<usize>>()
+        }
+    });
 
-        if search.is_empty() {
+    let artists = use_memo(move || {
+        if clean_search().is_empty() {
+            Vec::new()
+        } else {
+            CONTROLLER.read().artists
+                .iter()
+                .map(|t| t.1.0.clone())
+                .filter(|t| {
+                    strip_unnessecary(&t).starts_with(&clean_search())
+                })
+                .collect::<Vec<String>>()
+        }
+    });
+
+    let genres = use_memo(move || {
+        if clean_search().is_empty() {
             Vec::new()
         } else {
             CONTROLLER
@@ -20,24 +44,9 @@ pub fn SearchView() -> Element {
                 .iter()
                 .map(|t| t.0.clone())
                 .filter(|t| {
-                    strip_unnessecary(&t).starts_with(&search)
+                    strip_unnessecary(&t).starts_with(&clean_search())
                 })
                 .collect::<Vec<String>>()
-        }
-    });
-
-    let tracks = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
-        log::info!("searching {search}");
-
-        if search.is_empty() {
-            Vec::new()
-        } else {
-            (0..CONTROLLER.read().all_tracks.len())
-                .filter(|t| {
-                    strip_unnessecary(&CONTROLLER.read().all_tracks[*t].title).starts_with(&search)
-                })
-                .collect::<Vec<usize>>()
         }
     });
 
@@ -65,6 +74,13 @@ pub fn SearchView() -> Element {
                         span { "{CONTROLLER.read().all_tracks[track].title}" }
                     }
                 }
+                h3 { "{artists.read().len()} Artists" }
+                for artist in artists() {
+                    div {
+                        class: "thinitem",
+                        "{artist}"
+                    }
+                }
                 h3 { "{genres.read().len()} Genres" }
                 for genre in genres() {
                     div {
@@ -72,6 +88,7 @@ pub fn SearchView() -> Element {
                         "{genre}"
                     }
                 }
+
             }
         }
     }

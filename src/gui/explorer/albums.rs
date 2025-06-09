@@ -134,6 +134,9 @@ pub fn AlbumsList() -> Element {
             if VIEW.read().album.is_some() {
                 TracksView { viewtype: View::Albums }
             }
+            if is_searching() {
+                AlbumsSearch { is_searching }
+            }
         }
     }
 }

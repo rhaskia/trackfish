@@ -3,6 +3,7 @@ use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 use super::TracksSearch;
 use crate::app::utils::strip_unnessecary;
+use dioxus::document::eval;
 
 #[component]
 pub fn GenreList() -> Element {
@@ -28,7 +29,9 @@ pub fn GenreList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Genres { "none" },
-            div { class: "searchbar", onclick: move |_| is_searching.set(true),
+            div { class: "searchbar", 
+                display: if VIEW.read().genre.is_some() { "none" },
+                onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }
                 div { class: "pseudoinput" }
             }
@@ -91,6 +94,7 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                 div { class: "searchpopupbar",
                     img { src: "assets/icons/search.svg" }
                     input {
+                        id: "genresearchbar",
                         value: search,
                         autofocus: true,
                         onclick: |e| e.stop_propagation(),
