@@ -181,6 +181,13 @@
     overflow: hidden scroll;
 }
 
+.searchviewresults h3 {
+    text-decoration: underline;
+    font-weight: 400;
+    margin: 8px 0px 5px 0px;
+    padding: 0;
+}
+
 .trackitemicon {
     height: 40px;
     width: 40px;

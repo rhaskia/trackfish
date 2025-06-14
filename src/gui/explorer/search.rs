@@ -34,6 +34,23 @@ pub fn SearchView() -> Element {
         }
     });
 
+    let albums = use_memo(move || {
+        if clean_search().is_empty() {
+            Vec::new()
+        } else {
+            CONTROLLER
+                .read()
+                .albums
+                .iter()
+                .map(|a| a.0)
+                .filter(|t| {
+                    strip_unnessecary(&t).starts_with(&clean_search())
+                })
+                .cloned()
+                .collect::<Vec<String>>()
+        }
+    });
+
     let genres = use_memo(move || {
         if clean_search().is_empty() {
             Vec::new()
@@ -66,7 +83,7 @@ pub fn SearchView() -> Element {
             }
             div {
                 class: "searchviewresults",
-                h3 { "{tracks.read().len()} tracks" }
+                h3 { display: if tracks.read().len() == 0 { "none" }, "{tracks.read().len()} track/s" }
                 for track in tracks() {
                     div {
                         class: "trackitem",
@@ -74,14 +91,22 @@ pub fn SearchView() -> Element {
                         span { "{CONTROLLER.read().all_tracks[track].title}" }
                     }
                 }
-                h3 { "{artists.read().len()} Artists" }
+                h3 { display: if tracks.read().len() == 0 { "none" }, "{tracks.read().len()} album/s" }
+                for album in albums() {
+                    div {
+                        class: "trackitem",
+                        img { class: "trackitemicon", src: "/trackimage/{CONTROLLER.read().get_album_artwork(album.clone())}" }
+                        span { "{album}" }
+                    }
+                }
+                h3 { display: if artists.read().len() == 0 { "none" }, "{artists.read().len()} artist/s" }
                 for artist in artists() {
                     div {
                         class: "thinitem",
                         "{artist}"
                     }
                 }
-                h3 { "{genres.read().len()} Genres" }
+                h3 { display: if genres.read().len() == 0 { "none" }, "{artists.read().len()} genre/s" }
                 for genre in genres() {
                     div {
                         class: "thinitem",
