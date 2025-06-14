@@ -23,7 +23,10 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
  - [x] All tracks search
- - [ ] Search for albums/artists/genres
+ - [ ] Search 
+    - [x] Search for albums/artists/genres
+    - [x] Search View
+    - [ ] Better search algorithm
  - [ ] Media notifications/control
     - [x] Android
     - [ ] Desktop
@@ -56,7 +59,6 @@ You will also need to use my modified version of the dioxus-cli, branch manifest
     - [x] Add track list to queue
     - [ ] Locked queues/temp queues
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
- - [ ] Proper Search View
  - [ ] Auto Playlists
     - [ ] Basics that foobar would have
     - [ ] Sort by audio features

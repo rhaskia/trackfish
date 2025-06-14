@@ -2,11 +2,13 @@ pub mod albums;
 pub mod artists;
 pub mod alltracks;
 pub mod genres;
+pub mod search;
 
 pub use albums::AlbumsList;
 pub use artists::ArtistList;
 pub use alltracks::AllTracks;
 pub use genres::GenreList;
+pub use search::{SearchView, TracksSearch};
 
 use super::CONTROLLER;
 use super::{View, TRACKOPTION, VIEW};
@@ -80,8 +82,9 @@ pub fn TracksView(viewtype: View) -> Element {
         loop {
             let height = js.recv::<usize>().await;
             if let Ok(height) = height {
+                if height == 0 { continue; } // Stops app freezing on opening a different view 
                 window_size.set(height);
-                info!("Widnow Height {height}");
+                info!("Window Height {height}");
             }
         }
     });
@@ -89,9 +92,7 @@ pub fn TracksView(viewtype: View) -> Element {
     use_effect(move || {
         let mut js = eval(
             &format!(r#"
-            r#"
             let container = document.getElementById('tracksview-{0}');
-            console.log(container);
             container.addEventListener('scroll', function(event) {{
                 dioxus.send(container.scrollTop);
             }});

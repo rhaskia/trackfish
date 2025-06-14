@@ -1,10 +1,14 @@
 use dioxus::prelude::*;
 use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
+use super::TracksSearch;
+use crate::app::utils::strip_unnessecary;
+use dioxus::document::eval;
 
 #[component]
 pub fn GenreList() -> Element {
     let mut genres = use_signal(|| Vec::new());
+    let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
         let mut genres_unsorted = CONTROLLER
@@ -25,11 +29,11 @@ pub fn GenreList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Genres { "none" },
-            div {
-                class: "searchbar",
+            div { class: "searchbar", 
                 display: if VIEW.read().genre.is_some() { "none" },
+                onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }
-                input {}
+                div { class: "pseudoinput" }
             }
             div {
                 id: "genrelist",
@@ -39,6 +43,7 @@ pub fn GenreList() -> Element {
                     if genres.read()[i].1 > 1 {
                         div {
                             class: "thinitem",
+                            id: "genre-{genres.read()[i].0}",
                             onclick: move |_| set_genre(genres.read()[i].0.clone()),
                             if genres.read()[i].0.is_empty() {
                                 "Unknown Genres"
@@ -53,6 +58,64 @@ pub fn GenreList() -> Element {
             if VIEW.read().genre.is_some() {
                 TracksView { viewtype: View::Genres }
             }
+            if is_searching() {
+                GenreSearch { is_searching, genres }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize)>>) -> Element {
+    let mut search = use_signal(String::new);
+    
+    let matches = use_memo(move || {
+        let search = strip_unnessecary(&search.read());
+        log::info!("searching {search}");
+
+        if search.is_empty() {
+            Vec::new()
+        } else {
+            genres
+                .read()
+                .iter()
+                .map(|t| t.0.clone())
+                .filter(|t| {
+                    strip_unnessecary(&t).starts_with(&search)
+                })
+                .collect::<Vec<String>>()
+        }
+    });
+
+    rsx!{
+        div { class: "searchholder", onclick: move |_| is_searching.set(false),
+            div { flex: 1 }
+            div { class: "searchpopup",
+                div { class: "searchpopupbar",
+                    img { src: "assets/icons/search.svg" }
+                    input {
+                        id: "genresearchbar",
+                        value: search,
+                        autofocus: true,
+                        onclick: |e| e.stop_propagation(),
+                        oninput: move |e| search.set(e.value()),
+                    }
+                }
+                div { class: "searchtracks",
+                    for genre in matches() {
+                        div {
+                            class: "thinitem",
+                            onclick: move |_| {
+                                document::eval(
+                                    &format!("document.getElementById('genre-{}').scrollIntoView();", genre),
+                                );
+                            },
+                            span { "{genre}" }
+                        }
+                    }
+                }
+            }
+            div { flex: 1 }
         }
     }
 }

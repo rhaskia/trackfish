@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
 use super::TracksView;
 use dioxus::document::eval;
+use crate::app::utils::strip_unnessecary;
 
 #[component]
 pub fn AlbumsList() -> Element {
@@ -111,6 +112,7 @@ pub fn AlbumsList() -> Element {
                     for i in start_index()..end_index() {
                         div {
                             class: "albumitem",
+                            id: "album-{albums.read()[i].0}",
                             onclick: move |_| set_album(albums.read()[i].0.clone()),
                             img { 
                                 loading: "onvisible",
@@ -132,8 +134,70 @@ pub fn AlbumsList() -> Element {
             if VIEW.read().album.is_some() {
                 TracksView { viewtype: View::Albums }
             }
+            if is_searching() {
+                AlbumsSearch { is_searching }
+            }
         }
     }
 }
 
+#[component]
+pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
+    let mut search = use_signal(String::new);
+    
+    let matches = use_memo(move || {
+        let search = strip_unnessecary(&search.read());
+        log::info!("searching {search}");
 
+        if search.is_empty() {
+            log::info!("searching {search}");
+            Vec::new()
+        } else {
+            CONTROLLER
+                .read()
+                .albums
+                .iter()
+                .map(|a| a.0)
+                .filter(|t| {
+                    strip_unnessecary(&t).starts_with(&search)
+                })
+                .cloned()
+                .collect::<Vec<String>>()
+        }
+    });
+
+    rsx! {
+        div { class: "searchholder", onclick: move |_| is_searching.set(false),
+            div { flex: 1 }
+            div { class: "searchpopup",
+                div { class: "searchpopupbar",
+                    img { src: "assets/icons/search.svg" }
+                    input {
+                        value: search,
+                        autofocus: true,
+                        onclick: |e| e.stop_propagation(),
+                        oninput: move |e| search.set(e.value()),
+                    }
+                }
+                div { class: "searchtracks",
+                    for album in matches() {
+                        div {
+                            class: "trackitem",
+                            onclick: { 
+                                let album = album.clone();
+                                move |_| {
+                                    document::eval(
+                                        &format!("document.getElementById('album-{}').scrollIntoView();", &album),
+                                    );
+                                }
+                            },
+                            img { src: "/trackimage/{CONTROLLER.read().get_album_artwork(album.clone())}" }
+                            span { "{album}" }
+                        }
+                    }
+                }
+            }
+            div { flex: 1 }
+        }
+    }
+}
