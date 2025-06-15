@@ -10,12 +10,13 @@ use super::{
 };
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
 use crate::database::{hash_filename, save_track_weights};
-use log::info;
+use log::{info, warn};
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::thread_rng;
 use rusqlite::Connection;
+use rustfft::num_traits::Zero;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -279,7 +280,11 @@ impl MusicController {
 
     pub fn next_similar(&mut self) -> usize {
         log::info!("next");
-        let weights = self.get_weights().to_vec();
+        let mut weights = self.get_weights().to_vec();
+        if weights.iter().all(|w| w.is_zero()) { 
+            warn!("All weights zero");
+            weights = vec![1.0; weights.len()];
+        }
         let dist = WeightedIndex::new(weights.clone()).unwrap();
         let mut rng = thread_rng();
 
