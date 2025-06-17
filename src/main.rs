@@ -91,16 +91,27 @@ fn init() {
 #[component]
 fn SetUpRoute() -> Element {
     use app::settings::Settings;
-    let set_up = use_signal(Settings::exists);
-    let dir = use_signal(Settings::default_audio_dir);
+    let mut set_up = use_signal(Settings::exists);
+    let mut dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
         if set_up() {
             App {}
         } else {
-            label { r#for: "directory", "Select music directory:" }
+            label { r#for: "directory", "Current directory: " }
+            kbd { "{dir}" }
             br {}
-            input { id: "directory", value: dir }
+            button {
+                onclick: move |_| async move {
+                    let file = rfd::FileDialog::new()
+                        .set_directory("/")
+                        .pick_folder();
+                    if let Some(file) = file {
+                        dir.set(file.display().to_string());
+                    }
+                },
+                "Change Music Directory"
+            }
             // Other options
             br {}
             br {}
@@ -112,6 +123,7 @@ fn SetUpRoute() -> Element {
                         radio: RadioSettings::default(),
                     }
                         .save();
+                    set_up.set(Settings::exists());
                 },
                 "Confirm"
             }

@@ -1261,7 +1261,7 @@ dependencies = [
  "objc",
  "objc_id",
  "once_cell",
- "rfd",
+ "rfd 0.14.1",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -4404,6 +4404,29 @@ dependencies = [
 
 [[package]]
 name = "rfd"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "241a0deb168c88050d872294f7b3106c1dfa8740942bcc97bc91b98e97b5c501"
+dependencies = [
+ "block",
+ "dispatch",
+ "glib-sys",
+ "gobject-sys",
+ "gtk-sys",
+ "js-sys",
+ "log",
+ "objc",
+ "objc-foundation",
+ "objc_id",
+ "raw-window-handle 0.5.2",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "rfd"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25a73a7337fc24366edfca76ec521f51877b114e42dab584008209cca6719251"
@@ -5463,6 +5486,7 @@ dependencies = [
  "ndk-context",
  "once_cell",
  "rand 0.8.5",
+ "rfd 0.12.0",
  "rodio",
  "rusqlite",
  "rustfft",
