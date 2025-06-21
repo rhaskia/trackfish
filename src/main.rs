@@ -26,7 +26,7 @@ use dioxus::mobile::use_asset_handler;
 
 use app::{
     settings::RadioSettings,
-    track::{load_tracks, TrackInfo},
+    track::{load_tracks, TrackInfo, get_track_image},
     MusicController,
 };
 use gui::*;
@@ -232,12 +232,8 @@ fn App() -> Element {
 
         let track = CONTROLLER.read().get_track(id).cloned();
 
-        let mut file = if let Some(file) = track
-            .and_then(|track| Tag::read_from_path(track.file).ok())
-            .and_then(|tag| tag.pictures().next().cloned())
-            .and_then(|picture| Some(Cursor::new(picture.data)))
-        {
-            file
+        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
+            Cursor::new(file)
         } else {
             responder.respond(r);
             return;
