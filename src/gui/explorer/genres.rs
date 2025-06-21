@@ -1,9 +1,7 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::gui::{View, VIEW, CONTROLLER};
 use super::TracksView;
-use super::TracksSearch;
 use crate::app::utils::strip_unnessecary;
-use dioxus::document::eval;
 
 #[component]
 pub fn GenreList() -> Element {
@@ -29,7 +27,8 @@ pub fn GenreList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Genres { "none" },
-            div { class: "searchbar", 
+            div {
+                class: "searchbar",
                 display: if VIEW.read().genre.is_some() { "none" },
                 onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }

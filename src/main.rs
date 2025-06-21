@@ -6,18 +6,14 @@ pub mod database;
 pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
-use crate::document::eval;
-use dioxus::mobile::RequestAsyncResponder;
 use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
-use id3::Tag;
 use log::{error, info};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
-use tokio::sync::mpsc::unbounded_channel;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;

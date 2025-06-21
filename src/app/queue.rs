@@ -76,7 +76,7 @@ impl Queue {
 
         let track = self.cached_order[index_to_move];
         let moving_current = index_to_move == self.current_track;
-        let mut new_pos = 0;
+        let mut new_pos;
 
         if position >= self.current_track && index_to_move < self.current_track {
             self.current_track -= 1;

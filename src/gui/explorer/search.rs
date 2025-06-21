@@ -1,6 +1,5 @@
-use super::TracksView;
 use crate::app::utils::strip_unnessecary;
-use crate::gui::{View, CONTROLLER, TRACKOPTION, VIEW};
+use crate::gui::{View, CONTROLLER, VIEW};
 use dioxus::prelude::*;
 
 #[component]
@@ -70,16 +69,11 @@ pub fn SearchView() -> Element {
             height: "calc(100vh - 50px)",
             overflow: "hidden",
             display: if VIEW.read().current != View::Search { "none" },
-            div {
-                class: "searchbar",
+            div { class: "searchbar",
                 img { src: "assets/icons/search.svg" }
-                input {
-                    oninput: move |e| search.set(e.value()),
-                    value: search,
-                }
+                input { oninput: move |e| search.set(e.value()), value: search }
             }
-            div {
-                class: "searchviewresults",
+            div { class: "searchviewresults",
                 h3 { display: if tracks.read().len() == 0 { "none" }, "{tracks.read().len()} track/s" }
                 for i in 0..tracks.read().len() {
                     div {
@@ -88,7 +82,10 @@ pub fn SearchView() -> Element {
                             CONTROLLER.write().add_all_queue(tracks.read()[i]);
                             VIEW.write().current = View::Song;
                         },
-                        img { class: "trackitemicon", src: "/trackimage/{tracks.read()[i]}" }
+                        img {
+                            class: "trackitemicon",
+                            src: "/trackimage/{tracks.read()[i]}",
+                        }
                         span { "{CONTROLLER.read().all_tracks[tracks.read()[i]].title}" }
                     }
                 }
@@ -100,7 +97,10 @@ pub fn SearchView() -> Element {
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(albums.read()[i].clone());
                         },
-                        img { class: "trackitemicon", src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].clone())}" }
+                        img {
+                            class: "trackitemicon",
+                            src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].clone())}",
+                        }
                         span { "{albums.read()[i]}" }
                     }
                 }
@@ -126,7 +126,7 @@ pub fn SearchView() -> Element {
                         "{genres.read()[i]}"
                     }
                 }
-
+            
             }
         }
     }
@@ -178,7 +178,10 @@ pub fn TracksSearch(
                             class: "trackitem",
                             onclick: move |_| {
                                 document::eval(
-                                    &format!("document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();", track),
+                                    &format!(
+                                        "document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();",
+                                        track,
+                                    ),
                                 );
                             },
                             img { src: "/trackimage/{track}" }

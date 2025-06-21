@@ -1,6 +1,6 @@
 use super::queue::QueueType;
 use super::utils::similar;
-use crate::database::{get_from_cache, init_db, save_to_cache};
+use crate::database::init_db;
 use metaflac::Block::VorbisComment;
 use id3::Tag;
 use id3::TagLike;
@@ -15,6 +15,7 @@ use std::io::BufReader;
 use std::path::PathBuf;
 use std::time::Duration;
 use base64::Engine;
+use crate::database::{save_to_cache, get_from_cache};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
@@ -88,16 +89,16 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     let mut tracks = Vec::new();
 
     for file in files {
-        // match get_from_cache(&cache, &file)? {
-        //     Some(track) => {
-        //         tracks.push(track);
-        //     }
-        //     None => {
-        let track = load_track(file)?;
-        tracks.push(track);
-        // save_to_cache(&cache, &track)?;
-        //     }
-        // }
+        match get_from_cache(&cache, &file)? {
+            Some(track) => {
+                tracks.push(track);
+            }
+            None => {
+                let track = load_track(file)?;
+                tracks.push(track.clone());
+                save_to_cache(&cache, &track)?;
+            }
+        }
     }
 
     info!("Track information loaded in {:?}", started.elapsed());

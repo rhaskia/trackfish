@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::gui::{View, VIEW, CONTROLLER};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 
@@ -27,7 +27,8 @@ pub fn ArtistList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Artists { "none" },
-            div { class: "searchbar", 
+            div {
+                class: "searchbar",
                 display: if VIEW.read().artist.is_some() { "none" },
                 onclick: move |_| is_searching.set(true),
                 img { src: "assets/icons/search.svg" }

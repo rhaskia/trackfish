@@ -1,5 +1,4 @@
 use super::{View, VIEW};
-use crate::app::utils::strip_unnessecary;
 use dioxus::prelude::*;
 use dioxus::document::eval;
 use log::info;
@@ -35,7 +34,6 @@ pub fn AllTracks() -> Element {
     let mut start_index = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
-    let mut scroll = use_signal(|| 0);
 
     use_future(move || async move {
         let mut js = eval(
@@ -91,12 +89,12 @@ pub fn AllTracks() -> Element {
                 "{CONTROLLER.read().all_tracks.len()} songs / "
                 "{display_time(total_time())} total duration"
             }
-            div { class: "tracklist", id: "alltrackslist",
+            div {
+                class: "tracklist",
+                id: "alltrackslist",
                 position: "relative",
 
-                div { 
-                    min_height: "{(tracks.read().len()) * ROW_HEIGHT}px",
-                }
+                div { min_height: "{(tracks.read().len()) * ROW_HEIGHT}px" }
 
                 for i in start_index()..end_index() {
                     div {
@@ -121,7 +119,7 @@ pub fn AllTracks() -> Element {
                         }
                     }
                 }
-
+            
             }
             if is_searching() {
                 TracksSearch { tracks, is_searching, id_prefix: "alltracks" }
