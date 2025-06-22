@@ -7,7 +7,7 @@ use id3::TagLike;
 use log::info;
 use metaflac::block::Block;
 use ndarray::Array1;
-use rodio::{Decoder, Source};
+// use rodio::{Decoder, Source};
 use std::fmt;
 use std::fs;
 use std::io;
@@ -250,26 +250,30 @@ pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
 pub fn load_track(file: String) -> anyhow::Result<Track> {
     let filetype = file.split('.').last().unwrap_or("");
 
-    match filetype {
+    Ok(match filetype {
         "flac" => load_flac_track(file),
         "ogg" => load_ogg_track(file),
         _ => load_id3_track(file),
-    }
+    }.unwrap_or_default())
 }
 
 pub fn load_ogg_track(file: String) -> anyhow::Result<Track> {
-    let tag = oggmeta::Tag::read_from_path(&file)?;
+    // let f = std::fs::File::open(&file)?;
+    // let tag = lewton::inside_ogg::OggStreamReader::new(f)?;
+    //
+    // let comments = tag.comment_hdr;
     let mut track = Track { file, ..Default::default() };
 
-    if let Some(title) = tag.get("TITLE") {
-        track.title = title[0].clone();
-    }
-
-    if let Some(album) = tag.get("ALBUM") {
-        track.album = album[0].clone();
-    }
-
-    track.artists = tag.get("ARTIST").unwrap_or_default();
+    // for (key, value) in &comments.comment_list {
+    //     match key.as_str() {
+    //         "TRACKNUMBER" => track.trackno = value.parse()?,
+    //         "ARTIST" => track.artists = value.split(|c| c == '\0' || c == ';').map(|a| a.to_string()).collect(),
+    //         "GENRE" => track.genres = value.split(|c| c == '\0' || c == ';').map(|g| g.to_string()).collect(),
+    //         "TITLE" => track.title = value.clone(),
+    //         "ALBUM" => track.album = value.clone(),
+    //         _ => {}
+    //     }
+    // }
 
     Ok(track)
 }
@@ -298,7 +302,7 @@ pub fn load_flac_track(file: String) -> anyhow::Result<Track> {
 
 pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     let tag = Tag::read_from_path(file.clone())?;
-    let source = Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
+    // let source = Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
 
     let title = tag.title().unwrap_or_default().to_string();
 
@@ -313,7 +317,8 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
 
     let album = tag.album().unwrap_or_default().to_string();
     let genres = get_genres(&tag);
-    let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
+    // let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
+    let len = 100.0;
     let trackno = tag.track().unwrap_or(1) as usize;
 
     let mut year = String::new();
@@ -378,18 +383,23 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
             None
         },
         "ogg" => {
-            let tag = oggmeta::Tag::read_from_path(&file).ok()?;
-            let pictures = tag.get("METADATA_BLOCK_PICTURE")?;
-            let mut encoded = pictures.get(0)?.clone();
-            for _ in 0..(encoded.len() % 4) {
-                encoded.push('=');
-            }
-
-            let decoded = base64::prelude::BASE64_STANDARD
-                .decode(encoded.as_bytes()).unwrap();
-            let picture = metaflac::block::Picture::from_bytes(&decoded).ok()?;
-
-            Some(picture.data)
+            // let f = std::fs::File::open(file).ok()?;
+            // let tag = lewton::inside_ogg::OggStreamReader::new(f).ok()?;
+            //
+            // let comments = tag.comment_hdr;
+            // let picture = comments.comment_list.iter().find(|(k, v)| k == "METADATA_BLOCK_PICTURE")?;
+            //
+            // let mut encoded = picture.1.clone();
+            // for _ in 0..(encoded.len() % 4) {
+            //     encoded.push('=');
+            // }
+            //
+            // let decoded = base64::prelude::BASE64_STANDARD
+            //     .decode(encoded.as_bytes()).unwrap();
+            // let picture = metaflac::block::Picture::from_bytes(&decoded).ok()?;
+            //
+            // Some(picture.data)
+            Some(Vec::new()) 
         }
         _ => {
             let tag = id3::Tag::read_from_path(file).ok()?;
