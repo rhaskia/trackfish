@@ -146,8 +146,9 @@ pub fn TrackView() -> Element {
                     }
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().playing() { "url(assets/icons/pause.svg)" } else { "url(assets/icons/play.svg)" },
-                        onclick: move |_| CONTROLLER.write().toggle_playing(),
+                        background_image: "url(assets/icons/pause.svg)",
+                        //background_image: if CONTROLLER.read().playing() { "url(assets/icons/pause.svg)" } else { "url(assets/icons/play.svg)" },
+                        onclick: move |_| info!("what the hell"),
                     }
                     button {
                         class: "svg-button",

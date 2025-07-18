@@ -109,7 +109,6 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
 pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     if let Some(artists) = tag.artists() {
         if artists.len() != 0 {
-            info!("{artists:?}");
             return Some(artists.into_iter().map(|a| a.to_string()).collect());
         }
     }
@@ -311,7 +310,6 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     } else {
         vec![tag.artist().unwrap_or_default().to_string()]
     };
-    info!("{artists:?}");
 
     let mood = get_mood(&tag);
 

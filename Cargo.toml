@@ -21,7 +21,7 @@ ndarray = "0.16"
 ndarray-npy = "0.9"
 tracing = "0.1.41"
 tracing-log = "0.2.0"
-#rodio = { git = "https://github.com/RustAudio/rodio.git" }
+rodio = "0.21.1"
 toml = "0.8.19"
 serde = { version = "1", features = ["derive"]}
 dirs = "6.0.0"
