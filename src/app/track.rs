@@ -1,11 +1,11 @@
 use super::queue::QueueType;
 use super::utils::similar;
 use crate::database::init_db;
-use metaflac::Block::VorbisComment;
+//use metaflac::Block::VorbisComment;
 use id3::Tag;
 use id3::TagLike;
 use log::info;
-use metaflac::block::Block;
+// use metaflac::block::Block;
 use ndarray::Array1;
 // use rodio::{Decoder, Source};
 use std::fmt;
@@ -278,25 +278,25 @@ pub fn load_ogg_track(file: String) -> anyhow::Result<Track> {
 }
 
 pub fn load_flac_track(file: String) -> anyhow::Result<Track> {
-    let tag = metaflac::Tag::read_from_path(&file)?;
-    let mut track = Track { file, ..Default::default() };
+    // let tag = metaflac::Tag::read_from_path(&file)?;
+    // let mut track = Track { file, ..Default::default() };
+    //
+    // for frame in tag.blocks() {
+    //     if let VorbisComment(ref comments) = &frame {
+    //         for (key, value) in &comments.comments {
+    //             match key.as_str() {
+    //                 "TRACKNUMBER" => track.trackno = value[0].parse()?,
+    //                 "ARTIST" => track.artists = value.clone(),
+    //                 "GENRE" => track.genres = value.clone(),
+    //                 "TITLE" => track.title = value[0].clone(),
+    //                 "ALBUM" => track.album = value[0].clone(),
+    //                 _ => {}
+    //             }
+    //         }
+    //     }
+    // }
 
-    for frame in tag.blocks() {
-        if let VorbisComment(ref comments) = &frame {
-            for (key, value) in &comments.comments {
-                match key.as_str() {
-                    "TRACKNUMBER" => track.trackno = value[0].parse()?,
-                    "ARTIST" => track.artists = value.clone(),
-                    "GENRE" => track.genres = value.clone(),
-                    "TITLE" => track.title = value[0].clone(),
-                    "ALBUM" => track.album = value[0].clone(),
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    Ok(track)
+    Ok(Track::default())
 }
 
 pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
@@ -370,13 +370,13 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
 
     match filetype {
         "flac" => {
-            let tag = metaflac::Tag::read_from_path(&file).ok()?;
-            
-            for frame in tag.blocks() {
-                if let Block::Picture(picture) = frame {
-                    return Some(picture.data.clone());
-                }
-            }
+            // let tag = metaflac::Tag::read_from_path(&file).ok()?;
+            // 
+            // for frame in tag.blocks() {
+            //     if let Block::Picture(picture) = frame {
+            //         return Some(picture.data.clone());
+            //     }
+            // }
 
             None
         },

@@ -7,7 +7,7 @@ use std::time::Duration;
 
 pub struct AudioPlayer {
     sink: Sink,
-    _sources: SourcesQueueOutput,
+    _stream_handle: OutputStream,
     current_song_len: f64,
 }
 
@@ -19,11 +19,13 @@ impl PartialEq for AudioPlayer {
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        let (sink, _sources) = Sink::new();
+        let _stream_handle = rodio::OutputStreamBuilder::open_default_stream()
+            .expect("open default audio stream");
+        let sink = rodio::Sink::connect_new(&_stream_handle.mixer());
 
         AudioPlayer {
             sink,
-            _sources,
+            _stream_handle,
             current_song_len: 1.0,
         }
     }
@@ -40,6 +42,8 @@ impl AudioPlayer {
         let was_paused = self.sink.is_paused();
         self.sink.clear();
         self.sink.append(source);
+        self.sink.play();
+        //self._stream_handle.mixer().add(source);
         if !was_paused {
             self.sink.play();
         }
