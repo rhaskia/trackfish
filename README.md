@@ -1,8 +1,6 @@
 # TrackFish
 ![](https://raw.githubusercontent.com/rhaskia/trackfish/refs/heads/main/image.png)
-This is a music player, made for offline usage while not having to sacrifice online features.
-It works just as well as any other music player would (apart from a big lacking in settings/search right now), but the main feature of it is the radio system.
-Using ~tags on your mp3/wav/other files (which you may need to tag using picard/onetagger/yourself~ audio features, the application weights songs by how "close" they are to one another, so your massive music collection doesn't leave you skipping over and over again as you try to get to certain songs.
+TrackFish is a music player made for offline usage without having to sacrifice features typically only associated with streaming services - the ability to have similar songs to continue playing after one ends, called autoplay or a radio in many apps. TrackFish also seeks to be a generally comprehensive music player with features such as playlists, autoplaylists, comprehensive queue management. Planned features include scrobbling, tagging, and more. 
 
 # Compiling
 On desktop you will need the dioxus-cli, and to install the following packages:
