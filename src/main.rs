@@ -6,27 +6,24 @@ pub mod database;
 pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
-use crate::document::eval;
-use dioxus::mobile::RequestAsyncResponder;
 use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
-use id3::Tag;
 use log::{error, info};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
-use tokio::sync::mpsc::unbounded_channel;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
+use tokio::sync::mpsc::unbounded_channel;
 
 use app::{
     settings::RadioSettings,
-    track::{load_tracks, TrackInfo},
+    track::{load_tracks, TrackInfo, get_track_image},
     MusicController,
 };
 use gui::*;
@@ -103,11 +100,14 @@ fn SetUpRoute() -> Element {
             br {}
             button {
                 onclick: move |_| async move {
-                    let file = rfd::FileDialog::new()
-                        .set_directory("/")
-                        .pick_folder();
-                    if let Some(file) = file {
-                        dir.set(file.display().to_string());
+                    #[cfg(not(target_os = "android"))]
+                    {
+                        let file = rfd::FileDialog::new()
+                            .set_directory("/")
+                            .pick_folder();
+                        if let Some(file) = file {
+                            dir.set(file.display().to_string());
+                        }
                     }
                 },
                 "Change Music Directory"
@@ -213,11 +213,7 @@ fn App() -> Element {
     use_effect(move || {
         if let Some(ref mut session) = *session.write() {
             if let Some(track) = CONTROLLER.read().current_track() {
-                let image = Tag::read_from_path(&track.file)
-                    .unwrap()
-                    .pictures()
-                    .next()
-                    .and_then(|p| Some(p.data.clone()));
+                let image = get_track_image(&track.file);
                 session.update_metadata(
                     &track.title,
                     &track.artists[0],
@@ -244,12 +240,13 @@ fn App() -> Element {
 
         let track = CONTROLLER.read().get_track(id).cloned();
 
-        let mut file = if let Some(file) = track
-            .and_then(|track| Tag::read_from_path(track.file).ok())
-            .and_then(|tag| tag.pictures().next().cloned())
-            .and_then(|picture| Some(Cursor::new(picture.data)))
-        {
-            file
+        if track.is_none() {
+            responder.respond(r);
+            return;
+        }
+
+        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
+            Cursor::new(file)
         } else {
             responder.respond(r);
             return;

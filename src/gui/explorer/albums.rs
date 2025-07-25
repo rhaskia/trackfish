@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::gui::{View, TRACKOPTION, VIEW, CONTROLLER};
+use crate::gui::{View, VIEW, CONTROLLER};
 use super::TracksView;
 use dioxus::document::eval;
 use crate::app::utils::strip_unnessecary;
@@ -32,7 +32,6 @@ pub fn AlbumsList() -> Element {
     let mut start_index = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / row_height() + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + (rows_in_view() * items_per_row())).min(albums.read().len()));
-    let mut scroll = use_signal(|| 0);
 
     use_effect(move || {
         let mut js = eval(
@@ -114,12 +113,11 @@ pub fn AlbumsList() -> Element {
                             class: "albumitem",
                             id: "album-{albums.read()[i].0}",
                             onclick: move |_| set_album(albums.read()[i].0.clone()),
-                            img { 
+                            img {
                                 loading: "onvisible",
-                                src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].0.clone())}"
+                                src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].0.clone())}",
                             }
-                            div {
-                                class: "albuminfo",
+                            div { class: "albuminfo",
                                 if albums.read()[i].0.is_empty() {
                                     span { "Unknown Album" }
                                 } else {
@@ -183,7 +181,7 @@ pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
                     for album in matches() {
                         div {
                             class: "trackitem",
-                            onclick: { 
+                            onclick: {
                                 let album = album.clone();
                                 move |_| {
                                     document::eval(

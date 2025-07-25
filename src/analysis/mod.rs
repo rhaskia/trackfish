@@ -16,7 +16,7 @@ use crate::app::{
 };
 use log::info;
 use ndarray::Array1;
-use rodio::{Decoder, Source};
+// use rodio::{Decoder, Source};
 use std::io::BufReader;
 use std::{fs::File, time::Duration};
 
@@ -31,7 +31,7 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let mfcc = extract_mfcc(&samples, sample_rate);
     let chroma = extract_mfcc(&samples, sample_rate);
     let spectral = extract_spectral(&samples, sample_rate);
-    let energy = extract_energy(&samples).mean().unwrap();
+    let energy = extract_energy(&samples).mean().unwrap_or(1.0);
     let bpm = extract_tempo(&samples, sample_rate);
     let zcr = extract_zcr(&samples, sample_rate);
 
@@ -48,43 +48,44 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
 }
 
 pub fn load_samples(file_path: &str, duration: Option<(f64, f64)>) -> (Vec<f32>, u32) {
-    let file = File::open(file_path).unwrap();
-    let source = Decoder::new(BufReader::new(file)).unwrap();
-
-    let channels = source.channels();
-    let sample_rate = source.sample_rate();
-    let samples: Vec<f32> = if let Some((duration, offset)) = duration {
-        let sample_dur = source.total_duration().unwrap_or_default().as_secs_f64();
-        let source = if sample_dur > duration + offset {
-            source.skip_duration(Duration::from_secs_f64(offset))
-        } else if sample_dur > duration {
-            source.skip_duration(Duration::from_secs_f64(sample_dur - duration))
-        } else {
-            source.skip_duration(Duration::from_secs(0))
-        };
-
-        let samples: Vec<i16> = source
-            .take((sample_rate as f64 * duration) as usize)
-            .collect();
-        samples.into_iter().map(|n| n as f32).collect()
-    } else {
-        source.convert_samples().collect()
-    };
-
-    if samples.is_empty() {
-        panic!("No samples were read from the file!");
-    }
-
-    let samples = if channels == 2 {
-        samples
-            .chunks_exact(2)
-            .map(|s| (s[0] + s[1]) / 2.0)
-            .collect()
-    } else {
-        samples.clone()
-    };
-
-    (samples, sample_rate)
+    // let file = File::open(file_path).unwrap();
+    // let source = Decoder::new(BufReader::new(file)).unwrap();
+    //
+    // let channels = source.channels();
+    // let sample_rate = source.sample_rate();
+    //
+    // let samples: Vec<f32> = if let Some((duration, offset)) = duration {
+    //     let sample_dur = source.total_duration().unwrap_or_default().as_secs_f64();
+    //     let source = if sample_dur > duration + offset {
+    //         source.skip_duration(Duration::from_secs_f64(offset))
+    //     } else if sample_dur > duration {
+    //         source.skip_duration(Duration::from_secs_f64(sample_dur - duration))
+    //     } else {
+    //         source.skip_duration(Duration::from_secs(0))
+    //     };
+    //
+    //     source
+    //         .take((sample_rate as f64 * duration) as usize)
+    //         .collect()
+    // } else {
+    //     source.collect()
+    // };
+    //
+    // if samples.is_empty() {
+    //     panic!("No samples were read from the file!");
+    // }
+    //
+    // let samples = if channels == 2 {
+    //     samples
+    //         .chunks_exact(2)
+    //         .map(|s| (s[0] + s[1]) / 2.0)
+    //         .collect()
+    // } else {
+    //     samples.clone()
+    // };
+    //
+    // (samples, sample_rate)
+    (vec![0.0; 1000], 44100)
 }
 
 pub fn linear_resample(audio_data: &Vec<f32>, input_rate: usize, output_rate: usize) -> Vec<f32> {

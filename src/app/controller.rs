@@ -188,7 +188,7 @@ impl MusicController {
 
         self.current_started = Instant::now();
 
-        info!("{:?}", &self.all_tracks[idx].file);
+        info!("Playing {:?}", &self.all_tracks[idx].file);
         self.player.play_track(&self.all_tracks[idx].file);
     }
 
@@ -218,7 +218,6 @@ impl MusicController {
     }
 
     pub fn get_weights(&mut self) -> Array1<f32> {
-        info!("{}", self.current_queue().current());
         let space = self.get_space();
 
         let mut weights = Array1::from_vec(vec![0.0; self.all_tracks.len()]);

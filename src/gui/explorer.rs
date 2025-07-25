@@ -67,7 +67,6 @@ pub fn TracksView(viewtype: View) -> Element {
     let mut start_index = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
-    let mut scroll = use_signal(|| 0);
 
     use_future(move || async move {
         let mut js = eval(
@@ -137,12 +136,12 @@ pub fn TracksView(viewtype: View) -> Element {
                 src: "assets/icons/vert.svg",
             }
         }
-        div { class: "tracksview", id: "tracksview-{name()}",
+        div {
+            class: "tracksview",
+            id: "tracksview-{name()}",
             position: "relative",
 
-            div { 
-                min_height: "{(tracks.read().len()) * ROW_HEIGHT}px",
-            }
+            div { min_height: "{(tracks.read().len()) * ROW_HEIGHT}px" }
 
             for i in start_index()..end_index() {
                 div {
