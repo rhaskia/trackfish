@@ -584,6 +584,7 @@ impl MusicController {
     }
 
     pub fn toggle_playing(&mut self) {
+        info!("hi");
         self.player.toggle_playing();
     }
 

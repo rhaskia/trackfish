@@ -195,7 +195,7 @@ pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
     let spectral = blob_to_array(row.get(4)?);
     let energy = row.get(5)?;
     let key = row.get(6)?;
-    let bpm = row.get(7)?;
+    let bpm = row.get(7).unwrap_or(0.0);
     let zcr = row.get(8)?;
 
     Ok(TrackInfo {
