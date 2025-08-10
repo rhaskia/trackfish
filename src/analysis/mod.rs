@@ -48,6 +48,9 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
 }
 
 pub fn load_samples(file_path: &str, duration: Option<(f64, f64)>) -> (Vec<f32>, u32) {
+    if file_path.is_empty() {
+        return (vec![0.0], 44000);
+    }
     let file = File::open(file_path).unwrap();
     let source = Decoder::new(BufReader::new(file)).unwrap();
 

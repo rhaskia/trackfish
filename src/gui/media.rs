@@ -40,7 +40,6 @@ fn send_media_msg(msg: MediaMsg) {
 pub struct MediaSession {
     media_session: GlobalRef,
     callback: GlobalRef,
-    wakelock: WakeLock,
 }
 
 impl MediaSession {
@@ -146,12 +145,9 @@ impl MediaSession {
 
         show_media_notification(&mut env, &context, &media_session, None, true).unwrap();
 
-        let wakelock = WakeLock::acquire(&mut env, &context).unwrap();
-
         Self {
             media_session: env.new_global_ref(media_session).unwrap(),
             callback: env.new_global_ref(callback).unwrap(),
-            wakelock,
         }
     }
 
@@ -200,7 +196,10 @@ impl MediaSession {
             bitmap.as_ref(),
         )
         .unwrap();
+
+        info!("showing notif");
         show_media_notification(&mut env, &context, &self.media_session, bitmap.as_ref(), false).unwrap();
+        info!("showed notif");
     }
 
     pub fn update_state(&mut self, paused: bool, progress: i64) {
@@ -221,61 +220,6 @@ impl MediaSession {
 }
 
 use jni::objects::JString;
-
-pub struct WakeLock {
-    wakelock: GlobalRef,
-}
-
-impl WakeLock {
-    pub fn acquire(env: &mut JNIEnv, context: &JObject) -> jni::errors::Result<Self> {
-        let power_service = env.get_static_field(
-            "android/content/Context",
-            "POWER_SERVICE",
-            "Ljava/lang/String;",
-        )?.l()?;
-
-        let power_manager = env.call_method(
-            context,
-            "getSystemService",
-            "(Ljava/lang/String;)Ljava/lang/Object;",
-            &[(&power_service).into()],
-        )?.l()?;
-
-        let tag: JString = env.new_string("RustWakeLock")?;
-
-        let partial_wake_lock: jint = env.get_static_field(
-            "android/os/PowerManager",
-            "PARTIAL_WAKE_LOCK",
-            "I",
-        )?.i()?;
-
-        let wakelock = env.call_method(
-            power_manager,
-            "newWakeLock",
-            "(ILjava/lang/String;)Landroid/os/PowerManager$WakeLock;",
-            &[partial_wake_lock.into(), (&tag).into()],
-        )?.l()?;
-
-        env.call_method(
-            &wakelock,
-            "acquire",
-            "()V",
-            &[],
-        )?;
-
-        let wakelock_global = env.new_global_ref(wakelock)?;
-
-        Ok(WakeLock {
-            wakelock: wakelock_global,
-        })
-    }
-
-    pub fn release(&mut self, env: &mut JNIEnv) -> jni::errors::Result<()> {
-        env.call_method(self.wakelock.as_obj(), "release", "()V", &[])?;
-        Ok(())
-    }
-}
-
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnPlay(
     _env: JNIEnv,
@@ -369,33 +313,6 @@ pub fn start_audio_service(env: &mut JNIEnv, context: &JObject) -> jni::errors::
     let callback_class = JClass::from(callback_class);
 
     let callback = env.new_object(callback_class, "()V", &[]).unwrap();
-
-    let binding = env.new_string("dev.dioxus.main.RustAudioService").unwrap();
-    let class = env
-        .call_method(
-            &class_loader,
-            "loadClass",
-            "(Ljava/lang/String;)Ljava/lang/Class;",
-            &[JValue::Object(&binding)],
-        )
-        .unwrap()
-        .l()
-        .unwrap();
-    let service_class = JClass::from(class);
-
-    env.call_method(
-        &intent,
-        "setClass",
-        "(Landroid/content/Context;Ljava/lang/Class;)Landroid/content/Intent;",
-        &[JValue::Object(&context), JValue::Object(&service_class.into())],
-    )?;
-
-    env.call_method(
-        context,
-        "startForegroundService",
-        "(Landroid/content/Intent;)Landroid/content/ComponentName;",
-        &[JValue::Object(&intent)],
-    )?;
 
     Ok(())
 }
@@ -532,7 +449,7 @@ pub fn show_media_notification(
             "setLargeIcon",
             "(Landroid/graphics/Bitmap;)Landroid/app/Notification$Builder;",
             &[JValue::Object(&bitmap)],
-        )?;
+        ).unwrap();
     }
 
     let action_class = env.find_class("android/app/Notification$Action")?;
@@ -545,7 +462,7 @@ pub fn show_media_notification(
             JValue::Object(&JObject::from(label)),
             JValue::Object(&pending_intent),
         ],
-    )?;
+    ).unwrap();
 
     let style_class = env.find_class("android/app/Notification$MediaStyle")?;
     let media_style = env.new_object(style_class, "()V", &[])?;
@@ -556,33 +473,47 @@ pub fn show_media_notification(
             "()Landroid/media/session/MediaSession$Token;",
             &[],
         )?
-        .l()?;
+        .l().unwrap();
 
     env.call_method(
         &media_style,
         "setMediaSession",
         "(Landroid/media/session/MediaSession$Token;)Landroid/app/Notification$MediaStyle;",
         &[JValue::Object(&session_token)],
-    )?;
+    ).unwrap();
 
     env.call_method(
         &builder,
         "setStyle",
         "(Landroid/app/Notification$Style;)Landroid/app/Notification$Builder;",
         &[JValue::Object(&media_style)],
-    )?;
+    ).unwrap();
 
     let notification = env
         .call_method(builder, "build", "()Landroid/app/Notification;", &[])?
         .l()?;
 
     *NOTIFICATION.lock().unwrap() = Some(env.new_global_ref(&notification)?);
-    env.call_method(
-        &notification_manager,
-        "notify",
-        "(ILandroid/app/Notification;)V",
-        &[JValue::Int(1), JValue::Object(&notification)],
-    )?;
+    let notification_global = NOTIFICATION.lock().unwrap();
+
+    
+    if let Some(ref global_ref) = *notification_global {
+        if let Err(e) = env.call_method(
+            &notification_manager,
+            "notify",
+            "(ILandroid/app/Notification;)V",
+            &[JValue::Int(1), JValue::Object(global_ref.as_obj())],
+        ) {
+            eprintln!("notify() failed: {:?}", e);
+            if let Ok(exception) = env.exception_occurred() {
+                if !exception.is_null() {
+                    env.exception_describe().unwrap();
+                    env.exception_clear().unwrap();
+                }
+            }
+        }
+    }
+
 
     if creating {
         start_audio_service(env, context);

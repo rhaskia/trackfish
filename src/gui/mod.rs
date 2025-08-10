@@ -6,12 +6,14 @@ pub mod settings;
 pub mod stream;
 pub mod trackoptions;
 pub mod trackview;
+pub mod icons;
 
 #[cfg(target_os = "android")]
 pub mod media;
 
+pub use icons::*;
 pub use confirm::Confirmation;
-pub use explorer::*;
+pub use explorer::{AlbumsList, ArtistList, GenreList, AllTracks, SearchView};
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;

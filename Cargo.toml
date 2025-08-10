@@ -8,7 +8,7 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { path = "../dioxus/packages/dioxus", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { git="https://github.com/DioxusLabs/dioxus", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8"
 tokio = "1.41.1"
@@ -34,6 +34,7 @@ once_cell = "1.21.3"
 #metaflac = "0.2.8"
 base64 = "0.22.1"
 lewton = "0.10.2"
+env_filter = "0.1.3"
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21.1"
@@ -66,8 +67,8 @@ inherits = "dev"
 inherits = "dev"
 
 [package.metadata.android]
-android_version = 33
-target_sdk_version = 33
+android_version = 35
+target_sdk_version = 35
 min_sdk_version = 26
 
 build_targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android" ]

@@ -28,6 +28,18 @@ use app::{
 };
 use gui::*;
 
+// CSS 
+static MAIN_CSS: Asset = asset!("/assets/style.css");
+static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
+static EXPLORER_CSS: Asset = asset!("/assets/explorer.css");
+static MENUBAR_CSS: Asset = asset!("/assets/menubar.css");
+static QUEUE_CSS: Asset = asset!("/assets/queue.css");
+static PLAYLISTS_CSS: Asset = asset!("/assets/playlists.css");
+static SETTINGS_CSS: Asset = asset!("/assets/settings.css");
+static TRACKOPTIONS_CSS: Asset = asset!("/assets/trackoptions.css");
+static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
+
+
 fn main() {
     // Hook panics into the logger to see them on android
     std::panic::set_hook(Box::new(|panic_info| {
@@ -47,9 +59,17 @@ fn main() {
 fn init() {
     use android_logger::Config;
     use log::LevelFilter;
+    use env_filter::Builder;
+
+    let mut builder = Builder::new();
+    builder.filter(None, LevelFilter::Trace);
+    builder.filter(Some("tungstenite"), LevelFilter::Off);
+
+    let filter = builder.build();
 
     android_logger::init_once(
         Config::default()
+            .with_filter(filter)
             .with_max_level(LevelFilter::Trace)
             .with_tag("com.example.Music"),
     );
@@ -100,6 +120,7 @@ fn SetUpRoute() -> Element {
             br {}
             button {
                 onclick: move |_| async move {
+                    info!("hi");
                     #[cfg(not(target_os = "android"))]
                     {
                         let file = rfd::FileDialog::new()
@@ -116,7 +137,10 @@ fn SetUpRoute() -> Element {
             br {}
             br {}
             button {
+                width: "200px",
+                height: "50px",
                 onclick: move |_| {
+                    info!("setting");
                     Settings {
                         directory: dir(),
                         volume: 1.0,
@@ -142,15 +166,7 @@ fn App() -> Element {
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
-        #[cfg(target_os = "android")]
-        {
-            //let result = crossbow::Permission::StorageRead.request_async().await;
-            let result = crossbow_android::permission::request_permission(
-                &crossbow_android::permission::AndroidPermission::ReadMediaAudio,
-            )
-            .await;
-            info!("{result:?}");
-        }
+
 
         let tracks = load_tracks(&CONTROLLER.read().settings.directory);
         if let Ok(t) = tracks {
@@ -186,11 +202,11 @@ fn App() -> Element {
     #[cfg(target_os = "android")]
     use_future(move || async move {
         use crate::media::{MediaMsg, MEDIA_MSG_TX};
-        let result = crossbow_android::permission::request_permission(
-            &crossbow_android::permission::AndroidPermission::PostNotifications,
-        )
-        .await;
-        info!("{result:?}");
+        // let result = crossbow_android::permission::request_permission(
+        //     &crossbow_android::permission::AndroidPermission::PostNotifications,
+        // )
+        // .await;
+        // info!("{result:?}");
 
         let (tx, mut rx) = unbounded_channel();
         *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
@@ -263,16 +279,15 @@ fn App() -> Element {
     });
 
     rsx! {
-        document::Link { href: "assets/style.css", rel: "stylesheet" }
-
-        document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
-        document::Link { href: "assets/explorer.css", rel: "stylesheet" }
-        document::Link { href: "assets/menubar.css", rel: "stylesheet" }
-        document::Link { href: "assets/playlists.css", rel: "stylesheet" }
-        document::Link { href: "assets/settings.css", rel: "stylesheet" }
-        document::Link { href: "assets/trackview.css", rel: "stylesheet" }
-        document::Link { href: "assets/trackoptions.css", rel: "stylesheet" }
-        document::Link { href: "assets/queue.css", rel: "stylesheet" }
+        document::Stylesheet { href: MAIN_CSS }
+        document::Stylesheet { href: ALL_TRACKS_CSS }
+        document::Stylesheet { href: EXPLORER_CSS }
+        document::Stylesheet { href: MENUBAR_CSS }
+        document::Stylesheet { href: PLAYLISTS_CSS }
+        document::Stylesheet { href: SETTINGS_CSS }
+        document::Stylesheet { href: TRACKVIEW_CSS }
+        document::Stylesheet { href: TRACKOPTIONS_CSS }
+        document::Stylesheet { href: QUEUE_CSS }
 
         div {
             class: "loadingpopupbg",
@@ -305,47 +320,47 @@ pub fn MenuBar() -> Element {
         div { class: "buttonrow nav",
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/song.svg)",
+                background_image: "url({asset!(\"/assets/icons/song.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Song),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/queue.svg)",
+                background_image: "url({asset!(\"/assets/icons/queue.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Queue),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/folder.svg)",
+                background_image: "url({asset!(\"/assets/icons/folder.svg\")})",
                 onclick: move |_| VIEW.write().open(View::AllTracks),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/album.svg)",
+                background_image: "url({asset!(\"/assets/icons/album.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Albums),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/artist.svg)",
+                background_image: "url({asset!(\"/assets/icons/artist.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Artists),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/genres.svg)",
+                background_image: "url({asset!(\"/assets/icons/genres.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Genres),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/playlist.svg)",
+                background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Playlists),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/search.svg)",
+                background_image: "url({asset!(\"/assets/icons/search.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Search),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/settings.svg)",
+                background_image: "url({asset!(\"/assets/icons/settings.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Settings),
             }
         }

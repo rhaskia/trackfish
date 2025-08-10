@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;
+use crate::gui::icons::*;
 
 #[component]
 pub fn TrackView() -> Element {
@@ -136,27 +137,27 @@ pub fn TrackView() -> Element {
                 div { class: "buttonrow",
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/vert.svg)",
+                        background_image: "url({VERT_ICON})",
                         onclick: move |_| *TRACKOPTION.write() = Some(CONTROLLER.read().current_track_idx()),
                     }
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/skipprevious.svg)",
+                        background_image: "url({SKIP_BACK_ICON})",
                         onclick: skipback,
                     }
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().playing() { "url(assets/icons/pause.svg)" } else { "url(assets/icons/play.svg)" },
+                        background_image: if CONTROLLER.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
                         onclick: move |_| CONTROLLER.write().toggle_playing(),
                     }
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/skip.svg)",
+                        background_image: "url({SKIP_ICON})",
                         onclick: skip,
                     }
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().shuffle { "url(assets/icons/shuffleon.svg)" } else { "url(assets/icons/shuffle.svg)" },
+                        background_image: if CONTROLLER.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
                         onclick: move |_| CONTROLLER.write().toggle_shuffle(),
                     }
                 }
