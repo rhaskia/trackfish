@@ -161,7 +161,7 @@ fn App() -> Element {
     let mut tracks_count = use_signal(|| 0);
 
     #[cfg(target_os = "android")]
-    let mut session = use_signal(|| None);
+    //let mut session = use_signal(|| None);
 
     // Load in all tracks
     use_future(move || async move {
@@ -201,47 +201,47 @@ fn App() -> Element {
     // Start up media session
     #[cfg(target_os = "android")]
     use_future(move || async move {
-        use crate::media::{MediaMsg, MEDIA_MSG_TX};
+        // use crate::media::{MediaMsg, MEDIA_MSG_TX};
         // let result = crossbow_android::permission::request_permission(
         //     &crossbow_android::permission::AndroidPermission::PostNotifications,
         // )
         // .await;
         // info!("{result:?}");
 
-        let (tx, mut rx) = unbounded_channel();
-        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
-        session.set(Some(crate::gui::media::MediaSession::new()));
-        info!("Set up media session successfully");
-
-        while let Some(msg) = rx.recv().await {
-            match msg {
-                MediaMsg::Play => CONTROLLER.write().play(),
-                MediaMsg::Pause => CONTROLLER.write().pause(),
-                MediaMsg::Next => CONTROLLER.write().skip(),
-                MediaMsg::Previous => CONTROLLER.write().skipback(),
-                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
-            }
-        }
+        // let (tx, mut rx) = unbounded_channel();
+        // *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+        // session.set(Some(crate::gui::media::MediaSession::new()));
+        // info!("Set up media session successfully");
+        //
+        // while let Some(msg) = rx.recv().await {
+        //     match msg {
+        //         MediaMsg::Play => CONTROLLER.write().play(),
+        //         MediaMsg::Pause => CONTROLLER.write().pause(),
+        //         MediaMsg::Next => CONTROLLER.write().skip(),
+        //         MediaMsg::Previous => CONTROLLER.write().skipback(),
+        //         MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
+        //     }
+        // }
     });
 
     // Update mediasession as needed
     #[cfg(target_os = "android")]
     use_effect(move || {
-        if let Some(ref mut session) = *session.write() {
-            if let Some(track) = CONTROLLER.read().current_track() {
-                let image = get_track_image(&track.file);
-                session.update_metadata(
-                    &track.title,
-                    &track.artists[0],
-                    (track.len * 1000.0) as i64,
-                    image,
-                );
-                session.update_state(
-                    CONTROLLER.read().playing(),
-                    (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
-                );
-            }
-        }
+        // if let Some(ref mut session) = *session.write() {
+        //     if let Some(track) = CONTROLLER.read().current_track() {
+        //         let image = get_track_image(&track.file);
+        //         session.update_metadata(
+        //             &track.title,
+        //             &track.artists[0],
+        //             (track.len * 1000.0) as i64,
+        //             image,
+        //         );
+        //         session.update_state(
+        //             CONTROLLER.read().playing(),
+        //             (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
+        //         );
+        //     }
+        // }
     });
 
     use_asset_handler("trackimage",  |request, responder| {

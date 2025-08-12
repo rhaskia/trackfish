@@ -1,24 +1,27 @@
-package dev.dioxus.main
+package dev.dioxus.main;
 
-// need to re-export buildconfig down from the parent
-import com.example.Trackfish.BuildConfig
-typealias BuildConfig = BuildConfig
-
-import android.Manifest
+import dev.dioxus.main.RustWebView
+import dev.dioxus.main.Logger
 import android.annotation.SuppressLint
-import android.app.*
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.KeyEvent
 import android.webkit.WebView
-import androidx.activity.result.contract.ActivityResultContracts
+import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import android.util.Log
 
-abstract class BaseWryActivity : AppCompatActivity() {
+import com.example.Trackfish.BuildConfig;
+typealias BuildConfig = BuildConfig;
+
+class MainActivity : MusicActivity()
+
+abstract class MusicActivity : AppCompatActivity() {
     private lateinit var mWebView: RustWebView
 
     open fun onWebViewCreate(webView: WebView) { }
@@ -31,13 +34,15 @@ abstract class BaseWryActivity : AppCompatActivity() {
     val version: String
         @SuppressLint("WebViewApiAvailability", "ObsoleteSdkInt")
         get() {
+            // Check getCurrentWebViewPackage() directly if above Android 8
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 return WebView.getCurrentWebViewPackage()?.versionName ?: ""
             }
 
+            // Otherwise manually check WebView versions
             var webViewPackage = "com.google.android.webview"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                webViewPackage = "com.android.chrome"
+              webViewPackage = "com.android.chrome"
             }
             try {
                 @Suppress("DEPRECATION")
@@ -55,21 +60,19 @@ abstract class BaseWryActivity : AppCompatActivity() {
                 Logger.warn("Unable to get package info for 'com.android.webview'$ex")
             }
 
+            // Could not detect any webview, return empty string
             return ""
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Start a foreground service to keep this process alive
-        val intent = Intent(this, KeepAliveService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-
         create(this)
+
+        Log.i("com.example.Music", "woah 0")
+        val intent = Intent(this, KeepAliveService::class.java)
+        Log.i("com.example.Music", "woah 1")
+        startForegroundService(intent)
+        Log.i("com.example.Music", "woah 2")
     }
 
     override fun onStart() {
@@ -131,7 +134,7 @@ abstract class BaseWryActivity : AppCompatActivity() {
         }
     }
 
-    private external fun create(activity: BaseWryActivity)
+    private external fun create(activity: MusicActivity)
     private external fun start()
     private external fun resume()
     private external fun pause()
@@ -141,122 +144,37 @@ abstract class BaseWryActivity : AppCompatActivity() {
     private external fun onActivityDestroy()
     private external fun memory()
     private external fun focus(focus: Boolean)
-
-    class KeepAliveService : Service() {
-
-        companion object {
-            const val NOTIF_ID = 1
-            const val CHANNEL_ID = "media_channel"
-        }
-
-        override fun onCreate() {
-            super.onCreate()
-            createNotificationChannel()
-
-            mediaSession = MediaSessionCompat(this, "MusicService")
-
-            val baseNotification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Trackfish")
-                .setContentText("App is running")
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setOngoing(true)
-                .setStyle(
-                    MediaStyle()
-                        .setMediaSession(mediaSession.sessionToken)
-                        .setShowActionsInCompactView() // No actions yet, but layout is set
-                )
-                .build()
-
-            startForeground(NOTIF_ID, baseNotification)
-        }
-
-        override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-            // Service logic here if any
-
-            return START_STICKY // keep service running
-        }
-
-        override fun onBind(intent: Intent?): IBinder? = null
-
-        private fun createNotificationChannel() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    "Media Playback",
-                    NotificationManager.IMPORTANCE_LOW
-                )
-                val manager = getSystemService(NotificationManager::class.java)
-                manager.createNotificationChannel(channel)
-            }
-        }
-    }
-
 }
 
-class MainActivity : BaseWryActivity() {
+class KeepAliveService : Service() {
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
 
-    private val permissionsToRequest = arrayOf(
-        Manifest.permission.READ_MEDIA_AUDIO,
-        Manifest.permission.WAKE_LOCK,
-        Manifest.permission.FOREGROUND_SERVICE,
-        Manifest.permission.POST_NOTIFICATIONS
-    )
+        val notification: Notification = Notification.Builder(this, "media_channel")
+            .setContentTitle("Trackfish is running")
+            .setContentText("Your music service is active")
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .build()
 
-    private val requestPermissionsLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.entries.all { it.value }
-        if (allGranted) {
-            onPermissionsGranted()
-        } else {
-            onPermissionsDenied()
+        startForeground(1, notification)
+
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "media_channel",
+                "Trackfish Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
         }
     }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        Log.i("com.example.Music", "Info message")
-
-        if (!hasAllPermissions()) {
-            requestPermissionsLauncher.launch(permissionsToRequest)
-        } else {
-            onPermissionsGranted()
-        }
-    }
-
-    private fun hasAllPermissions(): Boolean {
-        return permissionsToRequest.all { perm ->
-            ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    private fun onPermissionsGranted() {
-        // Permissions granted — safe to proceed with audio access, notifications, etc.
-    }
-
-    private fun onPermissionsDenied() {
-        // Permissions denied — show UI or disable related features gracefully
-    }
-}
-
-fun createBaseNotification(context: Context) {
-    val channelId = "media_channel"
-    val channelName = "Media Controls"
-
-    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    // Create the channel if not exists
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-        manager.createNotificationChannel(channel)
-    }
-
-    val notif = NotificationCompat.Builder(context, channelId)
-        .setContentTitle("Loading...")
-        .setContentText("Preparing media controls")
-        .setSmallIcon(android.R.drawable.ic_media_play)
-        .setOngoing(true)
-        .build()
-
-    manager.notify(1, notif) // Known ID = 1
 }

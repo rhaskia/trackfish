@@ -21,7 +21,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".dev.dioxus.main.WryActivity$KeepAliveService"
+            android:name=".KeepAliveService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
     </application>

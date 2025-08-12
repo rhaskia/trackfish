@@ -197,9 +197,7 @@ impl MediaSession {
         )
         .unwrap();
 
-        info!("showing notif");
         show_media_notification(&mut env, &context, &self.media_session, bitmap.as_ref(), false).unwrap();
-        info!("showed notif");
     }
 
     pub fn update_state(&mut self, paused: bool, progress: i64) {
