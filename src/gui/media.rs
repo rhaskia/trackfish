@@ -110,7 +110,7 @@ pub fn update_media_notification(
 
     Ok(())
 }
-//
+
 // impl MediaSession {
 //     pub fn new() -> Self {
 //         let ctx = ndk_context::android_context();
@@ -352,6 +352,25 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_getNotification<'a>(
         *JObject::null()
     }
 }
+
+#[no_mangle]
+pub extern "system" fn Java_dev_dioxus_main_KeepAliveService_nativeOnAudioFocusLost(
+    _env: JNIEnv,
+    _class: JClass,
+    focus_change: jint,
+) {
+    info!("Audio focus lost: {focus_change}");
+    send_media_msg(MediaMsg::Pause)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_dev_dioxus_main_KeepAliveService_nativeOnAudioFocusGained(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    // TODO: check if previously playing
+}
+
 
 pub fn start_audio_service(env: &mut JNIEnv, context: &JObject) -> jni::errors::Result<()> {
     let intent_class = env.find_class("android/content/Intent")?;

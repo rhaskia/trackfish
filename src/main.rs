@@ -199,13 +199,6 @@ fn App() -> Element {
     // Start up media session
     #[cfg(target_os = "android")]
     use_future(move || async move {
-        // use crate::media::{MediaMsg, MEDIA_MSG_TX};
-        // let result = crossbow_android::permission::request_permission(
-        //     &crossbow_android::permission::AndroidPermission::PostNotifications,
-        // )
-        // .await;
-        // info!("{result:?}");
-
         let (tx, mut rx) = unbounded_channel();
         *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
 

@@ -11,6 +11,10 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import android.app.Notification
 import android.content.Context
+import android.media.AudioManager
+import android.media.AudioFocusRequest
+import android.media.AudioAttributes
+import android.os.Build
 
 class MediaCallback : MediaSession.Callback() {
     override fun onPlay() {
@@ -30,19 +34,19 @@ class MediaCallback : MediaSession.Callback() {
 
     override fun onSkipToPrevious() {
         Log.d("MediaCallback", "Skipped to previous track")
-	nativeOnPrevious();
+	    nativeOnPrevious();
     }
 
     override fun onSeekTo(pos: Long) {
         Log.d("MediaCallback", "Seek to a position")
-	nativeOnSeekTo(pos);
+	    nativeOnSeekTo(pos);
     }
 }
 
 object MediaHelper {
 	@JvmStatic
 	fun setMediaCallback(mediaSession: MediaSession, callback: MediaSession.Callback) {
- 	   mediaSession.setCallback(callback, Handler(Looper.getMainLooper()))
+	   mediaSession.setCallback(callback, Handler(Looper.getMainLooper()))
 	}
 }
 
@@ -53,4 +57,3 @@ external fun nativeOnPause()
 external fun nativeOnNext()
 external fun nativeOnPrevious()
 external fun nativeOnSeekTo(pos: Long)
-

@@ -14,12 +14,17 @@ import android.os.IBinder
 import android.app.Notification
 import android.app.Notification.MediaStyle
 import android.util.Log
+import android.media.AudioManager
+import android.content.Context
+import android.media.AudioFocusRequest
+import android.media.AudioAttributes
 
 class KeepAliveService : Service() {
     private lateinit var mediaSession: MediaSession
     private lateinit var mediaCallback: MediaCallback
     private lateinit var mediaController: MediaController
     private lateinit var notificationManager: NotificationManager
+    private var focusRequest: AudioFocusRequest? = null
     private val channelId = "media_channel"
 
     companion object {
@@ -89,6 +94,13 @@ class KeepAliveService : Service() {
         val bitmap = artworkBytes?.let {
             android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size)
         }
+
+        if (isPlaying) {
+            requestAudioFocus()
+        } else {
+            abandonAudioFocus()
+        }
+
         // Update MediaSession playback state
         val state = android.media.session.PlaybackState.Builder()
             .setState(
@@ -155,4 +167,46 @@ class KeepAliveService : Service() {
     ) {
         createMediaNotification(title, artist, trackLengthMs, progressMs, isPlaying, artworkbytes, false)
     }
+
+    private fun requestAudioFocus(): Boolean {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setOnAudioFocusChangeListener { focusChange: Int ->
+                when (focusChange) {
+                    AudioManager.AUDIOFOCUS_LOSS,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                        Log.i("KeepAliveService", "Lost audio focus: $focusChange")
+                        nativeOnAudioFocusLost(focusChange)
+                    }
+                    AudioManager.AUDIOFOCUS_GAIN -> {
+                        Log.i("KeepAliveService", "Gained audio focus")
+                        nativeOnAudioFocusGained()
+                    }
+                }
+            }
+            .build()
+
+        val result = audioManager.requestAudioFocus(focusRequest!!)
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun abandonAudioFocus() {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        focusRequest?.let {
+            audioManager.abandonAudioFocusRequest(it)
+            focusRequest = null
+        }
+    }
+
+    external fun nativeOnAudioFocusLost(focusChange: Int)
+    external fun nativeOnAudioFocusGained()
 }
+
