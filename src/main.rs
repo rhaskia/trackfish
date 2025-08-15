@@ -14,6 +14,8 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
+use crate::media::MediaMsg;
+use crate::media::MEDIA_MSG_TX;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
@@ -160,20 +162,16 @@ fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
 
-    #[cfg(target_os = "android")]
-    //let mut session = use_signal(|| None);
-
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
-
 
         let tracks = load_tracks(&CONTROLLER.read().settings.directory);
         if let Ok(t) = tracks {
             tracks_count.set(t.len());
             let dir = CONTROLLER.read().settings.directory.clone();
             *CONTROLLER.write() = MusicController::new(t, dir);
-            info!("Loaded tracks in {:?}", started.elapsed());
+            info!("Loaded all tracks in {:?}", started.elapsed());
         } else {
             info!("{:?}", tracks);
         }
@@ -208,40 +206,37 @@ fn App() -> Element {
         // .await;
         // info!("{result:?}");
 
-        // let (tx, mut rx) = unbounded_channel();
-        // *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
-        // session.set(Some(crate::gui::media::MediaSession::new()));
-        // info!("Set up media session successfully");
-        //
-        // while let Some(msg) = rx.recv().await {
-        //     match msg {
-        //         MediaMsg::Play => CONTROLLER.write().play(),
-        //         MediaMsg::Pause => CONTROLLER.write().pause(),
-        //         MediaMsg::Next => CONTROLLER.write().skip(),
-        //         MediaMsg::Previous => CONTROLLER.write().skipback(),
-        //         MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
-        //     }
-        // }
+        let (tx, mut rx) = unbounded_channel();
+        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+
+        while let Some(msg) = rx.recv().await {
+            match msg {
+                MediaMsg::Play => CONTROLLER.write().play(),
+                MediaMsg::Pause => CONTROLLER.write().pause(),
+                MediaMsg::Next => CONTROLLER.write().skip(),
+                MediaMsg::Previous => CONTROLLER.write().skipback(),
+                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
+            }
+        }
     });
 
     // Update mediasession as needed
-    #[cfg(target_os = "android")]
     use_effect(move || {
-        // if let Some(ref mut session) = *session.write() {
-        //     if let Some(track) = CONTROLLER.read().current_track() {
-        //         let image = get_track_image(&track.file);
-        //         session.update_metadata(
-        //             &track.title,
-        //             &track.artists[0],
-        //             (track.len * 1000.0) as i64,
-        //             image,
-        //         );
-        //         session.update_state(
-        //             CONTROLLER.read().playing(),
-        //             (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
-        //         );
-        //     }
-        // }
+        info!("Updated notification");
+        #[cfg(target_os = "android")]
+        if let Some(track) = CONTROLLER.read().current_track() {
+            let image = get_track_image(&track.file);
+            info!("Progress {}", (CONTROLLER.read().player.progress_secs() * 1000.0) as i64);
+            info!("Duration {:?}", track);
+
+            crate::gui::media::update_media_notification(
+                &track.title,
+                &track.artists[0],
+                (track.len * 1000.0) as i64,
+                (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
+                CONTROLLER.read().playing(),
+                image).unwrap();
+        }
     });
 
     use_asset_handler("trackimage",  |request, responder| {

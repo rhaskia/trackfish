@@ -3,6 +3,7 @@ asset_dir = "assets"
 name = "TrackFish"
 android_manifest = "./AndroidManifest.xml"
 main_activity = "./kotlin/MainActivity.kt"
+android_min_sdk_version = 26
 
 [web.app]
 title = "TrackFish"

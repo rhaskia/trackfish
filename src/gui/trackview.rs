@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;
+use crate::app::track::get_track_image;
 use crate::gui::icons::*;
 
 #[component]

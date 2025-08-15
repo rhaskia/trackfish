@@ -7,7 +7,7 @@ use id3::TagLike;
 use log::info;
 // use metaflac::block::Block;
 use ndarray::Array1;
-// use rodio::{Decoder, Source};
+use rodio::{Decoder, Source};
 use std::fmt;
 use std::fs;
 use std::io;
@@ -301,7 +301,7 @@ pub fn load_flac_track(file: String) -> anyhow::Result<Track> {
 
 pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     let tag = Tag::read_from_path(file.clone())?;
-    // let source = Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
+    let source = rodio::Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
 
     let title = tag.title().unwrap_or_default().to_string();
 
@@ -315,16 +315,13 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
 
     let album = tag.album().unwrap_or_default().to_string();
     let genres = get_genres(&tag);
-    // let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
-    let len = 100.0;
+    let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
     let trackno = tag.track().unwrap_or(1) as usize;
 
     let mut year = String::new();
     if let Some(tag_year) = tag.get("Date") {
         year = tag_year.to_string();
     }
-
-    //let file = PathBuf::from(file).file_name().unwrap().to_str().unwrap().to_string();
 
     Ok(Track { file, title, artists, album, genres, year, len, mood, trackno })
 }

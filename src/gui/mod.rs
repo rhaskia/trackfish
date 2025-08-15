@@ -9,7 +9,7 @@ pub mod trackview;
 pub mod icons;
 
 #[cfg(target_os = "android")]
-// pub mod media;
+pub mod media;
 
 pub use icons::*;
 pub use confirm::Confirmation;
