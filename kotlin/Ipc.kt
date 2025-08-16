@@ -23,7 +23,7 @@ class Ipc(val webViewClient: RustWebViewClient) {
 
     companion object {
         init {
-            System.loadLibrary("dioxusmain")
+            NativeLoader.ensureLoaded()
         }
     }
 

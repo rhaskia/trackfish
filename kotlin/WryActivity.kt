@@ -67,7 +67,12 @@ abstract class WryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        create(this)        
+
+        if (!NativeLoader.initialized) {
+            NativeLoader.initialized = true
+            create(this)
+        }
+
         Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
         val intent = Intent(this, KeepAliveService::class.java)
 
@@ -144,8 +149,24 @@ abstract class WryActivity : AppCompatActivity() {
 
     companion object {
         init {
-            System.loadLibrary("dioxusmain")
+            NativeLoader.ensureLoaded()
         }
     }
 }
+
+object NativeLoader {
+    var loaded = false
+    var initialized = false
+
+    @Synchronized
+    fun ensureLoaded() {
+        if (!loaded) {
+            Log.i("NativeLoader", "Loading Rust library…")
+            System.loadLibrary("dioxusmain")
+            loaded = true
+            Log.i("NativeLoader", "Rust library loaded")
+        }
+    }
+}
+
 

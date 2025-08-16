@@ -122,7 +122,6 @@ fn SetUpRoute() -> Element {
             br {}
             button {
                 onclick: move |_| async move {
-                    info!("hi");
                     #[cfg(not(target_os = "android"))]
                     {
                         let file = rfd::FileDialog::new()
@@ -142,7 +141,6 @@ fn SetUpRoute() -> Element {
                 width: "200px",
                 height: "50px",
                 onclick: move |_| {
-                    info!("setting");
                     Settings {
                         directory: dir(),
                         volume: 1.0,
@@ -215,12 +213,9 @@ fn App() -> Element {
 
     // Update mediasession as needed
     use_effect(move || {
-        info!("Updated notification");
         #[cfg(target_os = "android")]
         if let Some(track) = CONTROLLER.read().current_track() {
             let image = get_track_image(&track.file);
-            info!("Progress {}", (CONTROLLER.read().player.progress_secs() * 1000.0) as i64);
-            info!("Duration {:?}", track);
 
             crate::gui::media::update_media_notification(
                 &track.title,

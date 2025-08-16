@@ -26,6 +26,7 @@ class KeepAliveService : Service() {
     private lateinit var notificationManager: NotificationManager
     private var focusRequest: AudioFocusRequest? = null
     private val channelId = "media_channel"
+    var hasAudioFocus = false
 
     companion object {
         @JvmStatic
@@ -96,10 +97,14 @@ class KeepAliveService : Service() {
         }
 
         if (isPlaying) {
-            requestAudioFocus()
+            if (!hasAudioFocus) {
+                requestAudioFocus()
+            }
         } else {
             abandonAudioFocus()
         }
+
+        Log.i("com.example.Music", "requested media notification with state " + isPlaying)
 
         // Update MediaSession playback state
         val state = android.media.session.PlaybackState.Builder()
@@ -116,8 +121,6 @@ class KeepAliveService : Service() {
                 PlaybackState.ACTION_SEEK_TO
             )
             .build()
-
-        Log.i("com.example.Music", "progress" + progressMs + "duration" + trackLengthMs)
 
         mediaSession.setPlaybackState(state)
 
@@ -185,16 +188,19 @@ class KeepAliveService : Service() {
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         Log.i("KeepAliveService", "Lost audio focus: $focusChange")
                         nativeOnAudioFocusLost(focusChange)
+                        hasAudioFocus = false
                     }
                     AudioManager.AUDIOFOCUS_GAIN -> {
                         Log.i("KeepAliveService", "Gained audio focus")
                         nativeOnAudioFocusGained()
+                        hasAudioFocus = true
                     }
                 }
             }
             .build()
 
         val result = audioManager.requestAudioFocus(focusRequest!!)
+        hasAudioFocus = true
         return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
 
