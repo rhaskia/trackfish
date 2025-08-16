@@ -158,7 +158,6 @@ pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_nativeOnSeekTo(
 }
 use std::thread;
 
-
 #[no_mangle]
 pub extern "system" fn Java_dev_dioxus_main_MediaCallbackKt_getNotification<'a>(
     mut env: JNIEnv,

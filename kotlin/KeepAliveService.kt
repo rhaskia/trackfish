@@ -27,6 +27,7 @@ class KeepAliveService : Service() {
     private var focusRequest: AudioFocusRequest? = null
     private val channelId = "media_channel"
     var hasAudioFocus = false
+    var initialized = false
 
     companion object {
         @JvmStatic

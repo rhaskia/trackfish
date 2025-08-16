@@ -69,8 +69,8 @@ abstract class WryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (!NativeLoader.initialized) {
-            NativeLoader.initialized = true
             create(this)
+            NativeLoader.initialized = true
         }
 
         Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
