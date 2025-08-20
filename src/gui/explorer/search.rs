@@ -1,5 +1,5 @@
 use crate::app::utils::strip_unnessecary;
-use crate::gui::{View, CONTROLLER, VIEW};
+use crate::gui::{View, CONTROLLER, VIEW, icons::*};
 use dioxus::prelude::*;
 
 #[component]
@@ -70,7 +70,7 @@ pub fn SearchView() -> Element {
             overflow: "hidden",
             display: if VIEW.read().current != View::Search { "none" },
             div { class: "searchbar",
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 input { oninput: move |e| search.set(e.value()), value: search }
             }
             div { class: "searchviewresults",
@@ -164,7 +164,7 @@ pub fn TracksSearch(
             div { flex: 1 }
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
-                    img { src: "assets/icons/search.svg" }
+                    img { src: SEARCH_ICON }
                     input {
                         value: search,
                         autofocus: true,

@@ -18,12 +18,14 @@ import android.media.AudioManager
 import android.content.Context
 import android.media.AudioFocusRequest
 import android.media.AudioAttributes
+import android.os.PowerManager
 
 class KeepAliveService : Service() {
     private lateinit var mediaSession: MediaSession
     private lateinit var mediaCallback: MediaCallback
     private lateinit var mediaController: MediaController
     private lateinit var notificationManager: NotificationManager
+    private lateinit var wakeLock: PowerManager.WakeLock
     private var focusRequest: AudioFocusRequest? = null
     private val channelId = "media_channel"
     var hasAudioFocus = false
@@ -40,6 +42,12 @@ class KeepAliveService : Service() {
         setupMediaSession()
         setupNotificationChannel()
         createMediaNotification("Unknown Title", "Unknown Artist", 0, 1000, false, null, true)
+        wakeLock = 
+        (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TrackFish::MediaWakeLock").apply {
+                acquire()
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

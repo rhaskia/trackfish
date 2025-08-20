@@ -1,5 +1,6 @@
 use super::{View, ADD_TO_PLAYLIST, CONTROLLER, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
+use super::icons::*;
 
 #[component]
 pub fn TrackOptions() -> Element {
@@ -12,7 +13,7 @@ pub fn TrackOptions() -> Element {
                     h3 { "{CONTROLLER.read().all_tracks[track].title}" }
 
                     button {
-                        img { src: "assets/icons/info.svg" }
+                        img { src: INFO_ICON }
                         "Track Information"
                     }
 
@@ -36,23 +37,23 @@ pub fn TrackOptions() -> Element {
 
                     // Various track options
                     button { onclick: move |_| CONTROLLER.write().start_radio(track),
-                        img { src: "assets/icons/radio.svg" }
+                        img { src: RADIO_ICON }
                         "Start radio"
                     }
                     button { onclick: move |_| *ADD_TO_PLAYLIST.write() = Some(track),
-                        img { src: "assets/icons/playlistadd.svg" }
+                        img { src: PLAYLIST_ADD_ICON }
                         "Add to a playlist"
                     }
                     button {
-                        img { src: "assets/icons/queue.svg" }
+                        img { src: QUEUE_ICON }
                         "Add to a queue"
                     }
                     button { onclick: move |_| CONTROLLER.write().mut_current_queue().cached_order.push(track),
-                        img { src: "assets/icons/playlistplay.svg" }
+                        img { src: PLAYLIST_PLAY_ICON }
                         "Add to current queue"
                     }
                     button { onclick: move |_| CONTROLLER.write().play_next(track),
-                        img { src: "assets/icons/skip.svg" }
+                        img { src: SKIP_ICON }
                         "Play after this song"
                     }
                     hr {}
@@ -62,7 +63,7 @@ pub fn TrackOptions() -> Element {
                             VIEW.write().open(View::Artists);
                             VIEW.write().artist = Some(artist.clone());
                         },
-                        img { src: "assets/icons/artist.svg" }
+                        img { src: ARTIST_ICON }
                         "Go to artist"
                     }
                     button {
@@ -71,16 +72,16 @@ pub fn TrackOptions() -> Element {
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(album.clone());
                         },
-                        img { src: "assets/icons/album.svg" }
+                        img { src: ALBUM_ICON }
                         "Go to album"
                     }
                     hr {}
                     button {
-                        img { src: "assets/icons/edit.svg" }
+                        img { src: EDIT_ICON }
                         "Edit tags"
                     }
                     button {
-                        img { src: "assets/icons/delete.svg" }
+                        img { src: DELETE_ICON }
                         "Delete song from files"
                     }
                 }
@@ -95,7 +96,7 @@ pub fn TrackOptions() -> Element {
 pub fn TrackOptionsQueueView(track: usize) -> Element {
     rsx! {
         button {
-            img { src: "assets/icons/info.svg" }
+            img { src: INFO_ICON }
             "Remove from queue"
         }
     }
@@ -123,7 +124,7 @@ pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
                 CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
                 CONTROLLER.write().save_playlist(VIEW.read().playlist.unwrap());
             },
-            img { src: "assets/icons/remove.svg" }
+            img { src: REMOVE_ICON }
             "Remove from playlist"
         }
     }

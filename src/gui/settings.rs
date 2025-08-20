@@ -3,6 +3,7 @@ use super::{View, VIEW};
 use dioxus::prelude::*;
 use log::info;
 use std::fmt::{Display, Formatter};
+use super::icons::*;
 
 #[component]
 pub fn Settings() -> Element {
@@ -26,19 +27,19 @@ pub fn Settings() -> Element {
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
-                    img { src: "assets/icons/audio.svg" }
+                    img { src: AUDIO_ICON }
                     "Audio"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Radio),
-                    img { src: "assets/icons/radio.svg" }
+                    img { src: RADIO_ICON }
                     "Radio Settings"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Library),
-                    img { src: "assets/icons/library.svg" }
+                    img { src: LIBRARY_ICON }
                     "Song library"
                 }
             }

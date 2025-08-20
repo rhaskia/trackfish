@@ -5,6 +5,8 @@ use dioxus::prelude::*;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
+use super::icons::*;
+
 #[component]
 pub fn PlaylistsView() -> Element {
     let mut playlist_name = use_signal(String::new);
@@ -25,7 +27,7 @@ pub fn PlaylistsView() -> Element {
                     div {
                         class: "playlistitem",
                         onclick: move |_| VIEW.write().playlist = Some(i),
-                        img { src: "assets/icons/playlistplay.svg" }
+                        img { src: PLAYLIST_PLAY_ICON }
                         "{CONTROLLER.read().playlists[i].name}"
                         div { flex: "1 1 0" }
                         img {
@@ -33,7 +35,7 @@ pub fn PlaylistsView() -> Element {
                                 e.stop_propagation();
                                 playlist_options.set(Some(i));
                             },
-                            src: "assets/icons/vert.svg",
+                            src: VERT_ICON,
                         }
                     }
                 }
@@ -174,15 +176,15 @@ pub fn PlaylistOptions(
             div { class: "optionbox", style: "--width: 300px; --height: 50px;",
                 h3 { "{CONTROLLER.read().playlists[playlist_options().unwrap()].name}" }
                 button { onclick: move |_| renaming_playlist.set(playlist_options()),
-                    img { src: "assets/icons/edit.svg" }
+                    img { src: EDIT_ICON }
                     "Rename playlist"
                 }
                 button {
-                    img { src: "assets/icons/export.svg" }
+                    img { src: EXPORT_ICON }
                     "Export playlist"
                 }
                 button { onclick: move |_| deleting_playlist.set(playlist_options()),
-                    img { src: "assets/icons/delete.svg" }
+                    img { src: DELETE_ICON }
                     "Delete playlist"
                 }
             }

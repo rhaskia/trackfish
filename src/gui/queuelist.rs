@@ -3,6 +3,7 @@ use super::{View, TRACKOPTION, VIEW};
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use std::time::Duration;
+use super::icons::*;
 
 #[component]
 pub fn QueueList() -> Element {
@@ -126,7 +127,7 @@ pub fn QueueList() -> Element {
                         e.stop_propagation();
                         queue_editing.set(Some(selected_queue()));
                     },
-                    src: "assets/icons/vert.svg",
+                    src: VERT_ICON,
                 }
             }
             span { margin: "2px 10px",
@@ -167,11 +168,11 @@ pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
             div { class: "optionbox", style: "--width: 300px; --height: 100px;",
                 h3 { "{CONTROLLER.read().queues[queue_editing().unwrap()].queue_type}" }
                 button { onclick: move |_| CONTROLLER.write().remove_queue(queue_editing.unwrap()),
-                    img { src: "assets/icons/remove.svg" }
+                    img { src: REMOVE_ICON }
                     "Remove queue"
                 }
                 button { onclick: move |_| CONTROLLER.write().queue_to_playlist(queue_editing.unwrap()),
-                    img { src: "assets/icons/export.svg" }
+                    img { src: EXPORT_ICON }
                     "Save as playlist"
                 }
             }
@@ -218,7 +219,7 @@ pub fn TrackItem(
             },
             div {
                 class: "trackbutton draghandle",
-                background_image: "url(/assets/icons/draghandle.svg)",
+                background_image: DRAG_HANDLE_ICON,
                 onmousedown: move |e| {
                     current_dragging.set(Some(idx));
                     grab_y.set(e.data.coordinates().element().y as f32);
@@ -241,7 +242,7 @@ pub fn TrackItem(
                         CONTROLLER.read().get_queue(selected_queue()).track(idx),
                     );
                 },
-                src: "/assets/icons/vert.svg",
+                src: VERT_ICON,
             }
         }
     }

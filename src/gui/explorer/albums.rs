@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER};
+use crate::gui::{View, VIEW, CONTROLLER, icons::*};
 use super::TracksView;
 use dioxus::document::eval;
 use crate::app::utils::strip_unnessecary;
@@ -92,7 +92,7 @@ pub fn AlbumsList() -> Element {
                 class: "searchbar",
                 onclick: move |_| is_searching.set(true),
                 display: if VIEW.read().album.is_some() { "none" },
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 input {}
             }
             div {
@@ -169,7 +169,7 @@ pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
             div { flex: 1 }
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
-                    img { src: "assets/icons/search.svg" }
+                    img { src: SEARCH_ICON }
                     input {
                         value: search,
                         autofocus: true,

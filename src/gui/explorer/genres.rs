@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER};
+use crate::gui::{View, VIEW, CONTROLLER, icons::*};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 
@@ -31,7 +31,7 @@ pub fn GenreList() -> Element {
                 class: "searchbar",
                 display: if VIEW.read().genre.is_some() { "none" },
                 onclick: move |_| is_searching.set(true),
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
             }
             div {
@@ -91,7 +91,7 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
             div { flex: 1 }
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
-                    img { src: "assets/icons/search.svg" }
+                    img { src: SEARCH_ICON }
                     input {
                         id: "genresearchbar",
                         value: search,

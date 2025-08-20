@@ -18,6 +18,8 @@ use log::info;
 use dioxus::document::eval;
 use rand::Rng;
 
+use super::icons::*;
+
 #[component]
 pub fn TracksView(viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
@@ -122,7 +124,7 @@ pub fn TracksView(viewtype: View) -> Element {
                     View::Playlists => VIEW.write().playlist = None,
                     _ => unreachable!(),
                 },
-                src: "assets/icons/back.svg",
+                src: BACK_ICON,
             }
             h3 {
                 if name().is_empty() {
@@ -133,7 +135,7 @@ pub fn TracksView(viewtype: View) -> Element {
             }
             img {
                 onclick: move |_| explorer_settings.set(true),
-                src: "assets/icons/vert.svg",
+                src: VERT_ICON,
             }
         }
         div {
@@ -176,7 +178,7 @@ pub fn TracksView(viewtype: View) -> Element {
                             e.stop_propagation();
                             *TRACKOPTION.write() = Some(tracks.read()[i]);
                         },
-                        src: "/assets/icons/vert.svg",
+                        src: VERT_ICON,
                     }
                 }
             }
@@ -265,7 +267,7 @@ pub fn ExplorerOptions(
                         };
                         VIEW.write().open(View::Song);
                     },
-                    img { src: "assets/icons/play.svg" }
+                    img { src: PLAY_ICON }
                     "Play"
                 }
                 button {
@@ -289,15 +291,15 @@ pub fn ExplorerOptions(
                             CONTROLLER.write().toggle_shuffle();
                         }
                     },
-                    img { src: "assets/icons/shuffle.svg" }
+                    img { src: SHUFFLE_ICON }
                     "Shuffle"
                 }
                 button { onclick: move |_| adding_to_playlist.set(true),
-                    img { src: "assets/icons/playlistadd.svg" }
+                    img { src: PLAYLIST_ADD_ICON }
                     "Add to a playlist"
                 }
                 button { onclick: move |_| adding_to_queue.set(true),
-                    img { src: "assets/icons/queue.svg" }
+                    img { src: QUEUE_ICON }
                     "Add to a queue"
                 }
             }

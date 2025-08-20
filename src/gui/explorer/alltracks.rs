@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use dioxus::document::eval;
 use log::info;
 use super::TracksSearch;
+use crate::gui::icons::*;
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -82,7 +83,7 @@ pub fn AllTracks() -> Element {
             class: "alltracksview",
             display: if VIEW.read().current != View::AllTracks { "none" },
             div { class: "searchbar", onclick: move |_| is_searching.set(true),
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
             }
             div { color: "white", padding: "10px",
@@ -115,7 +116,7 @@ pub fn AllTracks() -> Element {
                         img {
                             class: "trackbutton",
                             loading: "onvisible",
-                            src: "/assets/icons/vert.svg",
+                            src: VERT_ICON,
                         }
                     }
                 }

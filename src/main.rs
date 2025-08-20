@@ -14,7 +14,9 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use tracing_log::LogTracer;
+#[cfg(target_os = "android")]
 use crate::media::MediaMsg;
+#[cfg(target_os = "android")]
 use crate::media::MEDIA_MSG_TX;
 
 #[cfg(not(target_os = "android"))]
@@ -30,6 +32,8 @@ use app::{
 };
 use gui::*;
 
+pub use gui::icons;
+
 // CSS 
 static MAIN_CSS: Asset = asset!("/assets/style.css");
 static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
@@ -40,7 +44,6 @@ static PLAYLISTS_CSS: Asset = asset!("/assets/playlists.css");
 static SETTINGS_CSS: Asset = asset!("/assets/settings.css");
 static TRACKOPTIONS_CSS: Asset = asset!("/assets/trackoptions.css");
 static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
-
 
 fn main() {
     // Hook panics into the logger to see them on android
