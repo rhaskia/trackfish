@@ -68,20 +68,21 @@ abstract class WryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (!NativeLoader.initialized) {
+        if (KeepAliveService.serviceInstance == null) {
+            Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
+            val intent = Intent(this, KeepAliveService::class.java)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+            Log.i("com.example.Music", "started KeepAliveService")
+
             create(this)
-            NativeLoader.initialized = true
-        }
-
-        Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
-        val intent = Intent(this, KeepAliveService::class.java)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
         } else {
-            startService(intent)
+            Log.i("com.example.Trackfish", "Keep Alive Service already exists")
         }
-        Log.i("com.example.Music", "started KeepAliveService")
     }
 
     override fun onStart() {
@@ -153,20 +154,4 @@ abstract class WryActivity : AppCompatActivity() {
         }
     }
 }
-
-object NativeLoader {
-    var loaded = false
-    var initialized = false
-
-    @Synchronized
-    fun ensureLoaded() {
-        if (!loaded) {
-            Log.i("NativeLoader", "Loading Rust library…")
-            System.loadLibrary("dioxusmain")
-            loaded = true
-            Log.i("NativeLoader", "Rust library loaded")
-        }
-    }
-}
-
 

@@ -220,6 +220,8 @@ fn App() -> Element {
         if let Some(track) = CONTROLLER.read().current_track() {
             let image = get_track_image(&track.file);
 
+            info!("Updating media notification");
+
             crate::gui::media::update_media_notification(
                 &track.title,
                 &track.artists[0],

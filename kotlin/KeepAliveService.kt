@@ -34,10 +34,16 @@ class KeepAliveService : Service() {
     companion object {
         @JvmStatic
         var serviceInstance: KeepAliveService? = null
+        init {
+            System.loadLibrary("dioxusmain") // matches your libdioxusmain.so
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
+        if (!NativeLoader.initialized) {
+            NativeLoader.initialized = true
+        }
         serviceInstance = this
         setupMediaSession()
         setupNotificationChannel()
@@ -48,6 +54,12 @@ class KeepAliveService : Service() {
                 acquire()
             }
         }
+        startRustBackground()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceInstance = null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -223,5 +235,23 @@ class KeepAliveService : Service() {
 
     external fun nativeOnAudioFocusLost(focusChange: Int)
     external fun nativeOnAudioFocusGained()
+    
+    private external fun startRustBackground()
 }
+
+object NativeLoader {
+    var loaded = false
+    var initialized = false
+
+    @Synchronized
+    fun ensureLoaded() {
+        if (!loaded) {
+            Log.i("NativeLoader", "Loading Rust library…")
+            System.loadLibrary("dioxusmain")
+            loaded = true
+            Log.i("NativeLoader", "Rust library loaded")
+        }
+    }
+}
+
 
