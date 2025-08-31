@@ -8,7 +8,7 @@ use crate::gui::icons::*;
 
 #[component]
 pub fn TrackView() -> Element {
-    let mut progress = use_signal(|| CONTROLLER.read().player.progress_secs());
+    let mut progress = use_signal(|| CONTROLLER.read().progress_secs);
     let mut progress_held = use_signal(|| false);
 
     let skip = move |_: Event<MouseData>| {
@@ -27,11 +27,11 @@ pub fn TrackView() -> Element {
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
             if !progress_held() {
-                *progress.write() = CONTROLLER.read().player.progress_secs();
-                if CONTROLLER.read().player.track_ended() && CONTROLLER.read().all_tracks.len() > 0
-                {
-                    CONTROLLER.write().skip();
-                }
+                *progress.write() = CONTROLLER.read().progress_secs;
+                // if CONTROLLER.read().track_ended() && CONTROLLER.read().all_tracks.len() > 0
+                // {
+                //     CONTROLLER.write().skip();
+                // }
             }
         }
     });
@@ -114,23 +114,23 @@ pub fn TrackView() -> Element {
                 // Track progress information
                 div { class: "progressrow",
                     span { class: "songprogress",
-                        "{format_seconds(CONTROLLER.read().player.progress_secs())}"
+                        "{format_seconds(CONTROLLER.read().progress_secs)}"
                     }
                     input {
                         r#type: "range",
                         value: progress,
                         step: 0.25,
-                        max: CONTROLLER.read().player.song_length(),
+                        max: CONTROLLER.read().song_length(),
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
-                            CONTROLLER.write().player.set_pos(value);
+                            CONTROLLER.write().set_pos(value);
                             progress.set(value)
                         },
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),
                     }
                     span { class: "songlength",
-                        "{format_seconds(CONTROLLER.read().player.song_length())}"
+                        "{format_seconds(CONTROLLER.read().song_length())}"
                     }
                 }
 

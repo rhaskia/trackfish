@@ -43,7 +43,7 @@ impl AudioPlayer {
         self.sink.clear();
         self.sink.append(source);
         self.sink.play();
-        //self._stream_handle.mixer().add(source);
+
         if !was_paused {
             self.sink.play();
         }

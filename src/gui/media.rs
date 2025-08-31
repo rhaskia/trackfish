@@ -36,20 +36,19 @@ fn send_media_msg(msg: MediaMsg) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn Java_dev_dioxus_main_KeepAliveService_startRustBackground(
     _env: jni::JNIEnv,
     _class: jni::objects::JClass,
 ) {
-    std::thread::spawn(|| {
-        let mut i = 0;
-        loop {
-            log::info!("Rust background loop tick {i}");
-            i += 1;
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
-    });
+    // std::thread::spawn(|| {
+    //     let mut i = 0;
+    //     loop {
+    //         log::info!("Rust background loop tick {i}");
+    //         i += 1;
+    //         std::thread::sleep(std::time::Duration::from_secs(1));
+    //     }
+    // });
 }
 
 pub fn update_media_notification(

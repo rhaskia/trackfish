@@ -21,6 +21,32 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+
+pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<UnboundedSender<MusicMsg>>>> =
+    Lazy::new(|| Mutex::new(None));
+
+#[derive(Debug)]
+enum MusicMsg {
+    Skip,
+    SkipBack,
+    Pause,
+    Play,
+    Toggle,
+    PlayTrack(String),
+    SetVolume(f32),
+    SetPos(f64)
+}
+
+fn send_music_msg(msg: MusicMsg) {
+    if let Some(tx) = MUSIC_PLAYER_ACTIONS.lock().unwrap().as_ref() {
+        info!("{msg:?}");
+        tx.send(msg).unwrap();
+    }
+}
+
 #[derive(PartialEq)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
@@ -35,9 +61,10 @@ pub struct MusicController {
 
     pub current_queue: usize,
     pub queues: Vec<Queue>,
-    pub player: AudioPlayer,
     pub encoder: AutoEncoder,
     pub settings: Settings,
+    pub progress_secs: f64,
+    pub playing: bool,
 }
 
 // Basic functionality
@@ -53,11 +80,12 @@ impl MusicController {
             current_started: Instant::now(),
             current_queue: 0,
             queues: vec![Queue::all()],
-            player: AudioPlayer::new(),
             encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            progress_secs: 0.0,
+            playing: false,
         }
     }
 
@@ -106,20 +134,22 @@ impl MusicController {
             artists,
             genres,
             albums,
-            player: AudioPlayer::new(),
             encoder,
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            progress_secs: 0.0,
+            playing: false,
         };
 
-        controller.player.set_volume(controller.settings.volume);
+        send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
+
         controller.load_playlists();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
         if let Some(track) = controller.current_track().cloned() {
-            controller.player.play_track(&track.file);
+            send_music_msg(MusicMsg::PlayTrack(track.file.clone()));
             controller.toggle_playing();
             info!("Started track {track:?}");
         }
@@ -182,14 +212,14 @@ impl MusicController {
                 self.current_track_idx(),
                 self.current_started,
                 current_track.len,
-                self.player.progress_secs(),
+                self.progress_secs,
             ));
         }
 
         self.current_started = Instant::now();
 
         info!("Playing {:?}", &self.all_tracks[idx].file);
-        self.player.play_track(&self.all_tracks[idx].file);
+        send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()))
     }
 
     pub fn get_space(&mut self) -> TrackInfo {
@@ -293,8 +323,7 @@ impl MusicController {
     }
 
     pub fn skipback(&mut self) {
-        info!("Skipping {} through", self.player.progress_secs());
-        if self.player.progress_secs() < 5.0 {
+        if self.progress_secs < 5.0 {
             if self.queues[self.current_queue].current_track == 0 {
                 return;
             }
@@ -553,7 +582,7 @@ pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
 impl MusicController {
     pub fn set_volume(&mut self, volume: f32) {
         self.settings.volume = volume;
-        self.player.set_volume(volume);
+        send_music_msg(MusicMsg::SetVolume(volume));
         self.settings.save();
         info!("Set volume to {volume}");
     }
@@ -585,19 +614,22 @@ impl MusicController {
 
     pub fn toggle_playing(&mut self) {
         info!("hi");
-        self.player.toggle_playing();
+        send_music_msg(MusicMsg::Toggle);
+        self.playing = !self.playing;
     }
 
     pub fn play(&mut self) {
-        self.player.play();
+        send_music_msg(MusicMsg::Play);
+        self.playing = true;
     }
 
     pub fn pause(&mut self) {
-        self.player.pause();
+        send_music_msg(MusicMsg::Pause);
+        self.playing = false;
     }
 
     pub fn playing(&self) -> bool {
-        self.player.playing()
+        self.playing
     }
 
     pub fn current_track_idx(&self) -> usize {
@@ -656,6 +688,14 @@ impl MusicController {
 
     pub fn mut_current_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
+    }
+
+    pub fn song_length(&self) -> f64 {
+        100.0
+    }
+
+    pub fn set_pos(&self, pos: f64) {
+        send_music_msg(MusicMsg::SetPos(pos));
     }
 }
 

@@ -35,7 +35,7 @@ class KeepAliveService : Service() {
         @JvmStatic
         var serviceInstance: KeepAliveService? = null
         init {
-            System.loadLibrary("dioxusmain") // matches your libdioxusmain.so
+            System.loadLibrary("dioxusmain")
         }
     }
 

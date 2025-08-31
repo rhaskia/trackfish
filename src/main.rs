@@ -5,11 +5,13 @@ pub mod app;
 pub mod database;
 pub mod gui;
 
+use crate::app::audio::AudioPlayer;
 use crate::database::{init_db, row_to_weights};
 use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
 use log::{error, info};
 use rusqlite::{params, Rows};
+use trackfish::app::MusicController;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
@@ -162,6 +164,31 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
+    let mut music = use_signal_sync(|| MusicController::empty());
+
+    use_future(move || async move {
+        let (tx, mut rx) = unbounded_channel();
+        *AUDIO_PLAYER_ACTIONS.lock().unwrap() = Some(tx);
+
+        std::thread::spawn(move || {
+            while let Some(msg) = rx.recv().await {
+                match msg {
+
+                }
+            })
+        });
+        
+        std::thread::spawn(move || {
+            let audio_player = AudioPlayer::new();
+            loop {
+                info!("Rust tick {}", ss(), music.read().playing());
+                if audio_player.track_ended() {
+                    music.write().skip();
+                }
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            } 
+        });
+    });
 
     // Load in all tracks
     use_future(move || async move {

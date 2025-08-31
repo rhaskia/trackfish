@@ -47,6 +47,7 @@ pub fn AlbumsList() -> Element {
         spawn(async move {
             loop {
                 let size = js.recv::<(usize, usize)>().await;
+
                 if let Ok((height, width)) = size {
                     if height == 0 || width == 0 { continue; }
                     window_size.set(height);
