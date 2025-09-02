@@ -29,7 +29,7 @@ pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<UnboundedSender<MusicMsg>>>> 
     Lazy::new(|| Mutex::new(None));
 
 #[derive(Debug)]
-enum MusicMsg {
+pub enum MusicMsg {
     Skip,
     SkipBack,
     Pause,
@@ -40,10 +40,10 @@ enum MusicMsg {
     SetPos(f64)
 }
 
-fn send_music_msg(msg: MusicMsg) {
+pub fn send_music_msg(msg: MusicMsg) {
     if let Some(tx) = MUSIC_PLAYER_ACTIONS.lock().unwrap().as_ref() {
         info!("{msg:?}");
-        tx.send(msg).unwrap();
+        info!("{:?}", tx.send(msg));
     }
 }
 

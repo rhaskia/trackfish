@@ -5,13 +5,12 @@ pub mod app;
 pub mod database;
 pub mod gui;
 
-use crate::app::audio::AudioPlayer;
+use crate::app::audio::{AudioPlayer, self};
 use crate::database::{init_db, row_to_weights};
 use dioxus::{mobile::WindowBuilder, prelude::*};
 use http::Response;
 use log::{error, info};
 use rusqlite::{params, Rows};
-use trackfish::app::MusicController;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
@@ -26,6 +25,8 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 use tokio::sync::mpsc::unbounded_channel;
+
+use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
 
 use app::{
     settings::RadioSettings,
@@ -164,28 +165,43 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
-    let mut music = use_signal_sync(|| MusicController::empty());
+    // let mut music = use_signal_sync(|| MusicController::empty());
 
     use_future(move || async move {
         let (tx, mut rx) = unbounded_channel();
-        *AUDIO_PLAYER_ACTIONS.lock().unwrap() = Some(tx);
+        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(tx);
 
         std::thread::spawn(move || {
-            while let Some(msg) = rx.recv().await {
-                match msg {
-
+            use tokio::runtime::Runtime;
+            let rt = Runtime::new().unwrap();
+            let mut audio_player = AudioPlayer::new();
+            
+            rt.block_on(async {
+                while let Some(msg) = rx.recv().await {
+                    match msg {
+                        MusicMsg::Pause => audio_player.pause(),
+                        MusicMsg::Play => audio_player.play(),
+                        MusicMsg::Toggle => audio_player.toggle_playing(),
+                        MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
+                        MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
+                        MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                        _ => {}
+                    }
+                    CONTROLLER.write().progress_secs = audio_player.progress_secs();
                 }
-            })
+            });
         });
         
         std::thread::spawn(move || {
-            let audio_player = AudioPlayer::new();
             loop {
-                info!("Rust tick {}", ss(), music.read().playing());
-                if audio_player.track_ended() {
-                    music.write().skip();
+                if CONTROLLER.read().playing() && CONTROLLER.read().song_length() - CONTROLLER.read().progress_secs < 0.5 {
+                    CONTROLLER.write().skip();
                 }
-                std::thread::sleep(std::time::Duration::from_secs(1));
+
+                if CONTROLLER.read().playing() {
+                    CONTROLLER.write().progress_secs += 0.25;
+                }
+                std::thread::sleep(std::time::Duration::from_secs_f64(0.25));
             } 
         });
     });
@@ -236,7 +252,7 @@ fn App() -> Element {
                 MediaMsg::Pause => CONTROLLER.write().pause(),
                 MediaMsg::Next => CONTROLLER.write().skip(),
                 MediaMsg::Previous => CONTROLLER.write().skipback(),
-                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
+                MediaMsg::SeekTo(pos) => CONTROLLER.write().set_pos(pos as f64 / 1000.0),
             }
         }
     });
@@ -253,7 +269,7 @@ fn App() -> Element {
                 &track.title,
                 &track.artists[0],
                 (track.len * 1000.0) as i64,
-                (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
+                (CONTROLLER.read().progress_secs * 1000.0) as i64,
                 CONTROLLER.read().playing(),
                 image).unwrap();
         }
