@@ -45,13 +45,13 @@ pub fn TrackView() -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                // background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
+                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    //src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
+                    src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
                     loading: "onvisible",
                 }
             }

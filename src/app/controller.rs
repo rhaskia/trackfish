@@ -24,9 +24,11 @@ use std::time::Instant;
 use once_cell::sync::Lazy;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use once_cell::sync::OnceCell;
-use std::sync::{Mutex, Arc};
+use std::sync::{Mutex, Arc, atomic::Ordering};
+use tokio::sync::Notify;
 
 pub static CONTROLLER_LOCK: OnceCell<Arc<Mutex<MusicController>>> = OnceCell::new();
+pub static UPDATE_CONTROLLER: OnceCell<Notify> = OnceCell::new();
 
 pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<UnboundedSender<MusicMsg>>>> =
     Lazy::new(|| Mutex::new(None));
@@ -51,10 +53,14 @@ pub fn send_music_msg(msg: MusicMsg) {
 }
 
 pub fn controller() -> Arc<Mutex<MusicController>> {
+    if let Some(n) = UPDATE_CONTROLLER.get() {
+        n.notify_one();
+    }
+
     CONTROLLER_LOCK.get().unwrap().clone()
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
     pub track_info: Vec<TrackInfo>,

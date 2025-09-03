@@ -8,7 +8,7 @@ const D_WEIGHTS: &[u8; 69440] = include_bytes!("../../models/decoder_weights.npy
 const D_BIASES: &[u8; 4460] = include_bytes!("../../models/decoder_biases.npy");
 const G_LIST: &'static str = include_str!("../../models/genrelist");
 
-#[derive(PartialEq, Default)]
+#[derive(PartialEq, Default, Clone)]
 pub struct AutoEncoder {
     encoder_weights: Array2<f32>,
     encoder_biases: Array1<f32>,

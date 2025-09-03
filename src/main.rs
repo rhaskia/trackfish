@@ -25,8 +25,9 @@ use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 use tokio::sync::mpsc::unbounded_channel;
+use tokio::sync::Notify;
 
-use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS, controller, CONTROLLER_LOCK};
+use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS, controller, CONTROLLER_LOCK, UPDATE_CONTROLLER};
 use std::sync::{Arc, Mutex};
 
 use app::{
@@ -62,6 +63,7 @@ fn main() {
         }
     }));
 
+    UPDATE_CONTROLLER.set(Notify::new()).unwrap();
     let empty_controller = Arc::new(Mutex::new(MusicController::empty()));
     CONTROLLER_LOCK.set(empty_controller);
 
@@ -213,6 +215,19 @@ fn App() -> Element {
                 std::thread::sleep(std::time::Duration::from_secs_f64(0.25));
             } 
         });
+    });
+
+    use_future(move || async move {
+        let notify = UPDATE_CONTROLLER.get().unwrap().clone();
+        loop {
+            notify.notified().await;
+            info!("updated");
+
+            let controller = CONTROLLER_LOCK.get().unwrap().clone();
+            let ctrl = controller.lock().unwrap().clone();
+            CONTROLLER.set(ctrl);
+            drop(controller);
+        }
     });
 
     // Load in all tracks
