@@ -2,6 +2,7 @@ use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, CONTROLLER, VIEW};
 use crate::app::playlist::Playlist;
 use dioxus::prelude::*;
+use crate::app::controller::controller;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
@@ -58,8 +59,8 @@ pub fn PlaylistsView() -> Element {
                         }
                         button {
                             onclick: move |_| {
-                                let dir = CONTROLLER.write().settings.directory.clone();
-                                CONTROLLER.write().playlists.push(Playlist::new(playlist_name(), dir));
+                                let dir = controller().lock().unwrap().settings.directory.clone();
+                                controller().lock().unwrap().playlists.push(Playlist::new(playlist_name(), dir));
                                 *CREATING_PLAYLIST.write() = false;
                                 playlist_name.set(String::new());
                             },
@@ -94,7 +95,7 @@ pub fn PlaylistsView() -> Element {
         if deleting_playlist.read().is_some() {
             Confirmation {
                 label: "Delete playlist {CONTROLLER.read().playlists[deleting_playlist().unwrap()].name}?",
-                confirm: move |_| CONTROLLER.write().delete_playlist(deleting_playlist().unwrap()),
+                confirm: move |_| controller().lock().unwrap().delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
             }
         }
@@ -114,8 +115,8 @@ pub fn PlaylistRename(mut renaming_playlist: Signal<Option<usize>>) -> Element {
                 }
                 button {
                     onclick: move |_| {
-                        CONTROLLER.write().playlists[renaming_playlist().unwrap()].name = new_name();
-                        CONTROLLER.write().save_playlist(renaming_playlist().unwrap());
+                        controller().lock().unwrap().playlists[renaming_playlist().unwrap()].name = new_name();
+                        controller().lock().unwrap().save_playlist(renaming_playlist().unwrap());
                     },
                     "Rename"
                 }
@@ -139,7 +140,7 @@ pub fn PlaylistAdder() -> Element {
                     // Add to certain playlist
                     button {
                         onclick: move |_| {
-                            CONTROLLER.write().add_to_playlist(i, ADD_TO_PLAYLIST().unwrap());
+                            controller().lock().unwrap().add_to_playlist(i, ADD_TO_PLAYLIST().unwrap());
                             *ADD_TO_PLAYLIST.write() = None;
                         },
                         "{CONTROLLER.read().playlists[i].name}"

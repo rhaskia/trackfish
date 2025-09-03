@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use log::info;
 use std::fmt::{Display, Formatter};
 use super::icons::*;
+use crate::app::controller::controller;
 
 #[component]
 pub fn Settings() -> Element {
@@ -87,7 +88,7 @@ fn AudioSettings() -> Element {
                     max: "1",
                     step: "0.01",
                     value: "{CONTROLLER.read().settings.volume}",
-                    oninput: move |e| CONTROLLER.write().set_volume(e.parsed::<f32>().unwrap()),
+                    oninput: move |e| controller().lock().unwrap().set_volume(e.parsed::<f32>().unwrap()),
                 }
             }
         }
@@ -99,12 +100,12 @@ fn RadioSettings() -> Element {
     rsx! {
         form {
             class: "settingsmenu",
-            onchange: move |_| CONTROLLER.write().settings.save(),
+            onchange: move |_| controller().lock().unwrap().settings.save(),
             h2 { class: "settingsbar", "Radio" }
             SettingsInput {
                 label: "Radio Temperature",
                 max: "2.0",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap()),
+                oninput: move |e: Event<FormData>| controller().lock().unwrap().set_temp(e.parsed::<f32>().unwrap()),
                 value: "{CONTROLLER.read().settings.radio.temp}",
             }
             div { class: "settingbox",
@@ -121,7 +122,7 @@ fn RadioSettings() -> Element {
                 label: "Same artist penalty",
                 max: "1.0",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.artist_penalty}",
             }
@@ -129,7 +130,7 @@ fn RadioSettings() -> Element {
                 max: "1.0",
                 label: "Same album penalty",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.album_penalty = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.album_penalty}",
             }
@@ -138,7 +139,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "MFCC weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.mfcc_weight}",
             }
@@ -146,7 +147,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "Chroma weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.chroma_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.chroma_weight}",
             }
@@ -154,7 +155,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "Spectral weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.spectral_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.spectral_weight}",
             }
@@ -162,7 +163,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "Energy weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.energy_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.energy_weight}",
             }
@@ -170,7 +171,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "BPM weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.bpm_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.bpm_weight}",
             }
@@ -178,7 +179,7 @@ fn RadioSettings() -> Element {
                 max: "2.0",
                 label: "ZCR weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap();
+                    controller().lock().unwrap().settings.radio.zcr_weight = e.parsed::<f32>().unwrap();
                 },
                 value: "{CONTROLLER.read().settings.radio.zcr_weight}",
             }
@@ -220,7 +221,7 @@ fn LibrarySettings() -> Element {
                 input {
                     r#type: "text",
                     value: "{CONTROLLER.read().settings.directory}",
-                    onchange: move |e| CONTROLLER.write().set_directory(e.value()),
+                    onchange: move |e| controller().lock().unwrap().set_directory(e.value()),
                 }
             }
         }

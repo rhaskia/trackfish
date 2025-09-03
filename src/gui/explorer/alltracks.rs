@@ -1,6 +1,7 @@
 use super::{View, VIEW};
 use dioxus::prelude::*;
 use dioxus::document::eval;
+use crate::app::controller::controller;
 use log::info;
 use super::TracksSearch;
 use crate::gui::icons::*;
@@ -103,7 +104,7 @@ pub fn AllTracks() -> Element {
                         id: "alltracks-trackitem-{i}",
                         style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                         onclick: move |_| {
-                            CONTROLLER.write().add_all_queue(i);
+                            controller().lock().unwrap().add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
                         img {

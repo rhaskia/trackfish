@@ -1,6 +1,7 @@
 use crate::app::utils::strip_unnessecary;
 use crate::gui::{View, CONTROLLER, VIEW, icons::*};
 use dioxus::prelude::*;
+use crate::app::controller::controller;
 
 #[component]
 pub fn SearchView() -> Element {
@@ -79,7 +80,7 @@ pub fn SearchView() -> Element {
                     div {
                         class: "trackitem",
                         onclick: move |_| {
-                            CONTROLLER.write().add_all_queue(tracks.read()[i]);
+                            controller().lock().unwrap().add_all_queue(tracks.read()[i]);
                             VIEW.write().current = View::Song;
                         },
                         img {

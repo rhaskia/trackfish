@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::time;
 use crate::app::track::get_track_image;
 use crate::gui::icons::*;
+use crate::app::controller::controller;
 
 #[component]
 pub fn TrackView() -> Element {
@@ -12,13 +13,13 @@ pub fn TrackView() -> Element {
     let mut progress_held = use_signal(|| false);
 
     let skip = move |_: Event<MouseData>| {
-        CONTROLLER.write().skip();
+        controller().lock().unwrap().skip();
         progress.set(0.0);
         info!("{:?}", CONTROLLER.read().current_track());
     };
 
     let skipback = move |_: Event<MouseData>| {
-        CONTROLLER.write().skipback();
+        controller().lock().unwrap().skipback();
         progress.set(0.0);
         info!("{:?}", CONTROLLER.read().current_track());
     };
@@ -30,7 +31,7 @@ pub fn TrackView() -> Element {
                 *progress.write() = CONTROLLER.read().progress_secs;
                 // if CONTROLLER.read().track_ended() && CONTROLLER.read().all_tracks.len() > 0
                 // {
-                //     CONTROLLER.write().skip();
+                //     controller().lock().unwrap().skip();
                 // }
             }
         }
@@ -44,13 +45,13 @@ pub fn TrackView() -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
+                // background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
+                    //src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
                     loading: "onvisible",
                 }
             }
@@ -123,7 +124,7 @@ pub fn TrackView() -> Element {
                         max: CONTROLLER.read().song_length(),
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
-                            CONTROLLER.write().set_pos(value);
+                            controller().lock().unwrap().set_pos(value);
                             progress.set(value)
                         },
                         onmousedown: move |_| progress_held.set(true),
@@ -149,7 +150,7 @@ pub fn TrackView() -> Element {
                     button {
                         class: "svg-button",
                         background_image: if CONTROLLER.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
-                        onclick: move |_| CONTROLLER.write().toggle_playing(),
+                        onclick: move |_| controller().lock().unwrap().toggle_playing(),
                     }
                     button {
                         class: "svg-button",
@@ -159,7 +160,7 @@ pub fn TrackView() -> Element {
                     button {
                         class: "svg-button",
                         background_image: if CONTROLLER.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
-                        onclick: move |_| CONTROLLER.write().toggle_shuffle(),
+                        onclick: move |_| controller().lock().unwrap().toggle_shuffle(),
                     }
                 }
             }

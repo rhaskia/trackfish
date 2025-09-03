@@ -4,6 +4,7 @@ use dioxus::document::eval;
 use dioxus::prelude::*;
 use std::time::Duration;
 use super::icons::*;
+use crate::app::controller::controller;
 
 #[component]
 pub fn QueueList() -> Element {
@@ -99,7 +100,7 @@ pub fn QueueList() -> Element {
 
     let move_queue_item = move |_: Event<MouseData>| {
         if let Some(current) = current_dragging() {
-            CONTROLLER.write().queues[selected_queue()].swap(current, hovering_over())
+            controller().lock().unwrap().queues[selected_queue()].swap(current, hovering_over())
         }
         current_dragging.set(None);
     };
@@ -167,11 +168,11 @@ pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
         div { class: "optionsbg", onclick: move |_| queue_editing.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 100px;",
                 h3 { "{CONTROLLER.read().queues[queue_editing().unwrap()].queue_type}" }
-                button { onclick: move |_| CONTROLLER.write().remove_queue(queue_editing.unwrap()),
+                button { onclick: move |_| controller().lock().unwrap().remove_queue(queue_editing.unwrap()),
                     img { src: REMOVE_ICON }
                     "Remove queue"
                 }
-                button { onclick: move |_| CONTROLLER.write().queue_to_playlist(queue_editing.unwrap()),
+                button { onclick: move |_| controller().lock().unwrap().queue_to_playlist(queue_editing.unwrap()),
                     img { src: EXPORT_ICON }
                     "Save as playlist"
                 }
@@ -214,7 +215,7 @@ pub fn TrackItem(
                 if current_dragging.read().is_some() {
                     return;
                 }
-                CONTROLLER.write().set_queue_and_track(selected_queue(), idx);
+                controller().lock().unwrap().set_queue_and_track(selected_queue(), idx);
                 VIEW.write().current = View::Song;
             },
             div {

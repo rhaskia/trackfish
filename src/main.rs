@@ -26,7 +26,8 @@ use dioxus::desktop::use_asset_handler;
 use dioxus::mobile::use_asset_handler;
 use tokio::sync::mpsc::unbounded_channel;
 
-use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
+use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS, controller, CONTROLLER_LOCK};
+use std::sync::{Arc, Mutex};
 
 use app::{
     settings::RadioSettings,
@@ -50,6 +51,7 @@ static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
 
 fn main() {
     // Hook panics into the logger to see them on android
+    #[cfg(target_os = "android")]
     std::panic::set_hook(Box::new(|panic_info| {
         if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             info!("panic occurred: {s:?} at {:?}", panic_info.location());
@@ -59,6 +61,34 @@ fn main() {
             info!("panic occurred");
         }
     }));
+
+    let empty_controller = Arc::new(Mutex::new(MusicController::empty()));
+    CONTROLLER_LOCK.set(empty_controller);
+
+    std::thread::spawn(move || {
+        use tokio::runtime::Runtime;
+
+        let rt = Runtime::new().unwrap();
+        let mut audio_player = AudioPlayer::new();
+        
+        let (tx, mut rx) = unbounded_channel();
+        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(tx);
+
+        rt.block_on(async {
+            while let Some(msg) = rx.recv().await {
+                match msg {
+                    MusicMsg::Pause => audio_player.pause(),
+                    MusicMsg::Play => audio_player.play(),
+                    MusicMsg::Toggle => audio_player.toggle_playing(),
+                    MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
+                    MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
+                    MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                    _ => {}
+                }
+                controller().lock().unwrap().progress_secs = audio_player.progress_secs();
+            }
+        });
+    });
 
     init();
 }
@@ -165,42 +195,21 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
-    // let mut music = use_signal_sync(|| MusicController::empty());
 
     use_future(move || async move {
-        let (tx, mut rx) = unbounded_channel();
-        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(tx);
-
         std::thread::spawn(move || {
-            use tokio::runtime::Runtime;
-            let rt = Runtime::new().unwrap();
-            let mut audio_player = AudioPlayer::new();
-            
-            rt.block_on(async {
-                while let Some(msg) = rx.recv().await {
-                    match msg {
-                        MusicMsg::Pause => audio_player.pause(),
-                        MusicMsg::Play => audio_player.play(),
-                        MusicMsg::Toggle => audio_player.toggle_playing(),
-                        MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
-                        MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
-                        MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
-                        _ => {}
-                    }
-                    CONTROLLER.write().progress_secs = audio_player.progress_secs();
-                }
-            });
-        });
-        
-        std::thread::spawn(move || {
+            let controller = CONTROLLER_LOCK.get().unwrap().clone();
             loop {
-                if CONTROLLER.read().playing() && CONTROLLER.read().song_length() - CONTROLLER.read().progress_secs < 0.5 {
-                    CONTROLLER.write().skip();
+                let mut ctrl = controller.lock().unwrap();
+                if ctrl.playing() && ctrl.song_length() - ctrl.progress_secs < 0.5 {
+                    ctrl.skip();
                 }
 
-                if CONTROLLER.read().playing() {
-                    CONTROLLER.write().progress_secs += 0.25;
+                if ctrl.playing() {
+                    ctrl.progress_secs += 0.25;
                 }
+
+                drop(ctrl);
                 std::thread::sleep(std::time::Duration::from_secs_f64(0.25));
             } 
         });
@@ -209,12 +218,14 @@ fn App() -> Element {
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
+        let controller = CONTROLLER_LOCK.get().unwrap();
+        let mut ctrl = controller.lock().unwrap();
 
-        let tracks = load_tracks(&CONTROLLER.read().settings.directory);
+        let tracks = load_tracks(&ctrl.settings.directory);
         if let Ok(t) = tracks {
             tracks_count.set(t.len());
-            let dir = CONTROLLER.read().settings.directory.clone();
-            *CONTROLLER.write() = MusicController::new(t, dir);
+            let dir = ctrl.settings.directory.clone();
+            *ctrl = MusicController::new(t, dir);
             info!("Loaded all tracks in {:?}", started.elapsed());
         } else {
             info!("{:?}", tracks);
@@ -230,10 +241,12 @@ fn App() -> Element {
             weights.insert(hash, row_to_weights(&row).unwrap());
         }
 
-        let len = CONTROLLER.read().all_tracks.len();
+        let len = ctrl.all_tracks.len();
+        drop(ctrl);
+
         for i in 0..len {
             loading_track_weights += 1;
-            let is_cached = CONTROLLER.write().load_weight(&cache, &weights, i);
+            let is_cached = controller.lock().unwrap().load_weight(&cache, &weights, i);
             if !is_cached {
                 tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
             }
@@ -248,19 +261,22 @@ fn App() -> Element {
 
         while let Some(msg) = rx.recv().await {
             match msg {
-                MediaMsg::Play => CONTROLLER.write().play(),
-                MediaMsg::Pause => CONTROLLER.write().pause(),
-                MediaMsg::Next => CONTROLLER.write().skip(),
-                MediaMsg::Previous => CONTROLLER.write().skipback(),
-                MediaMsg::SeekTo(pos) => CONTROLLER.write().set_pos(pos as f64 / 1000.0),
+                MediaMsg::Play => controller().lock().unwrap().play(),
+                MediaMsg::Pause => controller().lock().unwrap().pause(),
+                MediaMsg::Next => controller().lock().unwrap().skip(),
+                MediaMsg::Previous => controller().lock().unwrap().skipback(),
+                MediaMsg::SeekTo(pos) => controller().lock().unwrap().set_pos(pos as f64 / 1000.0),
             }
         }
     });
 
     // Update mediasession as needed
+    #[cfg(target_os = "android")]
     use_effect(move || {
-        #[cfg(target_os = "android")]
-        if let Some(track) = CONTROLLER.read().current_track() {
+        let controller = CONTROLLER_LOCK.get().unwrap().clone();
+        let ctrl = controller.lock().unwrap();
+
+        if let Some(track) = ctrl.current_track() {
             let image = get_track_image(&track.file);
 
             info!("Updating media notification");
@@ -269,9 +285,10 @@ fn App() -> Element {
                 &track.title,
                 &track.artists[0],
                 (track.len * 1000.0) as i64,
-                (CONTROLLER.read().progress_secs * 1000.0) as i64,
-                CONTROLLER.read().playing(),
+                (ctrl.progress_secs * 1000.0) as i64,
+                ctrl.read().playing(),
                 image).unwrap();
+            drop(ctrl);
         }
     });
 
@@ -285,7 +302,7 @@ fn App() -> Element {
             return;
         };
 
-        let track = CONTROLLER.read().get_track(id).cloned();
+        let track = controller().lock().unwrap().get_track(id).cloned();
 
         if track.is_none() {
             responder.respond(r);

@@ -1,6 +1,7 @@
 use super::{View, ADD_TO_PLAYLIST, CONTROLLER, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
 use super::icons::*;
+use crate::app::controller::controller;
 
 #[component]
 pub fn TrackOptions() -> Element {
@@ -36,7 +37,7 @@ pub fn TrackOptions() -> Element {
                     hr {}
 
                     // Various track options
-                    button { onclick: move |_| CONTROLLER.write().start_radio(track),
+                    button { onclick: move |_| controller().lock().unwrap().start_radio(track),
                         img { src: RADIO_ICON }
                         "Start radio"
                     }
@@ -48,11 +49,11 @@ pub fn TrackOptions() -> Element {
                         img { src: QUEUE_ICON }
                         "Add to a queue"
                     }
-                    button { onclick: move |_| CONTROLLER.write().mut_current_queue().cached_order.push(track),
+                    button { onclick: move |_| controller().lock().unwrap().mut_current_queue().cached_order.push(track),
                         img { src: PLAYLIST_PLAY_ICON }
                         "Add to current queue"
                     }
-                    button { onclick: move |_| CONTROLLER.write().play_next(track),
+                    button { onclick: move |_| controller().lock().unwrap().play_next(track),
                         img { src: SKIP_ICON }
                         "Play after this song"
                     }
@@ -121,8 +122,8 @@ pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
     rsx! {
         button {
             onclick: move |_| {
-                CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
-                CONTROLLER.write().save_playlist(VIEW.read().playlist.unwrap());
+                controller().lock().unwrap().playlists[VIEW.read().playlist.unwrap()].remove(track);
+                controller().lock().unwrap().save_playlist(VIEW.read().playlist.unwrap());
             },
             img { src: REMOVE_ICON }
             "Remove from playlist"

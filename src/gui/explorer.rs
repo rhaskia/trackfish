@@ -11,6 +11,7 @@ pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
 use super::CONTROLLER;
+use crate::app::controller::controller;
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::utils::similar;
 use dioxus::prelude::*;
@@ -152,9 +153,9 @@ pub fn TracksView(viewtype: View) -> Element {
                     style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => CONTROLLER.write().play_album_at(name(), tracks.read()[i]),
-                            View::Artists => CONTROLLER.write().play_artist_at(name(), tracks.read()[i]),
-                            View::Genres => CONTROLLER.write().play_genre_at(name(), tracks.read()[i]),
+                            View::Albums => controller().lock().unwrap().play_album_at(name(), tracks.read()[i]),
+                            View::Artists => controller().lock().unwrap().play_artist_at(name(), tracks.read()[i]),
+                            View::Genres => controller().lock().unwrap().play_genre_at(name(), tracks.read()[i]),
                             View::Playlists => {
                                 CONTROLLER
                                     .write()
@@ -205,7 +206,7 @@ pub fn TracksView(viewtype: View) -> Element {
                     for i in 0..CONTROLLER.read().playlists.len() {
                         button {
                             onclick: move |_| {
-                                CONTROLLER.write().add_tracks_to_playlist(i, tracks());
+                                controller().lock().unwrap().add_tracks_to_playlist(i, tracks());
                                 adding_to_playlist.set(false);
                             },
                             "{CONTROLLER.read().playlists[i].name}"
@@ -225,7 +226,7 @@ pub fn TracksView(viewtype: View) -> Element {
                     for i in 0..CONTROLLER.read().queues.len() {
                         button {
                             onclick: move |_| {
-                                CONTROLLER.write().add_tracks_to_queue(i, tracks());
+                                controller().lock().unwrap().add_tracks_to_queue(i, tracks());
                                 adding_to_queue.set(false);
                             },
                             "{CONTROLLER.read().queues[i].queue_type}"
@@ -255,9 +256,9 @@ pub fn ExplorerOptions(
                 button {
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => CONTROLLER.write().play_album_at(name(), tracks.read()[0]),
-                            View::Artists => CONTROLLER.write().play_artist_at(name(), tracks.read()[0]),
-                            View::Genres => CONTROLLER.write().play_genre_at(name(), tracks.read()[0]),
+                            View::Albums => controller().lock().unwrap().play_album_at(name(), tracks.read()[0]),
+                            View::Artists => controller().lock().unwrap().play_artist_at(name(), tracks.read()[0]),
+                            View::Genres => controller().lock().unwrap().play_genre_at(name(), tracks.read()[0]),
                             View::Playlists => {
                                 CONTROLLER
                                     .write()
@@ -275,9 +276,9 @@ pub fn ExplorerOptions(
                         let random_index = rand::thread_rng().gen_range(0..tracks.read().len());
                         let track = tracks.read()[random_index];
                         match viewtype() {
-                            View::Albums => CONTROLLER.write().play_album_at(name(), track),
-                            View::Artists => CONTROLLER.write().play_artist_at(name(), track),
-                            View::Genres => CONTROLLER.write().play_genre_at(name(), track),
+                            View::Albums => controller().lock().unwrap().play_album_at(name(), track),
+                            View::Artists => controller().lock().unwrap().play_artist_at(name(), track),
+                            View::Genres => controller().lock().unwrap().play_genre_at(name(), track),
                             View::Playlists => {
                                 CONTROLLER
                                     .write()
@@ -286,9 +287,9 @@ pub fn ExplorerOptions(
                             _ => unreachable!(),
                         };
                         VIEW.write().open(View::Song);
-                        CONTROLLER.write().toggle_shuffle();
+                        controller().lock().unwrap().toggle_shuffle();
                         if !CONTROLLER.read().shuffle {
-                            CONTROLLER.write().toggle_shuffle();
+                            controller().lock().unwrap().toggle_shuffle();
                         }
                     },
                     img { src: SHUFFLE_ICON }

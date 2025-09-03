@@ -22,8 +22,11 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use once_cell::sync::OnceCell;
+use std::sync::{Mutex, Arc};
+
+pub static CONTROLLER_LOCK: OnceCell<Arc<Mutex<MusicController>>> = OnceCell::new();
 
 pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<UnboundedSender<MusicMsg>>>> =
     Lazy::new(|| Mutex::new(None));
@@ -45,6 +48,10 @@ pub fn send_music_msg(msg: MusicMsg) {
         info!("{msg:?}");
         info!("{:?}", tx.send(msg));
     }
+}
+
+pub fn controller() -> Arc<Mutex<MusicController>> {
+    CONTROLLER_LOCK.get().unwrap().clone()
 }
 
 #[derive(PartialEq)]

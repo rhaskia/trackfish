@@ -20,7 +20,7 @@ pub use settings::Settings;
 pub use stream::get_stream_response;
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
-
+use crate::app::controller::controller;
 use crate::app::MusicController;
 use dioxus::prelude::*;
 
