@@ -1,16 +1,16 @@
 use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER, icons::*};
+use crate::{gui::{View, VIEW, icons::*}, app::MusicController};
 use super::TracksView;
 use dioxus::document::eval;
 use crate::app::utils::strip_unnessecary;
 
 #[component]
-pub fn AlbumsList() -> Element {
+pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
     let mut albums = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut albums_unsorted = CONTROLLER
+        let mut albums_unsorted = controller
             .read()
             .albums
             .clone()
@@ -116,7 +116,7 @@ pub fn AlbumsList() -> Element {
                             onclick: move |_| set_album(albums.read()[i].0.clone()),
                             img {
                                 loading: "onvisible",
-                                src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].0.clone())}",
+                                src: "/trackimage/{controller.read().get_album_artwork(albums.read()[i].0.clone())}",
                             }
                             div { class: "albuminfo",
                                 if albums.read()[i].0.is_empty() {
@@ -131,17 +131,17 @@ pub fn AlbumsList() -> Element {
                 }
             }
             if VIEW.read().album.is_some() {
-                TracksView { viewtype: View::Albums }
+                TracksView { controller, viewtype: View::Albums }
             }
             if is_searching() {
-                AlbumsSearch { is_searching }
+                AlbumsSearch { controller, is_searching }
             }
         }
     }
 }
 
 #[component]
-pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
+pub fn AlbumsSearch(controller: SyncSignal<MusicController>, is_searching: Signal<bool>) -> Element {
     let mut search = use_signal(String::new);
     
     let matches = use_memo(move || {
@@ -152,7 +152,7 @@ pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
             log::info!("searching {search}");
             Vec::new()
         } else {
-            CONTROLLER
+            controller
                 .read()
                 .albums
                 .iter()
@@ -190,7 +190,7 @@ pub fn AlbumsSearch(is_searching: Signal<bool>) -> Element {
                                     );
                                 }
                             },
-                            img { src: "/trackimage/{CONTROLLER.read().get_album_artwork(album.clone())}" }
+                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}" }
                             span { "{album}" }
                         }
                     }

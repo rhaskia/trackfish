@@ -20,13 +20,10 @@ pub use settings::Settings;
 pub use stream::get_stream_response;
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
-use crate::app::controller::controller;
 use crate::app::MusicController;
 use dioxus::prelude::*;
 
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
-pub const CONTROLLER: GlobalSignal<MusicController> =
-    GlobalSignal::new(|| MusicController::empty());
 pub const TRACKOPTION: GlobalSignal<Option<usize>> = Signal::global(|| None);
 pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None);
 

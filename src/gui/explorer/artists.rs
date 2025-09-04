@@ -1,15 +1,15 @@
 use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER, icons::*};
+use crate::{gui::{View, VIEW, icons::*}, app::MusicController};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 
 #[component]
-pub fn ArtistList() -> Element {
+pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
     let mut artists = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut artists_unsorted = CONTROLLER
+        let mut artists_unsorted = controller
             .read()
             .artists
             .clone()
@@ -51,17 +51,17 @@ pub fn ArtistList() -> Element {
                 }
             }
             if VIEW.read().artist.is_some() {
-                TracksView { viewtype: View::Artists }
+                TracksView { controller, viewtype: View::Artists }
             }
             if is_searching() {
-                ArtistsSearch { is_searching, artists }
+                ArtistsSearch { controller, is_searching, artists }
             }
         }
     }
 }
 
 #[component]
-pub fn ArtistsSearch(is_searching: Signal<bool>, artists: Signal<Vec<(String, (String, usize))>>) -> Element {
+pub fn ArtistsSearch(controller: SyncSignal<MusicController>, is_searching: Signal<bool>, artists: Signal<Vec<(String, (String, usize))>>) -> Element {
     let mut search = use_signal(String::new);
     
     let matches = use_memo(move || {

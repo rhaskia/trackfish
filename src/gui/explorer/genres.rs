@@ -1,15 +1,15 @@
 use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER, icons::*};
+use crate::{gui::{View, VIEW, icons::*}, app::MusicController};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 
 #[component]
-pub fn GenreList() -> Element {
+pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
     let mut genres = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut genres_unsorted = CONTROLLER
+        let mut genres_unsorted = controller
             .read()
             .genres
             .clone()
@@ -55,7 +55,7 @@ pub fn GenreList() -> Element {
                 }
             }
             if VIEW.read().genre.is_some() {
-                TracksView { viewtype: View::Genres }
+                TracksView { controller, viewtype: View::Genres }
             }
             if is_searching() {
                 GenreSearch { is_searching, genres }

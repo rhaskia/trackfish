@@ -1,10 +1,10 @@
+use crate::app::MusicController;
 use crate::app::utils::strip_unnessecary;
-use crate::gui::{View, CONTROLLER, VIEW, icons::*};
+use crate::gui::{View, VIEW, icons::*};
 use dioxus::prelude::*;
-use crate::app::controller::controller;
 
 #[component]
-pub fn SearchView() -> Element {
+pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     let mut search = use_signal(String::new);
     let clean_search = use_memo(move || strip_unnessecary(&search.read()));
 
@@ -12,9 +12,9 @@ pub fn SearchView() -> Element {
         if clean_search().is_empty() {
             Vec::new()
         } else {
-            (0..CONTROLLER.read().all_tracks.len())
+            (0..controller.read().all_tracks.len())
                 .filter(|t| {
-                    strip_unnessecary(&CONTROLLER.read().all_tracks[*t].title)
+                    strip_unnessecary(&controller.read().all_tracks[*t].title)
                         .starts_with(&clean_search())
                 })
                 .collect::<Vec<usize>>()
@@ -25,7 +25,7 @@ pub fn SearchView() -> Element {
         if clean_search().is_empty() {
             Vec::new()
         } else {
-            CONTROLLER
+            controller
                 .read()
                 .artists
                 .iter()
@@ -39,7 +39,7 @@ pub fn SearchView() -> Element {
         if clean_search().is_empty() {
             Vec::new()
         } else {
-            CONTROLLER
+            controller
                 .read()
                 .albums
                 .iter()
@@ -54,7 +54,7 @@ pub fn SearchView() -> Element {
         if clean_search().is_empty() {
             Vec::new()
         } else {
-            CONTROLLER
+            controller
                 .read()
                 .genres
                 .iter()
@@ -80,14 +80,14 @@ pub fn SearchView() -> Element {
                     div {
                         class: "trackitem",
                         onclick: move |_| {
-                            controller().lock().unwrap().add_all_queue(tracks.read()[i]);
+                            controller.write().add_all_queue(tracks.read()[i]);
                             VIEW.write().current = View::Song;
                         },
                         img {
                             class: "trackitemicon",
                             src: "/trackimage/{tracks.read()[i]}",
                         }
-                        span { "{CONTROLLER.read().all_tracks[tracks.read()[i]].title}" }
+                        span { "{controller.read().all_tracks[tracks.read()[i]].title}" }
                     }
                 }
                 h3 { display: if albums.read().len() == 0 { "none" }, "{albums.read().len()} album/s" }
@@ -100,7 +100,7 @@ pub fn SearchView() -> Element {
                         },
                         img {
                             class: "trackitemicon",
-                            src: "/trackimage/{CONTROLLER.read().get_album_artwork(albums.read()[i].clone())}",
+                            src: "/trackimage/{controller.read().get_album_artwork(albums.read()[i].clone())}",
                         }
                         span { "{albums.read()[i]}" }
                     }
@@ -135,6 +135,7 @@ pub fn SearchView() -> Element {
 
 #[component]
 pub fn TracksSearch(
+    controller: SyncSignal<MusicController>,
     tracks: Memo<Vec<usize>>,
     is_searching: Signal<bool>,
     id_prefix: String,
@@ -153,7 +154,7 @@ pub fn TracksSearch(
                 .read()
                 .iter()
                 .filter(|t| {
-                    strip_unnessecary(&CONTROLLER.read().all_tracks[**t].title).starts_with(&search)
+                    strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
                 })
                 .cloned()
                 .collect::<Vec<usize>>()
@@ -186,7 +187,7 @@ pub fn TracksSearch(
                                 );
                             },
                             img { src: "/trackimage/{track}" }
-                            span { "{CONTROLLER.read().all_tracks[track].title}" }
+                            span { "{controller.read().all_tracks[track].title}" }
                         }
                     }
                 }

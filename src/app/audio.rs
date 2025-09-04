@@ -40,6 +40,7 @@ impl AudioPlayer {
             .as_secs_f64();
 
         let was_paused = self.sink.is_paused();
+        info!("was paused {was_paused}");
         self.sink.clear();
         self.sink.append(source);
         self.sink.play();
@@ -47,7 +48,7 @@ impl AudioPlayer {
         if !was_paused {
             self.sink.play();
         }
-        info!("{}", self.sink.empty());
+
         info!("Track successfully played");
     }
 

@@ -10,8 +10,7 @@ pub use alltracks::AllTracks;
 pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
-use super::CONTROLLER;
-use crate::app::controller::controller;
+use crate::app::MusicController;
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::utils::similar;
 use dioxus::prelude::*;
@@ -22,7 +21,7 @@ use rand::Rng;
 use super::icons::*;
 
 #[component]
-pub fn TracksView(viewtype: View) -> Element {
+pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
     let mut explorer_settings = use_signal(|| false);
     let mut adding_to_playlist = use_signal(|| false);
@@ -36,7 +35,7 @@ pub fn TracksView(viewtype: View) -> Element {
         View::Albums => VIEW.read().album.clone().unwrap(),
         View::Artists => VIEW.read().artist.clone().unwrap(),
         View::Genres => VIEW.read().genre.clone().unwrap(),
-        View::Playlists => CONTROLLER.read().playlists[VIEW.read().playlist.unwrap()]
+        View::Playlists => controller.read().playlists[VIEW.read().playlist.unwrap()]
             .name
             .clone(),
         _ => unreachable!(),
@@ -44,12 +43,12 @@ pub fn TracksView(viewtype: View) -> Element {
 
     let tracks = use_memo(move || {
         if let View::Playlists = viewtype() {
-            return CONTROLLER.read().playlists[VIEW.read().playlist.unwrap()]
+            return controller.read().playlists[VIEW.read().playlist.unwrap()]
                 .tracks
                 .clone();
         }
 
-        let mut tracks = CONTROLLER.read().get_tracks_where(|t| match viewtype() {
+        let mut tracks = controller.read().get_tracks_where(|t| match viewtype() {
             View::Albums => similar(&t.album, &name.read()),
             View::Artists => t.has_artist(&name.read()),
             View::Genres => t.has_genre(&name.read()),
@@ -58,9 +57,9 @@ pub fn TracksView(viewtype: View) -> Element {
 
         if viewtype() == View::Albums {
             tracks.sort_by(|a, b| {
-                CONTROLLER.read().all_tracks[*a]
+                controller.read().all_tracks[*a]
                     .trackno
-                    .cmp(&CONTROLLER.read().all_tracks[*b].trackno)
+                    .cmp(&controller.read().all_tracks[*b].trackno)
             });
         }
 
@@ -153,11 +152,11 @@ pub fn TracksView(viewtype: View) -> Element {
                     style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => controller().lock().unwrap().play_album_at(name(), tracks.read()[i]),
-                            View::Artists => controller().lock().unwrap().play_artist_at(name(), tracks.read()[i]),
-                            View::Genres => controller().lock().unwrap().play_genre_at(name(), tracks.read()[i]),
+                            View::Albums => controller.write().play_album_at(name(), tracks.read()[i]),
+                            View::Artists => controller.write().play_artist_at(name(), tracks.read()[i]),
+                            View::Genres => controller.write().play_genre_at(name(), tracks.read()[i]),
                             View::Playlists => {
-                                CONTROLLER
+                                controller
                                     .write()
                                     .start_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[i])
                             }
@@ -170,7 +169,7 @@ pub fn TracksView(viewtype: View) -> Element {
                         src: "/trackimage/{tracks.read()[i]}",
                         loading: "onvisible",
                     }
-                    span { "{CONTROLLER.read().get_track(tracks.read()[i]).unwrap().title}" }
+                    span { "{controller.read().get_track(tracks.read()[i]).unwrap().title}" }
                     div { flex_grow: 1 }
                     img {
                         class: "trackbutton",
@@ -187,6 +186,7 @@ pub fn TracksView(viewtype: View) -> Element {
 
         if explorer_settings() {
             ExplorerOptions {
+                controller,
                 explorer_settings,
                 name,
                 viewtype,
@@ -203,13 +203,13 @@ pub fn TracksView(viewtype: View) -> Element {
                 div { class: "playlistadder",
                     h3 { "Add {name()} to a playlist" }
 
-                    for i in 0..CONTROLLER.read().playlists.len() {
+                    for i in 0..controller.read().playlists.len() {
                         button {
                             onclick: move |_| {
-                                controller().lock().unwrap().add_tracks_to_playlist(i, tracks());
+                                controller.write().add_tracks_to_playlist(i, tracks());
                                 adding_to_playlist.set(false);
                             },
-                            "{CONTROLLER.read().playlists[i].name}"
+                            "{controller.read().playlists[i].name}"
                         }
                     }
                 }
@@ -223,13 +223,13 @@ pub fn TracksView(viewtype: View) -> Element {
                 div { class: "playlistadder",
                     h3 { "Add {name()} to a queue" }
 
-                    for i in 0..CONTROLLER.read().queues.len() {
+                    for i in 0..controller.read().queues.len() {
                         button {
                             onclick: move |_| {
-                                controller().lock().unwrap().add_tracks_to_queue(i, tracks());
+                                controller.write().add_tracks_to_queue(i, tracks());
                                 adding_to_queue.set(false);
                             },
-                            "{CONTROLLER.read().queues[i].queue_type}"
+                            "{controller.read().queues[i].queue_type}"
                         }
                     }
                 }
@@ -240,6 +240,7 @@ pub fn TracksView(viewtype: View) -> Element {
 
 #[component]
 pub fn ExplorerOptions(
+    controller: SyncSignal<MusicController>,
     explorer_settings: Signal<bool>,
     adding_to_playlist: Signal<bool>,
     adding_to_queue: Signal<bool>,
@@ -256,11 +257,11 @@ pub fn ExplorerOptions(
                 button {
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => controller().lock().unwrap().play_album_at(name(), tracks.read()[0]),
-                            View::Artists => controller().lock().unwrap().play_artist_at(name(), tracks.read()[0]),
-                            View::Genres => controller().lock().unwrap().play_genre_at(name(), tracks.read()[0]),
+                            View::Albums => controller.write().play_album_at(name(), tracks.read()[0]),
+                            View::Artists => controller.write().play_artist_at(name(), tracks.read()[0]),
+                            View::Genres => controller.write().play_genre_at(name(), tracks.read()[0]),
                             View::Playlists => {
-                                CONTROLLER
+                                controller
                                     .write()
                                     .start_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[0])
                             }
@@ -276,20 +277,20 @@ pub fn ExplorerOptions(
                         let random_index = rand::thread_rng().gen_range(0..tracks.read().len());
                         let track = tracks.read()[random_index];
                         match viewtype() {
-                            View::Albums => controller().lock().unwrap().play_album_at(name(), track),
-                            View::Artists => controller().lock().unwrap().play_artist_at(name(), track),
-                            View::Genres => controller().lock().unwrap().play_genre_at(name(), track),
+                            View::Albums => controller.write().play_album_at(name(), track),
+                            View::Artists => controller.write().play_artist_at(name(), track),
+                            View::Genres => controller.write().play_genre_at(name(), track),
                             View::Playlists => {
-                                CONTROLLER
+                                controller
                                     .write()
                                     .start_playlist_at(VIEW.read().playlist.unwrap(), track)
                             }
                             _ => unreachable!(),
                         };
                         VIEW.write().open(View::Song);
-                        controller().lock().unwrap().toggle_shuffle();
-                        if !CONTROLLER.read().shuffle {
-                            controller().lock().unwrap().toggle_shuffle();
+                        controller.write().toggle_shuffle();
+                        if !controller.read().shuffle {
+                            controller.write().toggle_shuffle();
                         }
                     },
                     img { src: SHUFFLE_ICON }

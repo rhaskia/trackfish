@@ -1,37 +1,37 @@
-use super::{View, CONTROLLER, TRACKOPTION, VIEW};
+use super::{View, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;
+use crate::app::MusicController;
 use crate::app::track::get_track_image;
 use crate::gui::icons::*;
-use crate::app::controller::controller;
 
 #[component]
-pub fn TrackView() -> Element {
-    let mut progress = use_signal(|| CONTROLLER.read().progress_secs);
+pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
+    let mut progress = use_signal(|| controller.read().progress_secs);
     let mut progress_held = use_signal(|| false);
 
     let skip = move |_: Event<MouseData>| {
-        controller().lock().unwrap().skip();
+        controller.write().skip();
         progress.set(0.0);
-        info!("{:?}", CONTROLLER.read().current_track());
+        info!("{:?}", controller.read().current_track());
     };
 
     let skipback = move |_: Event<MouseData>| {
-        controller().lock().unwrap().skipback();
+        controller.write().skipback();
         progress.set(0.0);
-        info!("{:?}", CONTROLLER.read().current_track());
+        info!("{:?}", controller.read().current_track());
     };
 
     use_future(move || async move {
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
             if !progress_held() {
-                *progress.write() = CONTROLLER.read().progress_secs;
-                // if CONTROLLER.read().track_ended() && CONTROLLER.read().all_tracks.len() > 0
+                *progress.write() = controller.read().progress_secs;
+                // if controller.read().track_ended() && CONTROLLER.read().all_tracks.len() > 0
                 // {
-                //     controller().lock().unwrap().skip();
+                //     controller.write().skip();
                 // }
             }
         }
@@ -45,23 +45,23 @@ pub fn TrackView() -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
+                background_image: "url(/trackimage/{controller.read().current_track_idx()})",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
+                    src: "/trackimage/{controller.read().current_track_idx()}",
                     loading: "onvisible",
                 }
             }
 
             div { class: "trackcontrols",
-                h3 { "{CONTROLLER.read().current_track_title().unwrap_or_default()}" }
+                h3 { "{controller.read().current_track_title().unwrap_or_default()}" }
 
                 // Song artist list
                 span { class: "artistspecifier",
-                    for (idx , artist) in CONTROLLER
+                    for (idx , artist) in controller
                         .read()
                         .current_track_artist()
                         .cloned()
@@ -89,16 +89,16 @@ pub fn TrackView() -> Element {
                     // Open album view on click
                     onclick: move |_| {
                         VIEW.write().album = Some(
-                            CONTROLLER.read().current_track_album().unwrap_or_default().to_string(),
+                            controller.read().current_track_album().unwrap_or_default().to_string(),
                         );
                         VIEW.write().open(View::Albums);
                     },
-                    "{CONTROLLER.read().current_track_album().unwrap_or_default()}"
+                    "{controller.read().current_track_album().unwrap_or_default()}"
                 }
 
                 // Song genre list
                 span { class: "genresspecifier",
-                    if let Some(genres) = CONTROLLER.read().current_track_genres() {
+                    if let Some(genres) = controller.read().current_track_genres() {
                         for genre in genres.iter().cloned() {
                             span {
                                 // Open genre view on click
@@ -115,23 +115,23 @@ pub fn TrackView() -> Element {
                 // Track progress information
                 div { class: "progressrow",
                     span { class: "songprogress",
-                        "{format_seconds(CONTROLLER.read().progress_secs)}"
+                        "{format_seconds(controller.read().progress_secs)}"
                     }
                     input {
                         r#type: "range",
                         value: progress,
                         step: 0.25,
-                        max: CONTROLLER.read().song_length(),
+                        max: controller.read().song_length(),
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
-                            controller().lock().unwrap().set_pos(value);
+                            controller.write().set_pos(value);
                             progress.set(value)
                         },
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),
                     }
                     span { class: "songlength",
-                        "{format_seconds(CONTROLLER.read().song_length())}"
+                        "{format_seconds(controller.read().song_length())}"
                     }
                 }
 
@@ -140,7 +140,7 @@ pub fn TrackView() -> Element {
                     button {
                         class: "svg-button",
                         background_image: "url({VERT_ICON})",
-                        onclick: move |_| *TRACKOPTION.write() = Some(CONTROLLER.read().current_track_idx()),
+                        onclick: move |_| *TRACKOPTION.write() = Some(controller.read().current_track_idx()),
                     }
                     button {
                         class: "svg-button",
@@ -149,8 +149,8 @@ pub fn TrackView() -> Element {
                     }
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
-                        onclick: move |_| controller().lock().unwrap().toggle_playing(),
+                        background_image: if controller.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
+                        onclick: move |_| controller.write().toggle_playing(),
                     }
                     button {
                         class: "svg-button",
@@ -159,8 +159,8 @@ pub fn TrackView() -> Element {
                     }
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
-                        onclick: move |_| controller().lock().unwrap().toggle_shuffle(),
+                        background_image: if controller.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
+                        onclick: move |_| controller.write().toggle_shuffle(),
                     }
                 }
             }

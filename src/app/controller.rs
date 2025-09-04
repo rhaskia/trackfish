@@ -22,16 +22,17 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use once_cell::sync::Lazy;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use once_cell::sync::OnceCell;
 use std::sync::{Mutex, Arc, atomic::Ordering};
 use tokio::sync::Notify;
 
-pub static CONTROLLER_LOCK: OnceCell<Arc<Mutex<MusicController>>> = OnceCell::new();
-pub static UPDATE_CONTROLLER: OnceCell<Notify> = OnceCell::new();
-
-pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<UnboundedSender<MusicMsg>>>> =
+pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<Sender<MusicMsg>>>> =
     Lazy::new(|| Mutex::new(None));
+
+pub static PROGRESS_UPDATE: Lazy<Mutex<Option<Receiver<f64>>>> =
+    Lazy::new(|| Mutex::new(None));
+
 
 #[derive(Debug)]
 pub enum MusicMsg {
@@ -47,17 +48,14 @@ pub enum MusicMsg {
 
 pub fn send_music_msg(msg: MusicMsg) {
     if let Some(tx) = MUSIC_PLAYER_ACTIONS.lock().unwrap().as_ref() {
-        info!("{msg:?}");
-        info!("{:?}", tx.send(msg));
+        info!("sending with tx at {:p}", tx);
+        match tx.send(msg) {
+            Ok(_) => info!("sent"),
+            Err(e) => info!("send error: {e:?}"),
+        }
+    } else {
+        info!("no MUSIC_PLAYER_ACTIONS set");
     }
-}
-
-pub fn controller() -> Arc<Mutex<MusicController>> {
-    if let Some(n) = UPDATE_CONTROLLER.get() {
-        n.notify_one();
-    }
-
-    CONTROLLER_LOCK.get().unwrap().clone()
 }
 
 #[derive(PartialEq, Clone)]
@@ -152,7 +150,7 @@ impl MusicController {
             shuffle: false,
             playlists: Vec::new(),
             progress_secs: 0.0,
-            playing: false,
+            playing: true,
         };
 
         send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
@@ -163,7 +161,7 @@ impl MusicController {
 
         if let Some(track) = controller.current_track().cloned() {
             send_music_msg(MusicMsg::PlayTrack(track.file.clone()));
-            controller.toggle_playing();
+            // controller.toggle_playing();
             info!("Started track {track:?}");
         }
 
@@ -626,7 +624,6 @@ impl MusicController {
     }
 
     pub fn toggle_playing(&mut self) {
-        info!("hi");
         send_music_msg(MusicMsg::Toggle);
         self.playing = !self.playing;
     }

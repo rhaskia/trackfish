@@ -12,13 +12,18 @@ use jni::sys::jobject;
 
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use crate::app::controller::PROGRESS_UPDATE;
+use tokio::sync::mpsc::UnboundedSender;
 
 pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> =
     Lazy::new(|| Mutex::new(None));
 
 pub static NOTIFICATION: Lazy<Mutex<Option<GlobalRef>>> =
     Lazy::new(|| Mutex::new(None));
+
+use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
+use crate::app::audio::AudioPlayer;
 
 #[derive(Debug)]
 pub enum MediaMsg {
@@ -41,14 +46,31 @@ pub extern "C" fn Java_dev_dioxus_main_KeepAliveService_startRustBackground(
     _env: jni::JNIEnv,
     _class: jni::objects::JClass,
 ) {
-    // std::thread::spawn(|| {
-    //     let mut i = 0;
-    //     loop {
-    //         log::info!("Rust background loop tick {i}");
-    //         i += 1;
-    //         std::thread::sleep(std::time::Duration::from_secs(1));
-    //     }
-    // });
+    std::thread::spawn(|| {
+        let mut audio_player = AudioPlayer::new();
+        
+        let (music_tx, mut rx) = channel();
+        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
+
+        let (tx, mut progress_rx) = channel();
+        *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
+
+        info!("Started music message watcher");
+        while let Ok(msg) = rx.recv() {
+            info!("Recieved msg: {msg:?}");
+            match msg {
+                MusicMsg::Pause => audio_player.pause(),
+                MusicMsg::Play => audio_player.play(),
+                MusicMsg::Toggle => audio_player.toggle_playing(),
+                MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
+                MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
+                MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                _ => {}
+            }
+            tx.send(audio_player.progress_secs()).unwrap();
+        }
+        info!("reciever failed");
+    });
 }
 
 pub fn update_media_notification(
