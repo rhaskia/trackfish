@@ -33,7 +33,6 @@ pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<Sender<MusicMsg>>>> =
 pub static PROGRESS_UPDATE: Lazy<Mutex<Option<Receiver<f64>>>> =
     Lazy::new(|| Mutex::new(None));
 
-
 #[derive(Debug)]
 pub enum MusicMsg {
     Skip,
@@ -161,7 +160,7 @@ impl MusicController {
 
         if let Some(track) = controller.current_track().cloned() {
             send_music_msg(MusicMsg::PlayTrack(track.file.clone()));
-            // controller.toggle_playing();
+            controller.toggle_playing();
             info!("Started track {track:?}");
         }
 

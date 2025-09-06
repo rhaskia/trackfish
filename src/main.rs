@@ -63,36 +63,6 @@ fn main() {
         }
     }));
 
-    // std::thread::spawn(|| {
-    //     use tokio::runtime::Runtime;
-    //     let rt = Runtime::new().unwrap();
-    //     let mut audio_player = AudioPlayer::new();
-    //     
-    //     let (music_tx, mut rx) = unbounded_channel();
-    //     *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
-    //
-    //     let (tx, mut progress_rx) = unbounded_channel();
-    //     *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
-    //
-    //     rt.block_on(async move {
-    //         info!("Started music message watcher");
-    //         while let Some(msg) = rx.recv().await {
-    //             info!("Recieved msg: {msg:?}");
-    //             match msg {
-    //                 MusicMsg::Pause => audio_player.pause(),
-    //                 MusicMsg::Play => audio_player.play(),
-    //                 MusicMsg::Toggle => audio_player.toggle_playing(),
-    //                 MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
-    //                 MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
-    //                 MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
-    //                 _ => {}
-    //             }
-    //             tx.send(audio_player.progress_secs()).unwrap();
-    //         }
-    //     });
-    //     info!("reciever failed");
-    // });
-
     init();
 }
 
@@ -199,22 +169,7 @@ fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
     let mut controller = use_signal_sync(|| MusicController::empty());
-
-    use_future(move || async move {
-        std::thread::spawn(move || {
-            loop {
-                if controller.read().playing() && controller.read().song_length() - controller.read().progress_secs < 0.5 {
-                    controller.write().skip();
-                }
-
-                if controller.read().playing() {
-                    controller.write().progress_secs += 0.25;
-                }
-
-                std::thread::sleep(std::time::Duration::from_secs_f64(0.25));
-            } 
-        });
-    });
+    *gui::CONTROLLER.lock().unwrap() = Some(controller);
 
     // use_future(move || async move {
     //     if let Some(ref mut progress_rx) = PROGRESS_UPDATE.lock().unwrap().as_mut() {
@@ -223,6 +178,9 @@ fn App() -> Element {
     //         }
     //     }
     // });
+    use_future(move || async move {
+        crate::gui::start_controller_thread();
+    });
 
     // Load in all tracks
     use_future(move || async move {

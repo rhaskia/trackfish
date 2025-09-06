@@ -22,10 +22,68 @@ pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
 use crate::app::MusicController;
 use dioxus::prelude::*;
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
+use crate::app::controller::{MusicMsg, PROGRESS_UPDATE, MUSIC_PLAYER_ACTIONS};
+use log::info;
+use std::sync::mpsc::channel;
+use crate::app::audio::AudioPlayer;
 
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 pub const TRACKOPTION: GlobalSignal<Option<usize>> = Signal::global(|| None);
 pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None);
+
+pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =
+    Lazy::new(|| Mutex::new(None));
+
+pub fn start_controller_thread() {
+    std::thread::spawn(|| {
+        let mut audio_player = AudioPlayer::new();
+        
+        let (music_tx, mut rx) = channel();
+        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
+
+        let (tx, mut progress_rx) = channel();
+        *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
+
+        audio_player.set_volume(0.0);
+
+        info!("Started music message watcher");
+        while let Ok(msg) = rx.recv() {
+            info!("Recieved msg: {msg:?}");
+            match msg {
+                MusicMsg::Pause => audio_player.pause(),
+                MusicMsg::Play => audio_player.play(),
+                MusicMsg::Toggle => audio_player.toggle_playing(),
+                MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
+                //MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
+                MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                _ => {}
+            }
+            tx.send(audio_player.progress_secs()).unwrap();
+        }
+        info!("reciever failed");
+    });
+
+    std::thread::spawn(move || {
+        if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+            let mut controller = ctrl.clone();
+            drop(ctrl);
+
+            loop {
+                if controller.read().playing() && controller.read().song_length() - controller.read().progress_secs < 0.5 {
+                    controller.write().skip();
+                }
+
+                if controller.read().playing() {
+                    controller.write().progress_secs += 0.25;
+                }
+
+                std::thread::sleep(std::time::Duration::from_secs_f64(0.25));
+            } 
+        }
+    });
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum View {

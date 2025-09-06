@@ -46,31 +46,7 @@ pub extern "C" fn Java_dev_dioxus_main_KeepAliveService_startRustBackground(
     _env: jni::JNIEnv,
     _class: jni::objects::JClass,
 ) {
-    std::thread::spawn(|| {
-        let mut audio_player = AudioPlayer::new();
-        
-        let (music_tx, mut rx) = channel();
-        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
-
-        let (tx, mut progress_rx) = channel();
-        *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
-
-        info!("Started music message watcher");
-        while let Ok(msg) = rx.recv() {
-            info!("Recieved msg: {msg:?}");
-            match msg {
-                MusicMsg::Pause => audio_player.pause(),
-                MusicMsg::Play => audio_player.play(),
-                MusicMsg::Toggle => audio_player.toggle_playing(),
-                MusicMsg::PlayTrack(file) => audio_player.play_track(&file),
-                MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
-                MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
-                _ => {}
-            }
-            tx.send(audio_player.progress_secs()).unwrap();
-        }
-        info!("reciever failed");
-    });
+    crate::app::controller::start_controller_thread();
 }
 
 pub fn update_media_notification(
