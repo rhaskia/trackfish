@@ -45,6 +45,7 @@ class KeepAliveService : Service() {
             NativeLoader.initialized = true
         }
         serviceInstance = this
+
         setupMediaSession()
         setupNotificationChannel()
         createMediaNotification("Unknown Title", "Unknown Artist", 0, 1000, false, null, true)

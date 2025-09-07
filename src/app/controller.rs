@@ -230,6 +230,7 @@ impl MusicController {
         }
 
         self.current_started = Instant::now();
+        self.progress_secs = 0.0;
 
         info!("Playing {:?}", &self.all_tracks[idx].file);
         send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()))

@@ -41,95 +41,99 @@ pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =
     Lazy::new(|| Mutex::new(None));
 
 pub fn start_controller_thread() {
-    // Start up media session
-    #[cfg(target_os = "android")]
     std::thread::spawn(|| {
-        let (tx, mut rx) = channel();
-        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+        let res = std::panic::catch_unwind(|| {
+            let mut track_playing = false;
+            let mut audio_player = AudioPlayer::new();
+            
+            let (music_tx, mut rx) = channel();
+            *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
 
-        while let Ok(msg) = rx.recv() {
-            if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
-                let mut controller = ctrl.clone();
+            let (tx, mut progress_rx) = channel();
+            *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
 
-                match msg {
-                    MediaMsg::Play => controller.write().play(),
-                    MediaMsg::Pause => controller.write().pause(),
-                    MediaMsg::Next => controller.write().skip(),
-                    MediaMsg::Previous => controller.write().skipback(),
-                    MediaMsg::SeekTo(pos) => controller.write().set_pos(pos as f64 / 1000.0),
-                }
-            }
-        }
-    });
+            let (tx, mut media_rx) = channel();
+            *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
 
-    std::thread::spawn(|| {
-        let mut track_playing = false;
-        let mut audio_player = AudioPlayer::new();
-        
-        let (music_tx, mut rx) = channel();
-        *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
-
-        let (tx, mut progress_rx) = channel();
-        *PROGRESS_UPDATE.lock().unwrap() = Some(progress_rx);
-
-        info!("Started music message watcher");
-        loop {
-            match rx.recv_timeout(std::time::Duration::from_millis(100)) {
-                Ok(msg) => {
-                    info!("Recieved msg: {msg:?}");
-                    match msg {
-                        MusicMsg::Pause => audio_player.pause(),
-                        MusicMsg::Play => audio_player.play(),
-                        MusicMsg::Toggle => audio_player.toggle_playing(),
-                        MusicMsg::PlayTrack(file) => {
-                            if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
-                                let mut controller = ctrl.clone();
-                                controller.write().song_length = audio_player.play_track(&file);
-                                controller.write().progress_secs = 0.0;
-                                track_playing = true;
-                            }
-                        } 
-                        MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
-                        MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
-                        _ => {}
-                    }
-
+            info!("Started music message watcher");
+            loop {
+                #[cfg(target_os = "android")]
+                while let Ok(msg) = media_rx.try_recv() {
                     if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                         let mut controller = ctrl.clone();
-                        controller.write().progress_secs = audio_player.progress_secs();
 
-                        let track = controller.read().current_track().cloned();
-
-                        #[cfg(target_os = "android")]
-                        if let Some(track) = track {
-                            info!("MEDIA NOTIF {track:?}");
-                            let image = get_track_image(&track.file);
-
-                            info!("Updating media notification");
-
-                            crate::gui::media::update_media_notification(
-                                &track.title,
-                                &track.artists[0],
-                                (track.len * 1000.0) as i64,
-                                (controller.read().progress_secs * 1000.0) as i64,
-                                controller.read().playing(),
-                                image).unwrap();
+                        match msg {
+                            MediaMsg::Play => controller.write().play(),
+                            MediaMsg::Pause => controller.write().pause(),
+                            MediaMsg::Next => controller.write().skip(),
+                            MediaMsg::Previous => controller.write().skipback(),
+                            MediaMsg::SeekTo(pos) => controller.write().set_pos(pos as f64 / 1000.0),
                         }
                     }
                 }
-                Err(RecvTimeoutError::Disconnected) => break, // channel closed
-                _ => {}
-            }
 
-            info!("TRACK PLAYING {}", audio_player.track_ended());
+                match rx.recv_timeout(std::time::Duration::from_millis(50)) {
+                    Ok(msg) => {
+                        info!("Recieved msg: {msg:?}");
+                        match msg {
+                            MusicMsg::Pause => audio_player.pause(),
+                            MusicMsg::Play => audio_player.play(),
+                            MusicMsg::Toggle => audio_player.toggle_playing(),
+                            MusicMsg::PlayTrack(file) => {
+                                if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                                    let mut controller = ctrl.clone();
+                                    controller.write().song_length = audio_player.play_track(&file);
+                                    controller.write().progress_secs = 0.0;
+                                    track_playing = true;
+                                }
+                            } 
+                            MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
+                            MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                            _ => {}
+                        }
 
-            if audio_player.track_ended() && track_playing {
-                if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
-                    let mut controller = ctrl.clone();
-                    controller.write().skip();
-                    track_playing = false;
+                        if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                            let mut controller = ctrl.clone();
+                            controller.write().progress_secs = audio_player.progress_secs();
+
+                            let track = controller.read().current_track().cloned();
+
+                            #[cfg(target_os = "android")]
+                            if let Some(track) = track {
+                                info!("MEDIA NOTIF {track:?}");
+                                let image = get_track_image(&track.file);
+
+                                info!("Updating media notification");
+
+                                let result = crate::gui::media::update_media_notification(
+                                    &track.title,
+                                    &track.artists[0],
+                                    (track.len * 1000.0) as i64,
+                                    (controller.read().progress_secs * 1000.0) as i64,
+                                    controller.read().playing(),
+                                    image);
+                                info!("MEDIA RESULT {result:?}");
+                            }
+                        }
+                    }
+                    Err(RecvTimeoutError::Disconnected) => { info!("Channel disconnected"); break }, // channel closed
+                    _ => {}
+                }
+
+                info!("TRACK PLAYING {}", audio_player.track_ended());
+
+                if audio_player.track_ended() && track_playing {
+                    if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                        let mut controller = ctrl.clone();
+                        controller.write().skip();
+                        track_playing = false;
+                    }
                 }
             }
+        });
+
+        if let Err(e) = res {
+            log::error!("Music thread panicked: {:?}", e);
         }
     });
 }

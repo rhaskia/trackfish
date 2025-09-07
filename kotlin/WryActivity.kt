@@ -21,6 +21,13 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import android.widget.Button
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.os.PowerManager
 
 abstract class WryActivity : AppCompatActivity() {
     private lateinit var mWebView: RustWebView
@@ -67,6 +74,7 @@ abstract class WryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestPermissions()
 
         if (KeepAliveService.serviceInstance == null) {
             Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
@@ -132,6 +140,34 @@ abstract class WryActivity : AppCompatActivity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun requestPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.POST_NOTIFICATIONS
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(
+                Manifest.permission.READ_MEDIA_AUDIO
+            )
+        } else {
+            permissions.add(
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        }
+
+        val permissionsToRequest = permissions.filter { permission ->
+            ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsToRequest.toTypedArray(), // Convert list to array
+                1001 // Pass the request code
+            )
+        }
     }
 
     fun getAppClass(name: String): Class<*> {

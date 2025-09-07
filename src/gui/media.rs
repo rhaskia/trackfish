@@ -65,11 +65,11 @@ pub fn update_media_notification(
 
     let class_loader = env
         .call_method(&context, "getClassLoader", "()Ljava/lang/ClassLoader;", &[])
-        .unwrap()
+        ?
         .l()
-        .unwrap();
+        ?;
 
-    let binding = env.new_string("dev.dioxus.main.KeepAliveService").unwrap();
+    let binding = env.new_string("dev.dioxus.main.KeepAliveService")?;
 
     let service_class = env
         .call_method(
@@ -78,9 +78,9 @@ pub fn update_media_notification(
             "(Ljava/lang/String;)Ljava/lang/Class;",
             &[JValue::Object(&binding)],
         )
-        .unwrap()
+        ?
         .l()
-        .unwrap();
+        ?;
 
     let service_class = JClass::from(service_class);
 
@@ -119,7 +119,7 @@ pub fn update_media_notification(
             JValue::from(playing),
             JValue::from(&j_bytes),
         ],
-    ).unwrap();
+    )?;
 
     Ok(())
 }
