@@ -30,7 +30,7 @@ impl AudioPlayer {
         }
     }
 
-    pub fn play_track(&mut self, file_path: &str) {
+    pub fn play_track(&mut self, file_path: &str) -> f64 {
         info!("Playing track: {file_path:?}");
         let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
@@ -50,6 +50,7 @@ impl AudioPlayer {
         }
 
         info!("Track successfully played");
+        self.current_song_len
     }
 
     pub fn toggle_playing(&mut self) {

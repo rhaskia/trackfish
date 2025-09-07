@@ -28,7 +28,7 @@ use app::controller::{MusicMsg, PROGRESS_UPDATE};
 use crate::app::controller::MUSIC_PLAYER_ACTIONS;
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
-use tokio::sync::mpsc::unbounded_channel;
+use std::sync::mpsc::channel;
 
 use app::{
     settings::RadioSettings,
@@ -171,13 +171,7 @@ fn App() -> Element {
     let mut controller = use_signal_sync(|| MusicController::empty());
     *gui::CONTROLLER.lock().unwrap() = Some(controller);
 
-    // use_future(move || async move {
-    //     if let Some(ref mut progress_rx) = PROGRESS_UPDATE.lock().unwrap().as_mut() {
-    //         while let progress = progress_rx.recv().await {
-    //             controller.write().progress_secs = progress.clone().unwrap();
-    //         }
-    //     }
-    // });
+    #[cfg(not(target_os = "android"))]
     use_future(move || async move {
         crate::gui::start_controller_thread();
     });
@@ -212,43 +206,8 @@ fn App() -> Element {
             loading_track_weights += 1;
             let is_cached = controller.write().load_weight(&cache, &weights, i);
             if !is_cached {
-                tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+                tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
             }
-        }
-    });
-
-    // Start up media session
-    #[cfg(target_os = "android")]
-    use_future(move || async move {
-        let (tx, mut rx) = unbounded_channel();
-        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
-
-        while let Some(msg) = rx.recv().await {
-            match msg {
-                MediaMsg::Play => controller.write().play(),
-                MediaMsg::Pause => controller.write().pause(),
-                MediaMsg::Next => controller.write().skip(),
-                MediaMsg::Previous => controller.write().skipback(),
-                MediaMsg::SeekTo(pos) => controller.write().set_pos(pos as f64 / 1000.0),
-            }
-        }
-    });
-
-    // Update mediasession as needed
-    #[cfg(target_os = "android")]
-    use_effect(move || {
-        if let Some(track) = controller.read().current_track() {
-            let image = get_track_image(&track.file);
-
-            info!("Updating media notification");
-
-            crate::gui::media::update_media_notification(
-                &track.title,
-                &track.artists[0],
-                (track.len * 1000.0) as i64,
-                (controller.read().progress_secs * 1000.0) as i64,
-                controller.read().playing(),
-                image).unwrap();
         }
     });
 

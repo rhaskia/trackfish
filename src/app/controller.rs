@@ -74,6 +74,7 @@ pub struct MusicController {
     pub encoder: AutoEncoder,
     pub settings: Settings,
     pub progress_secs: f64,
+    pub song_length: f64,
     pub playing: bool,
 }
 
@@ -95,6 +96,7 @@ impl MusicController {
             shuffle: false,
             playlists: Vec::new(),
             progress_secs: 0.0,
+            song_length: 100.0,
             playing: false,
         }
     }
@@ -149,6 +151,7 @@ impl MusicController {
             shuffle: false,
             playlists: Vec::new(),
             progress_secs: 0.0,
+            song_length: 100.0,
             playing: true,
         };
 
@@ -697,10 +700,6 @@ impl MusicController {
 
     pub fn mut_current_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
-    }
-
-    pub fn song_length(&self) -> f64 {
-        100.0
     }
 
     pub fn set_pos(&self, pos: f64) {

@@ -14,15 +14,15 @@ use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use crate::app::controller::PROGRESS_UPDATE;
-use tokio::sync::mpsc::UnboundedSender;
 
-pub static MEDIA_MSG_TX: Lazy<Mutex<Option<UnboundedSender<MediaMsg>>>> =
+pub static MEDIA_MSG_TX: Lazy<Mutex<Option<Sender<MediaMsg>>>> =
     Lazy::new(|| Mutex::new(None));
 
 pub static NOTIFICATION: Lazy<Mutex<Option<GlobalRef>>> =
     Lazy::new(|| Mutex::new(None));
 
 use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
+use crate::gui::start_controller_thread;
 use crate::app::audio::AudioPlayer;
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ pub extern "C" fn Java_dev_dioxus_main_KeepAliveService_startRustBackground(
     _env: jni::JNIEnv,
     _class: jni::objects::JClass,
 ) {
-    crate::app::controller::start_controller_thread();
+    start_controller_thread();
 }
 
 pub fn update_media_notification(

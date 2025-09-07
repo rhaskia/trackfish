@@ -6,6 +6,7 @@ use tokio::time;
 use crate::app::MusicController;
 use crate::app::track::get_track_image;
 use crate::gui::icons::*;
+use std::time::Instant;
 
 #[component]
 pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
@@ -25,15 +26,14 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
     };
 
     use_future(move || async move {
+        let mut last_set = Instant::now();
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
-            if !progress_held() {
+            if !progress_held() && controller.read().playing() {
+                controller.write().progress_secs += last_set.elapsed().as_secs_f64();
                 *progress.write() = controller.read().progress_secs;
-                // if controller.read().track_ended() && CONTROLLER.read().all_tracks.len() > 0
-                // {
-                //     controller.write().skip();
-                // }
             }
+            last_set = Instant::now();
         }
     });
 
@@ -115,13 +115,13 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                 // Track progress information
                 div { class: "progressrow",
                     span { class: "songprogress",
-                        "{format_seconds(controller.read().progress_secs)}"
+                        "{format_seconds(progress())}"
                     }
                     input {
                         r#type: "range",
                         value: progress,
                         step: 0.25,
-                        max: controller.read().song_length(),
+                        max: controller.read().song_length,
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
                             controller.write().set_pos(value);
@@ -131,7 +131,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                         onmouseup: move |_| progress_held.set(false),
                     }
                     span { class: "songlength",
-                        "{format_seconds(controller.read().song_length())}"
+                        "{format_seconds(controller.read().song_length)}"
                     }
                 }
 
