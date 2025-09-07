@@ -6,7 +6,6 @@ dist
 
 # Ignore Gradle build output directory
 build
-
 weights.txt
 predicted_genres.txt
 data
@@ -19,4 +18,4 @@ lastfm/fasttext_categories.model
 lastfm/fasttext_categories.model.wv.vectors_ngrams.npy
 .idea
 music.iml
-tree.txt
+__pycache__
