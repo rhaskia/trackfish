@@ -10,20 +10,14 @@ pub use spectral::extract_spectral;
 pub use tempo::extract_tempo;
 pub use zcr::extract_zcr;
 
-use crate::app::{
-    embed::AutoEncoder,
-    track::{Track, TrackInfo},
-};
+use crate::app::track::{Track, TrackInfo};
 use log::info;
 use ndarray::Array1;
 use rodio::{Decoder, Source};
 use std::io::BufReader;
 use std::{fs::File, time::Duration};
 
-pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
-    let genre_vec = encoder.genres_to_vec(track.genres.clone());
-    let genre_space = encoder.encode(genre_vec);
-
+pub fn generate_track_info(track: &Track) -> TrackInfo {
     info!("{track:?}");
     let (samples, sample_rate) = load_samples(&track.file, Some((10.0, 10.0)));
     info!("{}", samples.len() as f32 / sample_rate as f32);
@@ -36,7 +30,6 @@ pub fn generate_track_info(track: &Track, encoder: &AutoEncoder) -> TrackInfo {
     let zcr = extract_zcr(&samples, sample_rate);
 
     TrackInfo {
-        genre_space,
         mfcc,
         chroma,
         spectral,

@@ -1,7 +1,7 @@
 use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, VIEW};
-use crate::app::MusicController;
 use crate::app::playlist::Playlist;
+use crate::app::MusicController;
 use dioxus::prelude::*;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
@@ -51,12 +51,15 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                     div {
                         class: "playlistcreator",
                         onclick: |e| e.stop_propagation(),
+
                         label { "Playlist Name:" }
+
                         input {
                             onchange: move |e| playlist_name.set(e.data().value()),
                             r#type: "text",
                             value: "{playlist_name}",
                         }
+
                         button {
                             onclick: move |_| {
                                 let dir = controller.write().settings.directory.clone();
@@ -104,7 +107,10 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn PlaylistRename(controller: SyncSignal<MusicController>,  renaming_playlist: Signal<Option<usize>>) -> Element {
+pub fn PlaylistRename(
+    controller: SyncSignal<MusicController>,
+    renaming_playlist: Signal<Option<usize>>,
+) -> Element {
     let mut new_name = use_signal(String::new);
     rsx! {
         div { class: "optionsbg", onclick: move |_| renaming_playlist.set(None),
@@ -114,6 +120,7 @@ pub fn PlaylistRename(controller: SyncSignal<MusicController>,  renaming_playlis
                     onclick: |e| e.stop_propagation(),
                     onchange: move |e| new_name.set(e.data.value()),
                 }
+
                 button {
                     onclick: move |_| {
                         controller.write().playlists[renaming_playlist().unwrap()].name = new_name();
@@ -182,10 +189,12 @@ pub fn PlaylistOptions(
                     img { src: EDIT_ICON }
                     "Rename playlist"
                 }
+
                 button {
                     img { src: EXPORT_ICON }
                     "Export playlist"
                 }
+
                 button { onclick: move |_| deleting_playlist.set(playlist_options()),
                     img { src: DELETE_ICON }
                     "Delete playlist"

@@ -60,6 +60,7 @@ impl Default for RadioSettings {
 }
 
 impl Settings {
+    /// Gets the directory for caching information
     pub fn dir() -> PathBuf {
         if cfg!(target_os = "android") {
             cache_dir::get_cache_dir().unwrap()
@@ -68,6 +69,7 @@ impl Settings {
         }
     }
 
+    /// Tries to get the default audio directory on the platform
     pub fn default_audio_dir() -> String {
         if cfg!(target_os = "android") {
             "/storage/emulated/0/Music".to_string()
@@ -86,6 +88,7 @@ impl Settings {
         }
     }
 
+    /// Tries to load in settings or creates a new settings file
     pub fn load() -> Self {
         let dir = Self::dir().join("settings.toml");
         info!("loading settings from {dir:?}");
@@ -100,11 +103,13 @@ impl Settings {
         }
     }
 
+    /// Checks if settings exists
     pub fn exists() -> bool {
         let dir = Self::dir().join("settings.toml");
         dir.exists()
     }
 
+    /// Saves the settings file to cache
     pub fn save(&self) {
         let file = toml::to_string(&self).unwrap();
         if let Err(err) = std::fs::create_dir(Self::dir()) {

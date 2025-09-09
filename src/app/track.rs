@@ -1,21 +1,18 @@
 use super::queue::QueueType;
 use super::utils::similar;
 use crate::database::init_db;
-//use metaflac::Block::VorbisComment;
 use id3::Tag;
 use id3::TagLike;
 use log::info;
-// use metaflac::block::Block;
+use crate::database::{get_from_cache, save_to_cache};
 use ndarray::Array1;
-use rodio::{Decoder, Source};
+use rodio::Source;
 use std::fmt;
 use std::fs;
 use std::io;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::time::Duration;
-use base64::Engine;
-use crate::database::{save_to_cache, get_from_cache};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Track {
@@ -31,13 +28,15 @@ pub struct Track {
 }
 
 impl Track {
+    /// Does the track match the given queuetype
     pub fn matches(&self, queue_type: QueueType) -> bool {
         match queue_type {
             QueueType::AllTracks => true,
             QueueType::Radio(_) => false,
-            QueueType::Artist(target_artist) => {
-                self.artists.iter().any(|artist| similar(artist, &target_artist))
-            }
+            QueueType::Artist(target_artist) => self
+                .artists
+                .iter()
+                .any(|artist| similar(artist, &target_artist)),
             QueueType::Album(album) => similar(&album, &self.album),
             QueueType::Genre(_) => todo!(),
             QueueType::Union(_) => todo!(),
@@ -46,20 +45,35 @@ impl Track {
         }
     }
 
+    /// Artists shared between two tracks
     pub fn shared_artists(&self, other: &Self) -> usize {
-        self.artists.iter().filter(|e| other.artists.contains(e)).collect::<Vec<&String>>().len()
+        self.artists
+            .iter()
+            .filter(|e| other.artists.contains(e))
+            .collect::<Vec<&String>>()
+            .len()
     }
 
+    /// Genres shared between two tracks
     pub fn shared_genres(&self, other: &Self) -> usize {
-        self.genres.iter().filter(|e| other.genres.contains(e)).collect::<Vec<&String>>().len()
+        self.genres
+            .iter()
+            .filter(|e| other.genres.contains(e))
+            .collect::<Vec<&String>>()
+            .len()
     }
 
+    /// Does the track have a given genre
     pub fn has_genre(&self, genre: &str) -> bool {
         self.genres.iter().position(|e| similar(e, genre)).is_some()
     }
 
+    /// Does the track have a given artist
     pub fn has_artist(&self, artist: &str) -> bool {
-        self.artists.iter().position(|e| similar(e, artist)).is_some()
+        self.artists
+            .iter()
+            .position(|e| similar(e, artist))
+            .is_some()
     }
 }
 
@@ -79,6 +93,7 @@ impl Default for Track {
     }
 }
 
+/// Loads all tracks recursively in a directory
 pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     info!("Loading tracks from {directory}");
     let cache = init_db()?;
@@ -106,6 +121,7 @@ pub fn load_tracks(directory: &str) -> anyhow::Result<Vec<Track>> {
     Ok(tracks)
 }
 
+/// Get artists from a track tag
 pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     if let Some(artists) = tag.artists() {
         if artists.len() != 0 {
@@ -133,6 +149,7 @@ pub fn get_artists(tag: &Tag) -> Option<Vec<String>> {
     None
 }
 
+/// MusicBrainz Mood type
 #[derive(PartialEq, Clone, Debug, Default)]
 pub struct Mood {
     acoustic: bool,
@@ -145,10 +162,16 @@ pub struct Mood {
 }
 
 impl Mood {
+    /// Number of shared moods between two tracks
     pub fn shared(&self, other: &Self) -> f32 {
-        self.to_vec().iter().zip(other.to_vec()).map(|(a, b)| if *a == b { 1.0 } else { 0.0 }).sum()
+        self.to_vec()
+            .iter()
+            .zip(other.to_vec())
+            .map(|(a, b)| if *a == b { 1.0 } else { 0.0 })
+            .sum()
     }
 
+    /// Mood to a vec of booleans
     pub fn to_vec(&self) -> Vec<bool> {
         vec![
             self.acoustic,
@@ -161,6 +184,7 @@ impl Mood {
         ]
     }
 
+    /// Vec of booleans to a Mood
     pub fn from_vec(vec: Vec<bool>) -> Self {
         if vec.is_empty() {
             return Self::default();
@@ -177,10 +201,18 @@ impl Mood {
     }
 }
 
+// Displays a mood as a comma seperated list of words
 impl fmt::Display for Mood {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let displays =
-            vec!["Acoustic", "Aggressive", "Electronic", "Happy", "Party", "Relaxed", "Sad"];
+        let displays = vec![
+            "Acoustic",
+            "Aggressive",
+            "Electronic",
+            "Happy",
+            "Party",
+            "Relaxed",
+            "Sad",
+        ];
         let keep = vec![
             self.acoustic,
             self.aggressive,
@@ -204,11 +236,15 @@ impl fmt::Display for Mood {
     }
 }
 
+/// Returns a mood from a track tag
 pub fn get_mood(tag: &Tag) -> Option<Mood> {
     for frame in tag.extended_texts() {
         if frame.description == "ab:mood" {
-            let mut values =
-                frame.value.split("\0").map(|e| e.to_string()).filter(|e| !e.is_empty());
+            let mut values = frame
+                .value
+                .split("\0")
+                .map(|e| e.to_string())
+                .filter(|e| !e.is_empty());
             let acoustic = values.next().unwrap() == "Acoustic";
             let aggressive = values.next().unwrap() == "Aggressive";
             let electronic = values.next().unwrap() == "Electronic";
@@ -216,16 +252,29 @@ pub fn get_mood(tag: &Tag) -> Option<Mood> {
             let party = values.next().unwrap() == "Party";
             let relaxed = values.next().unwrap() == "Relaxed";
             let sad = values.next().unwrap() == "Sad";
-            return Some(Mood { acoustic, aggressive, electronic, happy, party, relaxed, sad });
+            return Some(Mood {
+                acoustic,
+                aggressive,
+                electronic,
+                happy,
+                party,
+                relaxed,
+                sad,
+            });
         }
     }
 
     None
 }
 
+/// Returns the genres from a track tag
 pub fn get_genres(tag: &Tag) -> Vec<String> {
-    let mut genres: Vec<String> =
-        tag.genre().unwrap_or_default().split('\0').map(|s| s.to_string()).collect();
+    let mut genres: Vec<String> = tag
+        .genre()
+        .unwrap_or_default()
+        .split('\0')
+        .map(|s| s.to_string())
+        .collect();
 
     for frame in tag.extended_texts() {
         if frame.description == "ab:genre" {
@@ -237,6 +286,7 @@ pub fn get_genres(tag: &Tag) -> Vec<String> {
     genres.into_iter().filter(|e| !e.is_empty()).collect()
 }
 
+/// Gets a specific frame from a track tag given the descriptor
 pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
     for frame in tag.extended_texts() {
         if frame.description == key {
@@ -246,6 +296,7 @@ pub fn get_text(tag: &Tag, key: &str) -> Option<String> {
     return None;
 }
 
+/// Loads a track in for any file type
 pub fn load_track(file: String) -> anyhow::Result<Track> {
     let filetype = file.split('.').last().unwrap_or("");
 
@@ -253,15 +304,20 @@ pub fn load_track(file: String) -> anyhow::Result<Track> {
         "flac" => load_flac_track(file),
         "ogg" => load_ogg_track(file),
         _ => load_id3_track(file),
-    }.unwrap_or_default())
+    }
+    .unwrap_or_default())
 }
 
+/// Loads in an OGG type track
 pub fn load_ogg_track(file: String) -> anyhow::Result<Track> {
     // let f = std::fs::File::open(&file)?;
     // let tag = lewton::inside_ogg::OggStreamReader::new(f)?;
     //
     // let comments = tag.comment_hdr;
-    let mut track = Track { file, ..Default::default() };
+    let track = Track {
+        file,
+        ..Default::default()
+    };
 
     // for (key, value) in &comments.comment_list {
     //     match key.as_str() {
@@ -277,10 +333,11 @@ pub fn load_ogg_track(file: String) -> anyhow::Result<Track> {
     Ok(track)
 }
 
+/// Loads in an flac track
 pub fn load_flac_track(file: String) -> anyhow::Result<Track> {
     // let tag = metaflac::Tag::read_from_path(&file)?;
-    // let mut track = Track { file, ..Default::default() };
-    //
+    let track = Track { file, ..Default::default() };
+    
     // for frame in tag.blocks() {
     //     if let VorbisComment(ref comments) = &frame {
     //         for (key, value) in &comments.comments {
@@ -296,9 +353,10 @@ pub fn load_flac_track(file: String) -> anyhow::Result<Track> {
     //     }
     // }
 
-    Ok(Track::default())
+    Ok(track)
 }
 
+/// Loads in a ID3 track, which includes mp3, wav, aiff and more
 pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     let tag = Tag::read_from_path(file.clone())?;
     let source = rodio::Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
@@ -315,7 +373,10 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
 
     let album = tag.album().unwrap_or_default().to_string();
     let genres = get_genres(&tag);
-    let len = source.total_duration().unwrap_or(Duration::ZERO).as_secs_f64();
+    let len = source
+        .total_duration()
+        .unwrap_or(Duration::ZERO)
+        .as_secs_f64();
     let trackno = tag.track().unwrap_or(1) as usize;
 
     let mut year = String::new();
@@ -323,9 +384,20 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
         year = tag_year.to_string();
     }
 
-    Ok(Track { file, title, artists, album, genres, year, len, mood, trackno })
+    Ok(Track {
+        file,
+        title,
+        artists,
+        album,
+        genres,
+        year,
+        len,
+        mood,
+        trackno,
+    })
 }
 
+/// Returns list of song files in a given directory
 fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
     // Can't seem to load paths with tildes in them
     let expanded = if let Some(home) = dirs::home_dir() {
@@ -339,6 +411,7 @@ fn get_song_files(directory: &str) -> Result<Vec<String>, io::Error> {
     Ok(files)
 }
 
+/// Recursively reads a directory
 fn recursive_read_dir(dir: &str) -> Result<Vec<String>, io::Error> {
     let mut files = Vec::new();
 
@@ -362,13 +435,14 @@ fn recursive_read_dir(dir: &str) -> Result<Vec<String>, io::Error> {
     Ok(files)
 }
 
+/// Returns the track image information from metadata as bytes
 pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
     let filetype = file.split(".").last()?;
 
     match filetype {
         "flac" => {
             // let tag = metaflac::Tag::read_from_path(&file).ok()?;
-            // 
+            //
             // for frame in tag.blocks() {
             //     if let Block::Picture(picture) = frame {
             //         return Some(picture.data.clone());
@@ -376,7 +450,7 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
             // }
 
             None
-        },
+        }
         "ogg" => {
             // let f = std::fs::File::open(file).ok()?;
             // let tag = lewton::inside_ogg::OggStreamReader::new(f).ok()?;
@@ -394,7 +468,7 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
             // let picture = metaflac::block::Picture::from_bytes(&decoded).ok()?;
             //
             // Some(picture.data)
-            Some(Vec::new()) 
+            Some(Vec::new())
         }
         _ => {
             let tag = id3::Tag::read_from_path(file).ok()?;
@@ -404,16 +478,22 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
     }
 }
 
+/// Is a file an audio file?
 fn path_is_audio(path: PathBuf) -> bool {
-    match path.extension().unwrap_or_default().to_str().unwrap_or_default() {
+    match path
+        .extension()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default()
+    {
         "mp3" | "opus" | "wav" | "flac" | "ogg" | "aiff" => true,
         _ => false,
     }
 }
 
+// Track audio features
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackInfo {
-    pub genre_space: Array1<f32>,
     pub mfcc: Array1<f32>,
     pub chroma: Array1<f32>,
     pub spectral: Array1<f32>,
@@ -424,19 +504,22 @@ pub struct TrackInfo {
 }
 
 impl TrackInfo {
-    pub fn genres_dist(&self, other: &TrackInfo) -> f32 {
-        let diff = (self.genre_space.clone() - other.genre_space.clone()).pow2();
-        diff.sum().sqrt()
-    }
-
+    /// Averages a set of track audio features
     pub fn average(tracks: Vec<TrackInfo>) -> TrackInfo {
         let count = tracks.len() as f32;
         TrackInfo {
-            genre_space: tracks.iter().fold(Array1::zeros(16), |a, b| a + b.genre_space.clone())
+            mfcc: tracks
+                .iter()
+                .fold(Array1::zeros(13), |a, b| a + b.mfcc.clone())
                 / count,
-            mfcc: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.mfcc.clone()) / count,
-            chroma: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.chroma.clone()) / count,
-            spectral: tracks.iter().fold(Array1::zeros(13), |a, b| a + b.spectral.clone()) / count,
+            chroma: tracks
+                .iter()
+                .fold(Array1::zeros(13), |a, b| a + b.chroma.clone())
+                / count,
+            spectral: tracks
+                .iter()
+                .fold(Array1::zeros(13), |a, b| a + b.spectral.clone())
+                / count,
             energy: tracks.iter().map(|t| t.energy).sum::<f32>() / count,
             key: tracks.iter().map(|t| t.key).sum::<i32>() / count as i32,
             bpm: tracks.iter().map(|t| t.bpm).sum::<f32>() / count,
@@ -448,7 +531,6 @@ impl TrackInfo {
 impl Default for TrackInfo {
     fn default() -> Self {
         TrackInfo {
-            genre_space: Array1::zeros(16),
             mfcc: Array1::zeros(13),
             chroma: Array1::zeros(13),
             spectral: Array1::zeros(13),

@@ -1,6 +1,4 @@
 use super::{
-    audio::AudioPlayer,
-    embed::AutoEncoder,
     playlist::get_playlist_files,
     playlist::Playlist,
     queue::{Listen, Queue, QueueType},
@@ -20,17 +18,11 @@ use rustfft::num_traits::Zero;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
-
+use std::sync::mpsc::Sender;
+use std::sync::Mutex;
 use once_cell::sync::Lazy;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use once_cell::sync::OnceCell;
-use std::sync::{Mutex, Arc, atomic::Ordering};
-use tokio::sync::Notify;
 
 pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<Sender<MusicMsg>>>> =
-    Lazy::new(|| Mutex::new(None));
-
-pub static PROGRESS_UPDATE: Lazy<Mutex<Option<Receiver<f64>>>> =
     Lazy::new(|| Mutex::new(None));
 
 #[derive(Debug)]
@@ -42,9 +34,10 @@ pub enum MusicMsg {
     Toggle,
     PlayTrack(String),
     SetVolume(f32),
-    SetPos(f64)
+    SetPos(f64),
 }
 
+// Send message to AudioPlayer in thread
 pub fn send_music_msg(msg: MusicMsg) {
     if let Some(tx) = MUSIC_PLAYER_ACTIONS.lock().unwrap().as_ref() {
         info!("sending with tx at {:p}", tx);
@@ -71,7 +64,6 @@ pub struct MusicController {
 
     pub current_queue: usize,
     pub queues: Vec<Queue>,
-    pub encoder: AutoEncoder,
     pub settings: Settings,
     pub progress_secs: f64,
     pub song_length: f64,
@@ -80,6 +72,7 @@ pub struct MusicController {
 
 // Basic functionality
 impl MusicController {
+    /// Creates an empty controller with no tracks
     pub fn empty() -> Self {
         Self {
             all_tracks: vec![],
@@ -91,7 +84,6 @@ impl MusicController {
             current_started: Instant::now(),
             current_queue: 0,
             queues: vec![Queue::all()],
-            encoder: AutoEncoder::new().unwrap(),
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
@@ -101,6 +93,7 @@ impl MusicController {
         }
     }
 
+    /// Creates and loads all tracks and weights into the controller
     pub fn new(all_tracks: Vec<Track>, _directory: String) -> Self {
         let mut rng = thread_rng();
         let current_playing = if all_tracks.len() > 0 {
@@ -109,7 +102,6 @@ impl MusicController {
             0
         };
 
-        let encoder = AutoEncoder::new().unwrap();
         let started = std::time::SystemTime::now();
 
         let (mut albums, mut artists, mut genres) =
@@ -146,7 +138,6 @@ impl MusicController {
             artists,
             genres,
             albums,
-            encoder,
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
@@ -170,6 +161,7 @@ impl MusicController {
         controller
     }
 
+    /// Loads all playlists in the music directory (.m3u files)
     pub fn load_playlists(&mut self) {
         let files = get_playlist_files(&self.settings.directory).unwrap();
 
@@ -179,12 +171,14 @@ impl MusicController {
         }
     }
 
+    /// Deletes a playlist from storage
     pub fn delete_playlist(&mut self, playlist: usize) {
         let path = self.playlists[playlist].file.clone();
         std::fs::remove_file(path).unwrap();
         self.playlists.remove(playlist);
     }
 
+    /// Saves a playlist in the M3U format
     pub fn save_playlist(&mut self, playlist: usize) {
         let playlist = self.playlists[playlist].clone();
         let relative_paths: Vec<String> = playlist
@@ -200,6 +194,7 @@ impl MusicController {
         std::fs::write(&playlist.file, file).unwrap();
     }
 
+    /// Loads a weight, either using the database or by calculating them 
     pub fn load_weight(
         &mut self,
         cache: &Connection,
@@ -212,13 +207,14 @@ impl MusicController {
             self.track_info.push(weights[&file_hash].clone());
             return true;
         } else {
-            let track_info = generate_track_info(&track, &self.encoder);
+            let track_info = generate_track_info(&track);
             save_track_weights(&cache, &track.file, &track_info).unwrap();
             self.track_info.push(track_info);
             return false;
         }
     }
 
+    /// Plays a given track
     pub fn play_track(&mut self, idx: usize) {
         if let Some(current_track) = self.current_track() {
             self.listens.push(Listen::new(
@@ -236,6 +232,7 @@ impl MusicController {
         send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()))
     }
 
+    /// Returns the current track weights, or average track weights accross the queue
     pub fn get_space(&mut self) -> TrackInfo {
         match self.settings.radio.weight_mode {
             WeightMode::First => self.track_info[self.current_queue().cached_order[0]].clone(),
@@ -261,6 +258,7 @@ impl MusicController {
         }
     }
 
+    /// Returns all given weights for tracks in the player
     pub fn get_weights(&mut self) -> Array1<f32> {
         let space = self.get_space();
 
@@ -321,10 +319,11 @@ impl MusicController {
         weights
     }
 
+    /// Returns the next 'similar' track to play
     pub fn next_similar(&mut self) -> usize {
         log::info!("next");
         let mut weights = self.get_weights().to_vec();
-        if weights.iter().all(|w| w.is_zero()) { 
+        if weights.iter().all(|w| w.is_zero()) {
             warn!("All weights zero");
             weights = vec![1.0; weights.len()];
         }
@@ -336,6 +335,7 @@ impl MusicController {
         next
     }
 
+    /// Skips to the previous song in queue
     pub fn skipback(&mut self) {
         if self.progress_secs < 5.0 {
             if self.queues[self.current_queue].current_track == 0 {
@@ -348,6 +348,7 @@ impl MusicController {
         self.play_track(self.queues[self.current_queue].current());
     }
 
+    /// Skips the current track in the queue, or skips to the next queue if at end of queue
     pub fn skip(&mut self) {
         if self.all_tracks.is_empty() {
             log::info!("No track to skip to");
@@ -356,7 +357,7 @@ impl MusicController {
 
         let current_queue = &mut self.queues[self.current_queue];
 
-        // next song exists in queue
+        // next track exists in queue
         if let Some(next) = current_queue
             .cached_order
             .get(current_queue.current_track + 1)
@@ -384,12 +385,14 @@ impl MusicController {
         }
     }
 
+    /// Sets the current queue playing and at which track
     pub fn set_queue_and_track(&mut self, queue: usize, track: usize) {
         self.current_queue = queue;
         self.queues[queue].current_track = track;
         self.play_track(self.queues[queue].cached_order[track]);
     }
 
+    /// Returns tracks matching a certain QueueType
     pub fn get_matching(&self, queue_type: QueueType) -> Vec<usize> {
         if queue_type == QueueType::AllTracks {
             return (0..self.all_tracks.len()).collect();
@@ -403,6 +406,8 @@ impl MusicController {
             .collect()
     }
 
+    /// Removes a queue from the queue list and moves to another queue
+    /// TODO: some better way of choosing the queue to shift to 
     pub fn remove_queue(&mut self, queue: usize) {
         if self.current_queue == queue && self.current_queue != 0 {
             self.current_queue -= 1;
@@ -410,6 +415,7 @@ impl MusicController {
         self.queues.remove(queue);
     }
 
+    /// Creates a playlist using tracks in a given queue
     pub fn queue_to_playlist(&mut self, queue: usize) {
         let queue = self.queues[queue].clone();
         let mut playlist = Playlist::new(
@@ -423,10 +429,12 @@ impl MusicController {
         // TODO replace queue with playlist queue?
     }
 
+    /// Adds a list of tracks to a given queue
     pub fn add_tracks_to_queue(&mut self, queue: usize, tracks: Vec<usize>) {
         self.queues[queue].cached_order.extend(tracks);
     }
 
+    /// Adds a list of tracks to a given playlist
     pub fn add_tracks_to_playlist(&mut self, playlist: usize, tracks: Vec<usize>) {
         self.playlists[playlist].tracks.extend(tracks);
     }
@@ -434,33 +442,39 @@ impl MusicController {
 
 // Queue creation
 impl MusicController {
+    /// Starts an artist queue at no specific starting track
     pub fn add_artist_queue(&mut self, artist: String) {
         let tracks = self.get_tracks_where(|track| track.artists.contains(&artist));
         self.queues
             .push(Queue::new(QueueType::Artist(artist), tracks));
         self.current_queue = self.queues.len() - 1;
     }
-
+    
+    /// Starts an album queue starting with a specified track
     pub fn play_album_at(&mut self, album: String, track: usize) {
         let tracks = self.get_tracks_where(|track| track.album == album);
         self.add_queue_at(tracks, QueueType::Album(album.clone()), track);
     }
 
+    /// Starts an genre queue starting with a specified track
     pub fn play_genre_at(&mut self, genre: String, track: usize) {
         let tracks = self.get_tracks_where(|track| track.has_genre(&genre));
         self.add_queue_at(tracks, QueueType::Genre(genre.clone()), track);
     }
 
+    /// Starts an artist queue starting with a specified track
     pub fn play_artist_at(&mut self, artist: String, track: usize) {
         let tracks = self.get_tracks_where(|track| track.has_artist(&artist));
         self.add_queue_at(tracks, QueueType::Artist(artist.clone()), track);
     }
 
+    /// Starts a radio queue with a specified starting track
     pub fn start_radio(&mut self, track: usize) {
         let track_name = self.all_tracks[track].title.clone();
         self.add_queue_at(vec![track], QueueType::Radio(track_name), track);
     }
 
+    /// Starts a playlist, with a given track to start
     pub fn start_playlist_at(&mut self, playlist: usize, track: usize) {
         self.add_queue_at(
             self.playlists[playlist].tracks.clone(),
@@ -469,6 +483,7 @@ impl MusicController {
         );
     }
 
+    /// Starts a given queue with some tracks at a specific track
     pub fn add_queue_at(&mut self, mut tracks: Vec<usize>, queue: QueueType, track: usize) {
         if self.shuffle {
             tracks = shuffle_with_first(tracks, track);
@@ -496,11 +511,13 @@ impl MusicController {
         self.play();
     }
 
+    /// Add a queue containing all tracks, with a given track to start
     pub fn add_all_queue(&mut self, track: usize) {
         let tracks = (0..self.all_tracks.len()).collect();
         self.add_queue_at(tracks, QueueType::AllTracks, track);
     }
 
+    /// Get tracks that fit a given conditional, using a supplied Fn
     pub fn get_tracks_where<F>(&self, condition: F) -> Vec<usize>
     where
         F: Fn(&Track) -> bool,
@@ -513,6 +530,7 @@ impl MusicController {
             .collect()
     }
 
+    /// Toggles between shuffled and unshuffled in all queues
     pub fn toggle_shuffle(&mut self) {
         if self.shuffle {
             // unshuffle queues
@@ -549,6 +567,7 @@ impl MusicController {
         self.shuffle = !self.shuffle
     }
 
+    /// Adds a track to the spot after the current track in queue
     pub fn play_next(&mut self, track: usize) {
         let position = self.current_queue().current_track;
         self.mut_current_queue()
@@ -556,6 +575,7 @@ impl MusicController {
             .insert(position + 1, track);
     }
 
+    /// Adds a track to a given playlist
     pub fn add_to_playlist(&mut self, playlist: usize, track: usize) {
         let file = relative_path(&self.all_tracks[track].file, &self.settings.directory);
         info!("{file}");
@@ -565,6 +585,9 @@ impl MusicController {
     }
 }
 
+/// Returns the part of two paths that they do not share
+/// Used to get part of a music file path without the initial music directory path
+/// Almost definitely flawed in the way it is coded
 pub fn relative_path(file: &str, dir: &str) -> String {
     let file_canon = PathBuf::from(file).canonicalize().unwrap();
     let dir_canon = PathBuf::from(dir).canonicalize().unwrap();
@@ -578,6 +601,8 @@ pub fn relative_path(file: &str, dir: &str) -> String {
     file_comp.as_path().to_string_lossy().to_string()
 }
 
+/// Shuffles a list while keeping an item at the start
+/// Used so that the shuffle button does not immediately play a new track
 pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
     if let Some(idx) = tracks.iter().position(|e| *e == start) {
         tracks.remove(idx);
@@ -594,6 +619,7 @@ pub fn shuffle_with_first(mut tracks: Vec<usize>, start: usize) -> Vec<usize> {
 
 // Settings Management
 impl MusicController {
+    /// Sets the volume of the music player and saves it to storage
     pub fn set_volume(&mut self, volume: f32) {
         self.settings.volume = volume;
         send_music_msg(MusicMsg::SetVolume(volume));
@@ -601,12 +627,14 @@ impl MusicController {
         info!("Set volume to {volume}");
     }
 
+    /// Sets the music directory, and saves it to storage
     pub fn set_directory(&mut self, new_dir: String) {
         self.settings.directory = new_dir;
         self.settings.save();
         // Manage loading new tracks
     }
 
+    /// Sets the 'temperature' of the reccomendation system
     pub fn set_temp(&mut self, temp: f32) {
         self.settings.radio.temp = temp;
         self.settings.save();
@@ -615,6 +643,8 @@ impl MusicController {
 
 // Small functions
 impl MusicController {
+    /// Returns a track id of the first track in an album for a given album name
+    /// The cover loading code works from track IDs so this works
     pub fn get_album_artwork(&self, album: String) -> usize {
         for (i, track) in self.all_tracks.iter().enumerate() {
             if strip_unnessecary(&track.album) == strip_unnessecary(&album) {
@@ -626,62 +656,77 @@ impl MusicController {
         return usize::MAX;
     }
 
+    /// Toggles between playing and paused
     pub fn toggle_playing(&mut self) {
         send_music_msg(MusicMsg::Toggle);
         self.playing = !self.playing;
     }
 
+    /// Unpauses the currently playing track
     pub fn play(&mut self) {
         send_music_msg(MusicMsg::Play);
         self.playing = true;
     }
 
+    /// Pauses the currently playing track
     pub fn pause(&mut self) {
         send_music_msg(MusicMsg::Pause);
         self.playing = false;
     }
 
+    /// Is the music player currently playing a track?
     pub fn playing(&self) -> bool {
         self.playing
     }
 
+    /// Returns the index of the currently playing track
     pub fn current_track_idx(&self) -> usize {
         self.current_queue().current()
     }
 
+    /// Gets a reference to the currently playing track
     pub fn current_track(&self) -> Option<&Track> {
         self.all_tracks.get(self.current_queue().current())
     }
 
+    /// Gets a reference to a given track
     pub fn get_track(&self, idx: usize) -> Option<&Track> {
         self.all_tracks.get(idx)
     }
 
+    /// Returns the current track's title
     pub fn current_track_title(&self) -> Option<&str> {
         Some(&self.current_track()?.title)
     }
 
+    /// Returns the mood information of the currently playing track
     pub fn current_track_mood(&self) -> Option<Mood> {
         Some(self.current_track()?.mood.clone()?)
     }
 
+    /// Returns the album of the currently playing track
     pub fn current_track_album(&self) -> Option<&str> {
         Some(&self.current_track()?.album)
     }
 
+    /// Returns the artists of the currently playing track
     pub fn current_track_artist(&self) -> Option<&Vec<String>> {
         Some(&self.current_track()?.artists)
     }
 
+    /// Returns the genres of the currently playing track
     pub fn current_track_genres(&self) -> Option<&Vec<String>> {
         Some(&self.current_track()?.genres)
     }
 
+    /// Returns the index for the album of the currently playing track
     pub fn current_album_idx(&self) -> usize {
         let album = &self.current_track().unwrap().album;
         self.albums.iter().position(|e| *e.0 == *album).unwrap()
     }
 
+    /// Tries to access the next track in the queue
+    /// Returns None if the current track is the end of the queue
     pub fn next_up(&self) -> Option<Track> {
         let current_queue = &self.queues[self.current_queue];
         Some(
@@ -691,23 +736,28 @@ impl MusicController {
         )
     }
 
+    /// Gets a reference to a given queue
     pub fn get_queue(&self, idx: usize) -> &Queue {
         &self.queues[idx]
     }
 
+    /// Gets a reference to the current queue
     pub fn current_queue(&self) -> &Queue {
         &self.queues[self.current_queue]
     }
 
+    /// Gets a mutable reference to the current queue
     pub fn mut_current_queue(&mut self) -> &mut Queue {
         &mut self.queues[self.current_queue]
     }
 
+    /// Sets audio player position
     pub fn set_pos(&self, pos: f64) {
         send_music_msg(MusicMsg::SetPos(pos));
     }
 }
 
+/// Applies setting weights to given features
 pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo, settings: &RadioSettings) -> f32 {
     let mfcc_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
     let chroma_sim = cosine_similarity(lhs.mfcc.clone(), rhs.mfcc.clone());
@@ -724,6 +774,7 @@ pub fn genres_dist_from_vec(lhs: &TrackInfo, rhs: &TrackInfo, settings: &RadioSe
         + (zcr_sim * settings.zcr_weight)
 }
 
+/// Implementation of cosine similarity
 pub fn relative_similarity(lhs: f32, rhs: f32) -> f32 {
     1.0 - (((lhs + 0.01) / (rhs + 0.01)) / 2.0).abs()
 }

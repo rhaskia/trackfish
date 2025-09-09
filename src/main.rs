@@ -5,41 +5,30 @@ pub mod app;
 pub mod database;
 pub mod gui;
 
-use crate::app::audio::{AudioPlayer, self};
 use crate::database::{init_db, row_to_weights};
-use dioxus::{mobile::WindowBuilder, prelude::*};
+use dioxus:: prelude::*;
 use http::Response;
 use log::{error, info};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
-use tracing_log::LogTracer;
-#[cfg(target_os = "android")]
-use crate::media::MediaMsg;
-#[cfg(target_os = "android")]
-use crate::media::MEDIA_MSG_TX;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
-use app::controller::{MusicMsg, PROGRESS_UPDATE}; 
-use crate::app::controller::MUSIC_PLAYER_ACTIONS;
-use std::sync::{Arc, Mutex};
-use once_cell::sync::Lazy;
-use std::sync::mpsc::channel;
 
 use app::{
     settings::RadioSettings,
-    track::{load_tracks, TrackInfo, get_track_image},
+    track::{get_track_image, load_tracks, TrackInfo},
     MusicController,
 };
 use gui::*;
 
 pub use gui::icons;
 
-// CSS 
+// CSS
 static MAIN_CSS: Asset = asset!("/assets/style.css");
 static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
 static EXPLORER_CSS: Asset = asset!("/assets/explorer.css");
@@ -69,8 +58,8 @@ fn main() {
 #[cfg(target_os = "android")]
 fn init() {
     use android_logger::Config;
-    use log::LevelFilter;
     use env_filter::Builder;
+    use log::LevelFilter;
 
     let mut builder = Builder::new();
     builder.filter(None, LevelFilter::Trace);
@@ -120,6 +109,7 @@ fn init() {
 fn SetUpRoute() -> Element {
     use app::settings::Settings;
     let mut set_up = use_signal(Settings::exists);
+    #[allow(unused_mut)]
     let mut dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
@@ -133,9 +123,7 @@ fn SetUpRoute() -> Element {
                 onclick: move |_| async move {
                     #[cfg(not(target_os = "android"))]
                     {
-                        let file = rfd::FileDialog::new()
-                            .set_directory("/")
-                            .pick_folder();
+                        let file = rfd::FileDialog::new().set_directory("/").pick_folder();
                         if let Some(file) = file {
                             dir.set(file.display().to_string());
                         }
@@ -211,7 +199,7 @@ fn App() -> Element {
         }
     });
 
-    use_asset_handler("trackimage",  move |request, responder| {
+    use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(404).body(&[]).unwrap();
 
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {

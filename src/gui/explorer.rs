@@ -1,21 +1,21 @@
 pub mod albums;
-pub mod artists;
 pub mod alltracks;
+pub mod artists;
 pub mod genres;
 pub mod search;
 
 pub use albums::AlbumsList;
-pub use artists::ArtistList;
 pub use alltracks::AllTracks;
+pub use artists::ArtistList;
 pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
-use crate::app::MusicController;
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::utils::similar;
+use crate::app::MusicController;
+use dioxus::document::eval;
 use dioxus::prelude::*;
 use log::info;
-use dioxus::document::eval;
 use rand::Rng;
 
 use super::icons::*;
@@ -31,6 +31,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
     const ROW_HEIGHT: usize = 62;
     const BUFFER_ROWS: usize = 5;
 
+    // Memo to hold the view name for any given viewtype
     let name = use_memo(move || match viewtype() {
         View::Albums => VIEW.read().album.clone().unwrap(),
         View::Artists => VIEW.read().artist.clone().unwrap(),
@@ -41,6 +42,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
         _ => unreachable!(),
     });
 
+    // Tracks to show dependant on viewtype
     let tracks = use_memo(move || {
         if let View::Playlists = viewtype() {
             return controller.read().playlists[VIEW.read().playlist.unwrap()]
@@ -66,39 +68,49 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
         tracks
     });
 
+    // Virtualization management
+    // Start index is where the list is rendered from
     let mut start_index = use_signal(|| 0);
+    // Rows in view is the rendered number of items
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
+    // End index is where rendering stops
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
 
+    // Watches the list height
     use_future(move || async move {
-        let mut js = eval(
-            &format!(r#"
+        let mut js = eval(&format!(
+            r#"
             new ResizeObserver(() => {{
                 let container = document.getElementById("tracksview-{0}");
                 dioxus.send(container.offsetHeight);
             }}).observe(document.getElementById("tracksview-{0}"));
-        "#, name()),
-        );
+        "#,
+            name()
+        ));
 
         loop {
             let height = js.recv::<usize>().await;
             if let Ok(height) = height {
-                if height == 0 { continue; } // Stops app freezing on opening a different view 
+                if height == 0 {
+                    continue;
+                } // Stops app freezing on opening a different view
                 window_size.set(height);
                 info!("Window Height {height}");
             }
         }
     });
 
+    // Watches the current scroll amount in the list
     use_effect(move || {
-        let mut js = eval(
-            &format!(r#"
+        let mut js = eval(&format!(
+            r#"
             let container = document.getElementById('tracksview-{0}');
             container.addEventListener('scroll', function(event) {{
                 dioxus.send(container.scrollTop);
             }});
-            "#, name()),
-        );
+            "#,
+            name()
+        ));
 
         spawn(async move {
             loop {
@@ -115,6 +127,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
     });
 
     rsx! {
+        // View header
         div { class: "tracksviewheader",
             img {
                 onclick: move |_| match viewtype() {
@@ -126,6 +139,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                 },
                 src: BACK_ICON,
             }
+
             h3 {
                 if name().is_empty() {
                     "Unknown {viewtype():?}"
@@ -133,18 +147,21 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                     "{name()}"
                 }
             }
-            img {
-                onclick: move |_| explorer_settings.set(true),
-                src: VERT_ICON,
-            }
+
+            img { onclick: move |_| explorer_settings.set(true), src: VERT_ICON }
         }
+
+        // Track view list
         div {
             class: "tracksview",
             id: "tracksview-{name()}",
             position: "relative",
 
+            // Allows infinite scroll without having to render every track item before and after
+            // the current viewport
             div { min_height: "{(tracks.read().len()) * ROW_HEIGHT}px" }
 
+            // Only render what's needed
             for i in start_index()..end_index() {
                 div {
                     class: "trackitem",
@@ -164,13 +181,17 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                         };
                         VIEW.write().open(View::Song);
                     },
+
                     img {
                         class: "trackitemicon",
                         src: "/trackimage/{tracks.read()[i]}",
                         loading: "onvisible",
                     }
+
                     span { "{controller.read().get_track(tracks.read()[i]).unwrap().title}" }
+
                     div { flex_grow: 1 }
+
                     img {
                         class: "trackbutton",
                         loading: "onvisible",
@@ -196,6 +217,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
             }
         }
 
+        // Adding all tracks from current view to a playlist 
         if adding_to_playlist() {
             div {
                 class: "optionsbg",
@@ -216,6 +238,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
             }
         }
 
+        // Adding all tracks from current view to a queue 
         if adding_to_queue() {
             div {
                 class: "optionsbg",
@@ -253,7 +276,9 @@ pub fn ExplorerOptions(
             class: "optionsbg",
             onclick: move |_| explorer_settings.set(false),
             div { class: "optionbox", style: "--width: 300px; --height: 160px;",
+
                 h3 { "{name}" }
+
                 button {
                     onclick: move |_| {
                         match viewtype() {
@@ -269,9 +294,12 @@ pub fn ExplorerOptions(
                         };
                         VIEW.write().open(View::Song);
                     },
+
                     img { src: PLAY_ICON }
+
                     "Play"
                 }
+
                 button {
                     onclick: move |_| {
                         let random_index = rand::thread_rng().gen_range(0..tracks.read().len());
@@ -296,10 +324,12 @@ pub fn ExplorerOptions(
                     img { src: SHUFFLE_ICON }
                     "Shuffle"
                 }
+
                 button { onclick: move |_| adding_to_playlist.set(true),
                     img { src: PLAYLIST_ADD_ICON }
                     "Add to a playlist"
                 }
+
                 button { onclick: move |_| adding_to_queue.set(true),
                     img { src: QUEUE_ICON }
                     "Add to a queue"
@@ -308,4 +338,3 @@ pub fn ExplorerOptions(
         }
     }
 }
-

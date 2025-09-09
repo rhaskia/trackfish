@@ -1,6 +1,5 @@
 pub mod audio;
 pub mod controller;
-pub mod embed;
 pub mod playlist;
 pub mod queue;
 pub mod settings;

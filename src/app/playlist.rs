@@ -13,6 +13,7 @@ pub struct Playlist {
 }
 
 impl Playlist {
+    /// Creates a new playlist with a given name and file name
     pub fn new(name: String, dir: String) -> Self {
         Playlist {
             name: name.clone(),
@@ -22,6 +23,7 @@ impl Playlist {
         }
     }
 
+    /// Loads a playlist from device and matches it to all loaded tracks
     pub fn load(dir: &str, playlist_file: &str, all_tracks: &Vec<Track>) -> Self {
         let path = PathBuf::from(playlist_file);
         let file = playlist_file.to_string();
@@ -69,6 +71,7 @@ impl Playlist {
         }
     }
 
+    /// Removes a track from a playlist
     pub fn remove(&mut self, track: usize) {
         let position = self.tracks.iter().position(|t| *t == track);
 
@@ -78,6 +81,7 @@ impl Playlist {
     }
 }
 
+/// Returns all files mentioned in a playlist file
 pub fn get_playlist_files(dir: &str) -> Result<Vec<String>, io::Error> {
     let mut files = Vec::new();
 
@@ -101,6 +105,7 @@ pub fn get_playlist_files(dir: &str) -> Result<Vec<String>, io::Error> {
     Ok(files)
 }
 
+/// Is a file of the type M3U
 fn path_is_playlist(path: PathBuf) -> bool {
     path.extension()
         .unwrap_or_default()

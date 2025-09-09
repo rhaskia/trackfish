@@ -1,7 +1,10 @@
-use dioxus::prelude::*;
-use crate::{gui::{View, VIEW, icons::*}, app::MusicController};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
+use crate::{
+    app::MusicController,
+    gui::{icons::*, View, VIEW},
+};
+use dioxus::prelude::*;
 
 #[component]
 pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
@@ -27,13 +30,17 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Artists { "none" },
+
             div {
                 class: "searchbar",
                 display: if VIEW.read().artist.is_some() { "none" },
                 onclick: move |_| is_searching.set(true),
+
                 img { src: SEARCH_ICON }
+
                 div { class: "pseudoinput" }
             }
+
             div {
                 id: "artistlist",
                 class: "tracklist",
@@ -50,9 +57,11 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
                     }
                 }
             }
+
             if VIEW.read().artist.is_some() {
                 TracksView { controller, viewtype: View::Artists }
             }
+
             if is_searching() {
                 ArtistsSearch { controller, is_searching, artists }
             }
@@ -61,9 +70,13 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn ArtistsSearch(controller: SyncSignal<MusicController>, is_searching: Signal<bool>, artists: Signal<Vec<(String, (String, usize))>>) -> Element {
+pub fn ArtistsSearch(
+    controller: SyncSignal<MusicController>,
+    is_searching: Signal<bool>,
+    artists: Signal<Vec<(String, (String, usize))>>,
+) -> Element {
     let mut search = use_signal(String::new);
-    
+
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
@@ -74,20 +87,20 @@ pub fn ArtistsSearch(controller: SyncSignal<MusicController>, is_searching: Sign
             artists
                 .read()
                 .iter()
-                .map(|t| t.1.0.clone())
-                .filter(|t| {
-                    strip_unnessecary(&t).starts_with(&search)
-                })
+                .map(|t| t.1 .0.clone())
+                .filter(|t| strip_unnessecary(&t).starts_with(&search))
                 .collect::<Vec<String>>()
         }
     });
 
-    rsx!{
+    rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
+
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
                     img { src: SEARCH_ICON }
+
                     input {
                         id: "artistsearchbar",
                         value: search,
@@ -96,6 +109,7 @@ pub fn ArtistsSearch(controller: SyncSignal<MusicController>, is_searching: Sign
                         oninput: move |e| search.set(e.value()),
                     }
                 }
+
                 div { class: "searchtracks",
                     for artist in matches() {
                         div {
@@ -105,11 +119,13 @@ pub fn ArtistsSearch(controller: SyncSignal<MusicController>, is_searching: Sign
                                     &format!("document.getElementById('artist-{}').scrollIntoView();", artist),
                                 );
                             },
+
                             span { "{artist}" }
                         }
                     }
                 }
             }
+
             div { flex: 1 }
         }
     }

@@ -1,10 +1,10 @@
-use super::{View, VIEW};
-use dioxus::prelude::*;
-use dioxus::document::eval;
-use crate::app::MusicController;
-use log::info;
 use super::TracksSearch;
+use super::{View, VIEW};
+use crate::app::MusicController;
 use crate::gui::icons::*;
+use dioxus::document::eval;
+use dioxus::prelude::*;
+use log::info;
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -122,9 +122,13 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
             
             }
             if is_searching() {
-                TracksSearch { controller, tracks, is_searching, id_prefix: "alltracks" }
+                TracksSearch {
+                    controller,
+                    tracks,
+                    is_searching,
+                    id_prefix: "alltracks",
+                }
             }
         }
     }
 }
-

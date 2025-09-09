@@ -1,6 +1,6 @@
-use crate::app::MusicController;
 use crate::app::utils::strip_unnessecary;
-use crate::gui::{View, VIEW, icons::*};
+use crate::app::MusicController;
+use crate::gui::{icons::*, View, VIEW};
 use dioxus::prelude::*;
 
 #[component]
@@ -70,12 +70,15 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
             height: "calc(100vh - 50px)",
             overflow: "hidden",
             display: if VIEW.read().current != View::Search { "none" },
+
             div { class: "searchbar",
                 img { src: SEARCH_ICON }
                 input { oninput: move |e| search.set(e.value()), value: search }
             }
+
             div { class: "searchviewresults",
                 h3 { display: if tracks.read().len() == 0 { "none" }, "{tracks.read().len()} track/s" }
+
                 for i in 0..tracks.read().len() {
                     div {
                         class: "trackitem",
@@ -83,14 +86,18 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
                             controller.write().add_all_queue(tracks.read()[i]);
                             VIEW.write().current = View::Song;
                         },
+
                         img {
                             class: "trackitemicon",
                             src: "/trackimage/{tracks.read()[i]}",
                         }
+
                         span { "{controller.read().all_tracks[tracks.read()[i]].title}" }
                     }
                 }
+
                 h3 { display: if albums.read().len() == 0 { "none" }, "{albums.read().len()} album/s" }
+
                 for i in 0..albums.len() {
                     div {
                         class: "trackitem",
@@ -98,14 +105,18 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(albums.read()[i].clone());
                         },
+
                         img {
                             class: "trackitemicon",
                             src: "/trackimage/{controller.read().get_album_artwork(albums.read()[i].clone())}",
                         }
+
                         span { "{albums.read()[i]}" }
                     }
                 }
+
                 h3 { display: if artists.read().len() == 0 { "none" }, "{artists.read().len()} artist/s" }
+
                 for i in 0..artists.read().len() {
                     div {
                         class: "thinitem",
@@ -116,7 +127,9 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
                         "{artists.read()[i]}"
                     }
                 }
+
                 h3 { display: if genres.read().len() == 0 { "none" }, "{genres.read().len()} genre/s" }
+
                 for i in 0..genres.read().len() {
                     div {
                         class: "thinitem",
@@ -164,7 +177,9 @@ pub fn TracksSearch(
     rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
+
             div { class: "searchpopup",
+                // Search bar
                 div { class: "searchpopupbar",
                     img { src: SEARCH_ICON }
                     input {
@@ -174,6 +189,8 @@ pub fn TracksSearch(
                         oninput: move |e| search.set(e.value()),
                     }
                 }
+
+                // Track list
                 div { class: "searchtracks",
                     for track in matches() {
                         div {

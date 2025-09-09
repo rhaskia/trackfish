@@ -1,9 +1,9 @@
+use super::icons::*;
 use super::{View, VIEW};
+use crate::app::MusicController;
 use dioxus::prelude::*;
 use log::info;
 use std::fmt::{Display, Formatter};
-use super::icons::*;
-use crate::app::MusicController;
 
 #[component]
 pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
@@ -23,6 +23,7 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
                 class: "settingslistbutton",
                 onclick: move |_| extended_list.set(!extended_list()),
             }
+
             div { class: "settingslist", class: if !extended_list() { "closed" },
                 button {
                     class: "settingsbutton",
@@ -43,6 +44,7 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
                     "Song library"
                 }
             }
+
             match settings_menu() {
                 SettingsMenu::Radio => rsx! {
                     RadioSettings { controller }
@@ -107,6 +109,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 oninput: move |e: Event<FormData>| controller.write().set_temp(e.parsed::<f32>().unwrap()),
                 value: "{controller.read().settings.radio.temp}",
             }
+
             div { class: "settingbox",
                 span { "Track features to use" }
                 div { class: "selectwrapper",
@@ -117,6 +120,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                     }
                 }
             }
+
             SettingsInput {
                 label: "Same artist penalty",
                 max: "1.0",
@@ -125,6 +129,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.artist_penalty}",
             }
+
             SettingsInput {
                 max: "1.0",
                 label: "Same album penalty",
@@ -133,7 +138,9 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.album_penalty}",
             }
+
             hr {}
+
             SettingsInput {
                 max: "2.0",
                 label: "MFCC weight",
@@ -142,6 +149,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.mfcc_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Chroma weight",
@@ -150,6 +158,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.chroma_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Spectral weight",
@@ -158,6 +167,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.spectral_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Energy weight",
@@ -166,6 +176,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.energy_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "BPM weight",
@@ -174,6 +185,7 @@ fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
                 },
                 value: "{controller.read().settings.radio.bpm_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "ZCR weight",
@@ -204,6 +216,7 @@ fn SettingsInput(
                     value: value.clone(),
                     oninput,
                 }
+
                 input { class: "smalltextinput", r#type: "text", value }
             }
         }
@@ -215,6 +228,7 @@ fn LibrarySettings(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         div { class: "settingsmenu",
             h2 { class: "settingsbar", "Library" }
+
             div { class: "settingbox",
                 span { "Music Directory" }
                 input {
