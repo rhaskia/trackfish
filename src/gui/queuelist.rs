@@ -1,11 +1,12 @@
-use super::CONTROLLER;
+use super::icons::*;
 use super::{View, TRACKOPTION, VIEW};
+use crate::app::MusicController;
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use std::time::Duration;
 
 #[component]
-pub fn QueueList() -> Element {
+pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
     let mut selected_queue = use_signal(|| 0);
     let mut current_dragging = use_signal(|| None);
     let mut mouse_y = use_signal(|| 0.0);
@@ -16,10 +17,11 @@ pub fn QueueList() -> Element {
     let mut queue_editing = use_signal(|| None);
 
     use_effect(move || {
-        selected_queue.set(CONTROLLER.read().current_queue);
+        selected_queue.set(controller.read().current_queue);
     });
 
     use_future(move || async move {
+        // Listens to js for mouse movement over whole document
         let mut js = eval(
             r#"
             document.addEventListener('mousemove', function(event) {
@@ -28,6 +30,8 @@ pub fn QueueList() -> Element {
         "#,
         );
 
+        // Calculates if the mouse if hovering over a specific track in queue
+        // Could use something better than crude calculations
         loop {
             let position = js.recv::<i32>().await;
             if let Ok(pos) = position {
@@ -38,6 +42,8 @@ pub fn QueueList() -> Element {
         }
     });
 
+    // Watches for resize or mouse move over the queuelist
+    // This makes sure that we have the current queue height whenever a calculation is needed to be made
     use_future(move || async move {
         let mut js = eval(
             r#"
@@ -60,6 +66,7 @@ pub fn QueueList() -> Element {
         }
     });
 
+    // Scroll up or down if mouse is hovering close to edge of queue top or bottom
     use_future(move || async move {
         loop {
             if mouse_y() < 100.0 && current_dragging.read().is_some() {
@@ -72,6 +79,7 @@ pub fn QueueList() -> Element {
         }
     });
 
+    // Sends the amount scrolled from top of queue on user or device scroll
     use_future(move || async move {
         let mut js = eval(
             r#"
@@ -86,6 +94,8 @@ pub fn QueueList() -> Element {
         "#,
         );
 
+        // Calculates if hovering over a item in queue
+        // Needs to be moved into function or joined with other future
         loop {
             let scroll = js.recv::<i32>().await;
             if let Ok(scroll) = scroll {
@@ -96,9 +106,10 @@ pub fn QueueList() -> Element {
         }
     });
 
+    // Callback for moving item into other place in queue
     let move_queue_item = move |_: Event<MouseData>| {
         if let Some(current) = current_dragging() {
-            CONTROLLER.write().queues[selected_queue()].swap(current, hovering_over())
+            controller.write().queues[selected_queue()].swap(current, hovering_over())
         }
         current_dragging.set(None);
     };
@@ -109,14 +120,15 @@ pub fn QueueList() -> Element {
             display: if VIEW.read().current != View::Queue { "none" },
             onclick: move_queue_item.clone(),
 
+            // Queue selector
             div { class: "queuebar",
                 div { class: "selectwrapper queueselectwrapper",
                     select {
                         class: "queueselect",
                         onchange: move |e| selected_queue.set(e.value().parse::<usize>().unwrap()),
-                        for i in 0..CONTROLLER.read().queues.len() {
+                        for i in 0..controller.read().queues.len() {
                             option { value: "{i}", selected: i == selected_queue(),
-                                "{CONTROLLER.read().queues[i].queue_type}"
+                                "{controller.read().queues[i].queue_type}"
                             }
                         }
                     }
@@ -126,15 +138,18 @@ pub fn QueueList() -> Element {
                         e.stop_propagation();
                         queue_editing.set(Some(selected_queue()));
                     },
-                    src: "assets/icons/vert.svg",
+                    src: VERT_ICON,
                 }
             }
+
+            // Current track out of track count in queue
             span { margin: "2px 10px",
-                "Track: {CONTROLLER.read().current_queue().current_track + 1}/{CONTROLLER.read().current_queue().len()}"
+                "Track: {controller.read().current_queue().current_track + 1}/{controller.read().current_queue().len()}"
             }
 
+            // Track items in selected queue
             div { id: "queuelist", class: "tracklist",
-                for idx in 0..CONTROLLER.read().get_queue(selected_queue()).cached_order.len() {
+                for idx in 0..controller.read().get_queue(selected_queue()).cached_order.len() {
                     if current_dragging.read().is_some() {
                         if current_dragging().unwrap() > idx && hovering_over() == idx
                             || current_dragging().unwrap() < idx && hovering_over() == idx.max(1) - 1
@@ -143,6 +158,7 @@ pub fn QueueList() -> Element {
                         }
                     }
                     TrackItem {
+                        controller,
                         selected_queue,
                         idx,
                         current_dragging,
@@ -155,23 +171,26 @@ pub fn QueueList() -> Element {
         }
 
         if queue_editing.read().is_some() {
-            QueueOptions { queue_editing }
+            QueueOptions { controller, queue_editing }
         }
     }
 }
 
 #[component]
-pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
+pub fn QueueOptions(
+    controller: SyncSignal<MusicController>,
+    queue_editing: Signal<Option<usize>>,
+) -> Element {
     rsx! {
         div { class: "optionsbg", onclick: move |_| queue_editing.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 100px;",
-                h3 { "{CONTROLLER.read().queues[queue_editing().unwrap()].queue_type}" }
-                button { onclick: move |_| CONTROLLER.write().remove_queue(queue_editing.unwrap()),
-                    img { src: "assets/icons/remove.svg" }
+                h3 { "{controller.read().queues[queue_editing().unwrap()].queue_type}" }
+                button { onclick: move |_| controller.write().remove_queue(queue_editing.unwrap()),
+                    img { src: REMOVE_ICON }
                     "Remove queue"
                 }
-                button { onclick: move |_| CONTROLLER.write().queue_to_playlist(queue_editing.unwrap()),
-                    img { src: "assets/icons/export.svg" }
+                button { onclick: move |_| controller.write().queue_to_playlist(queue_editing.unwrap()),
+                    img { src: EXPORT_ICON }
                     "Save as playlist"
                 }
             }
@@ -181,6 +200,7 @@ pub fn QueueOptions(queue_editing: Signal<Option<usize>>) -> Element {
 
 #[component]
 pub fn TrackItem(
+    controller: SyncSignal<MusicController>,
     selected_queue: Signal<usize>,
     idx: usize,
     current_dragging: Signal<Option<usize>>,
@@ -189,9 +209,9 @@ pub fn TrackItem(
     move_queue_item: Callback<Event<MouseData>>,
 ) -> Element {
     let title = use_memo(move || {
-        match CONTROLLER
+        match controller
             .read()
-            .get_track(CONTROLLER.read().get_queue(selected_queue()).track(idx))
+            .get_track(controller.read().get_queue(selected_queue()).track(idx))
         {
             Some(track) => track.title.clone(),
             None => String::new(),
@@ -199,8 +219,8 @@ pub fn TrackItem(
     });
 
     let is_current = use_memo(move || {
-        CONTROLLER.read().get_queue(selected_queue()).current_track == idx
-            && CONTROLLER.read().current_queue == selected_queue()
+        controller.read().get_queue(selected_queue()).current_track == idx
+            && controller.read().current_queue == selected_queue()
     });
 
     rsx! {
@@ -213,12 +233,13 @@ pub fn TrackItem(
                 if current_dragging.read().is_some() {
                     return;
                 }
-                CONTROLLER.write().set_queue_and_track(selected_queue(), idx);
+                controller.write().set_queue_and_track(selected_queue(), idx);
                 VIEW.write().current = View::Song;
             },
+
             div {
                 class: "trackbutton draghandle",
-                background_image: "url(/assets/icons/draghandle.svg)",
+                background_image: DRAG_HANDLE_ICON,
                 onmousedown: move |e| {
                     current_dragging.set(Some(idx));
                     grab_y.set(e.data.coordinates().element().y as f32);
@@ -226,22 +247,26 @@ pub fn TrackItem(
                 onmouseup: move_queue_item,
                 onclick: |e| e.stop_propagation(),
             }
+
             img {
                 class: "trackitemicon",
                 loading: "onvisible",
-                src: "/trackimage/{CONTROLLER.read().get_queue(selected_queue()).track(idx)}",
+                src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}",
             }
+
             span { "{title}" }
+
             div { flex_grow: 1 }
+
             img {
                 class: "trackbutton",
                 onclick: move |e| {
                     e.stop_propagation();
                     *TRACKOPTION.write() = Some(
-                        CONTROLLER.read().get_queue(selected_queue()).track(idx),
+                        controller.read().get_queue(selected_queue()).track(idx),
                     );
                 },
-                src: "/assets/icons/vert.svg",
+                src: VERT_ICON,
             }
         }
     }

@@ -18,6 +18,7 @@ pub fn hash_filename(name: &str) -> String {
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+/// Checks if the database has columns that are no longer needed or removed from the app
 pub fn table_outdated(conn: &Connection, table: &str) -> bool {
     let result = match conn.prepare(&format!(
         "
@@ -30,7 +31,6 @@ pub fn table_outdated(conn: &Connection, table: &str) -> bool {
 
     let columns_needed = vec![
         "file_hash",
-        "genre_space",
         "spectral",
         "chroma",
         "energy",
@@ -53,6 +53,7 @@ pub fn table_outdated(conn: &Connection, table: &str) -> bool {
     false
 }
 
+/// Spins up the database, creating it if needed
 pub fn init_db() -> Result<Connection> {
     let file = Settings::dir().join("tracks.db");
     let db_exists = file.exists();
@@ -84,7 +85,6 @@ pub fn init_db() -> Result<Connection> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS weights (
             file_hash TEXT PRIMARY KEY,
-            genre_space BLOB,
             mfcc BLOB,
             spectral BLOB,
             chroma BLOB,
@@ -99,6 +99,7 @@ pub fn init_db() -> Result<Connection> {
     Ok(conn)
 }
 
+/// Gets a track item from the database stored metadata using filename as a key
 pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>> {
     let file_hash = hash_filename(filename);
     let mut stmt = conn.prepare("SELECT * FROM tracks WHERE file_hash = ?1")?;
@@ -132,13 +133,14 @@ pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>
     Ok(result)
 }
 
+/// Turns a array of 32 bit floats into a byte array
 fn to_blob(array: &Array1<f32>) -> Vec<u8> {
     array.iter().map(|f| f.to_le_bytes()).flatten().collect()
 }
 
+/// Saves a given track weights to a row in the weights table
 pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -> Result<()> {
     let file_hash = hash_filename(track);
-    let genre_blob: Vec<u8> = to_blob(&weights.genre_space);
     let mfcc_blob: Vec<u8> = to_blob(&weights.mfcc);
     let chroma_blob: Vec<u8> = to_blob(&weights.chroma);
     let spectral_blob: Vec<u8> = to_blob(&weights.spectral);
@@ -146,17 +148,15 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
     conn.execute(
         "INSERT OR REPLACE INTO weights 
         (file_hash,
-         genre_space,
          mfcc,
          chroma,
          spectral,
          energy,
          key,
          bpm,
-         zcr) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+         zcr) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             file_hash,
-            genre_blob,
             mfcc_blob,
             chroma_blob,
             spectral_blob,
@@ -170,6 +170,7 @@ pub fn save_track_weights(conn: &Connection, track: &str, weights: &TrackInfo) -
     Ok(())
 }
 
+/// Turns a byte array into an array of 32 bit floats
 pub fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
     let mut weights = vec![];
     let mut raw = [0; 4];
@@ -181,6 +182,7 @@ pub fn blob_to_array(blob: Vec<u8>) -> Array1<f32> {
     Array1::from_vec(weights)
 }
 
+/// Loads a cached weight for a given track
 pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
     let file_hash = hash_filename(track);
     let mut stmt = conn.prepare("SELECT * FROM weights WHERE file_hash = ?1")?;
@@ -188,8 +190,8 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
     stmt.query_row(params![file_hash], |row| row_to_weights(&row))
 }
 
+/// Turns a row type into a track weight type
 pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
-    let genre_space = blob_to_array(row.get(1)?);
     let mfcc = blob_to_array(row.get(2)?);
     let chroma = blob_to_array(row.get(3)?);
     let spectral = blob_to_array(row.get(4)?);
@@ -199,7 +201,6 @@ pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
     let zcr = row.get(8)?;
 
     Ok(TrackInfo {
-        genre_space,
         mfcc,
         chroma,
         spectral,
@@ -210,6 +211,7 @@ pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
     })
 }
 
+/// Saves track metadata into the database
 pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
     let file_hash = hash_filename(&item.file);
     conn.execute(
@@ -231,6 +233,7 @@ pub fn save_to_cache(conn: &Connection, item: &Track) -> Result<()> {
     Ok(())
 }
 
+/// Turns a mood object into a sql string object
 impl ToSql for Mood {
     fn to_sql(&self) -> Result<ToSqlOutput<'_>, rusqlite::Error> {
         let text: Vec<&str> = self
@@ -242,6 +245,7 @@ impl ToSql for Mood {
     }
 }
 
+/// Turns a sql object into a Mood object
 impl FromSql for Mood {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let text = if let ValueRef::Text(text) = value {
@@ -259,6 +263,7 @@ impl FromSql for Mood {
     }
 }
 
+/// Turns a string of Ys and Ns into a Mood object
 fn string_to_mood(s: &str) -> Mood {
     let bools = s
         .as_bytes()

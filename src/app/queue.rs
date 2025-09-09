@@ -11,6 +11,7 @@ pub struct Queue {
 }
 
 impl Queue {
+    /// Creates a new queue with a type and tracks
     pub fn new(queue_type: QueueType, tracks: Vec<usize>) -> Self {
         Self {
             queue_type,
@@ -20,6 +21,7 @@ impl Queue {
         }
     }
 
+    /// Creates a new queue with a given type and current track
     pub fn new_from_pos(queue_type: QueueType, current_track: usize) -> Self {
         Self {
             queue_type,
@@ -29,6 +31,7 @@ impl Queue {
         }
     }
 
+    /// Creates a new queue with all tracks
     pub fn all() -> Self {
         Queue {
             queue_type: QueueType::AllTracks,
@@ -38,6 +41,7 @@ impl Queue {
         }
     }
 
+    /// Creates a new queue with all tracks, with a starting track
     pub fn all_pos(idx: usize) -> Self {
         Queue {
             queue_type: QueueType::AllTracks,
@@ -47,6 +51,7 @@ impl Queue {
         }
     }
 
+    /// Creates a new radio queue
     pub fn radio(idx: usize, name: String) -> Self {
         Queue {
             queue_type: QueueType::Radio(name),
@@ -56,18 +61,23 @@ impl Queue {
         }
     }
 
+    /// The currently playing track in a queue
     pub fn current(&self) -> usize {
         *self.cached_order.get(self.current_track).unwrap_or(&0)
     }
 
+    /// The track index at a given index in the queue
     pub fn track(&self, idx: usize) -> usize {
         self.cached_order[idx]
     }
 
+    /// The length of a given queue
     pub fn len(&self) -> usize {
         self.cached_order.len()
     }
 
+    /// Swaps two tracks inside a queue
+    /// Used in the queue dragging code
     pub fn swap(&mut self, index_to_move: usize, position: usize) {
         if index_to_move == position {
             return;
@@ -76,6 +86,7 @@ impl Queue {
 
         let track = self.cached_order[index_to_move];
         let moving_current = index_to_move == self.current_track;
+        #[allow(unused_mut)]
         let mut new_pos;
 
         if position >= self.current_track && index_to_move < self.current_track {

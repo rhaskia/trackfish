@@ -1,8 +1,10 @@
-use super::{View, VIEW};
-use dioxus::prelude::*;
-use dioxus::document::eval;
-use log::info;
 use super::TracksSearch;
+use super::{View, VIEW};
+use crate::app::MusicController;
+use crate::gui::icons::*;
+use dioxus::document::eval;
+use dioxus::prelude::*;
+use log::info;
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -12,14 +14,12 @@ fn display_time(total: u64) -> String {
     format!("{hours}:{minutes:02}:{seconds:02}")
 }
 
-use super::CONTROLLER;
-
 #[component]
-pub fn AllTracks() -> Element {
+pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
-    let tracks = use_memo(move || (0..CONTROLLER.read().all_tracks.len()).collect::<Vec<usize>>());
+    let tracks = use_memo(move || (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
     let total_time = use_memo(move || {
-        CONTROLLER
+        controller
             .read()
             .all_tracks
             .iter()
@@ -82,11 +82,11 @@ pub fn AllTracks() -> Element {
             class: "alltracksview",
             display: if VIEW.read().current != View::AllTracks { "none" },
             div { class: "searchbar", onclick: move |_| is_searching.set(true),
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
             }
             div { color: "white", padding: "10px",
-                "{CONTROLLER.read().all_tracks.len()} songs / "
+                "{controller.read().all_tracks.len()} songs / "
                 "{display_time(total_time())} total duration"
             }
             div {
@@ -102,7 +102,7 @@ pub fn AllTracks() -> Element {
                         id: "alltracks-trackitem-{i}",
                         style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                         onclick: move |_| {
-                            CONTROLLER.write().add_all_queue(i);
+                            controller.write().add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
                         img {
@@ -110,21 +110,25 @@ pub fn AllTracks() -> Element {
                             loading: "onvisible",
                             src: "/trackimage/{i}",
                         }
-                        span { "{CONTROLLER.read().all_tracks[i].title}" }
+                        span { "{controller.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }
                         img {
                             class: "trackbutton",
                             loading: "onvisible",
-                            src: "/assets/icons/vert.svg",
+                            src: VERT_ICON,
                         }
                     }
                 }
             
             }
             if is_searching() {
-                TracksSearch { tracks, is_searching, id_prefix: "alltracks" }
+                TracksSearch {
+                    controller,
+                    tracks,
+                    is_searching,
+                    id_prefix: "alltracks",
+                }
             }
         }
     }
 }
-

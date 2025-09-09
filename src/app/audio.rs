@@ -1,5 +1,4 @@
 use log::info;
-use rodio::queue::SourcesQueueOutput;
 use rodio::{Decoder, OutputStream, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
@@ -18,9 +17,10 @@ impl PartialEq for AudioPlayer {
 }
 
 impl AudioPlayer {
+    /// New audio player using the default device stream
     pub fn new() -> Self {
-        let _stream_handle = rodio::OutputStreamBuilder::open_default_stream()
-            .expect("open default audio stream");
+        let _stream_handle =
+            rodio::OutputStreamBuilder::open_default_stream().expect("open default audio stream");
         let sink = rodio::Sink::connect_new(&_stream_handle.mixer());
 
         AudioPlayer {
@@ -30,7 +30,8 @@ impl AudioPlayer {
         }
     }
 
-    pub fn play_track(&mut self, file_path: &str) {
+    /// Plays a new track from file into the audio sink
+    pub fn play_track(&mut self, file_path: &str) -> f64 {
         info!("Playing track: {file_path:?}");
         let file = BufReader::new(File::open(file_path).unwrap());
         let source = Decoder::new(file).unwrap();
@@ -40,17 +41,22 @@ impl AudioPlayer {
             .as_secs_f64();
 
         let was_paused = self.sink.is_paused();
+        info!("was paused {was_paused}");
         self.sink.clear();
         self.sink.append(source);
         self.sink.play();
-        //self._stream_handle.mixer().add(source);
+
         if !was_paused {
             self.sink.play();
         }
-        info!("{}", self.sink.empty());
+
+        // Seek to 0 to make sure the track starts from the beginning
+        let _ = self.sink.try_seek(Duration::from_secs_f64(0.0));
         info!("Track successfully played");
+        self.current_song_len
     }
 
+    /// Toggles the audio device from playing the current track
     pub fn toggle_playing(&mut self) {
         info!("{}", self.sink.is_paused());
         if self.sink.is_paused() {
@@ -61,19 +67,19 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
-         self.sink.play(); 
+        self.sink.play();
     }
 
     pub fn pause(&mut self) {
-         self.sink.pause(); 
+        self.sink.pause();
     }
 
     pub fn playing(&self) -> bool {
-        !self.sink.is_paused() 
+        !self.sink.is_paused()
     }
 
     pub fn progress_percent(&self) -> f64 {
-         self.sink.get_pos().as_secs_f64() / self.current_song_len 
+        self.sink.get_pos().as_secs_f64() / self.current_song_len
     }
 
     pub fn progress_secs(&self) -> f64 {

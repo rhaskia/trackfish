@@ -1,11 +1,12 @@
-use super::CONTROLLER;
+use super::icons::*;
 use super::{View, VIEW};
+use crate::app::MusicController;
 use dioxus::prelude::*;
 use log::info;
 use std::fmt::{Display, Formatter};
 
 #[component]
-pub fn Settings() -> Element {
+pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
     let mut settings_menu = use_signal(|| SettingsMenu::Audio);
     let mut extended_list = use_signal(|| false);
 
@@ -22,35 +23,37 @@ pub fn Settings() -> Element {
                 class: "settingslistbutton",
                 onclick: move |_| extended_list.set(!extended_list()),
             }
+
             div { class: "settingslist", class: if !extended_list() { "closed" },
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
-                    img { src: "assets/icons/audio.svg" }
+                    img { src: AUDIO_ICON }
                     "Audio"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Radio),
-                    img { src: "assets/icons/radio.svg" }
+                    img { src: RADIO_ICON }
                     "Radio Settings"
                 }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Library),
-                    img { src: "assets/icons/library.svg" }
+                    img { src: LIBRARY_ICON }
                     "Song library"
                 }
             }
+
             match settings_menu() {
                 SettingsMenu::Radio => rsx! {
-                    RadioSettings {}
+                    RadioSettings { controller }
                 },
                 SettingsMenu::Library => rsx! {
-                    LibrarySettings {}
+                    LibrarySettings { controller }
                 },
                 SettingsMenu::Audio => rsx! {
-                    AudioSettings {}
+                    AudioSettings { controller }
                 },
             }
         }
@@ -75,7 +78,7 @@ impl Display for SettingsMenu {
 }
 
 #[component]
-fn AudioSettings() -> Element {
+fn AudioSettings(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         div { class: "settingsmenu",
             h2 { class: "settingsbar", "Audio" }
@@ -85,8 +88,8 @@ fn AudioSettings() -> Element {
                     r#type: "range",
                     max: "1",
                     step: "0.01",
-                    value: "{CONTROLLER.read().settings.volume}",
-                    oninput: move |e| CONTROLLER.write().set_volume(e.parsed::<f32>().unwrap()),
+                    value: "{controller.read().settings.volume}",
+                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap()),
                 }
             }
         }
@@ -94,18 +97,19 @@ fn AudioSettings() -> Element {
 }
 
 #[component]
-fn RadioSettings() -> Element {
+fn RadioSettings(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         form {
             class: "settingsmenu",
-            onchange: move |_| CONTROLLER.write().settings.save(),
+            onchange: move |_| controller.write().settings.save(),
             h2 { class: "settingsbar", "Radio" }
             SettingsInput {
                 label: "Radio Temperature",
                 max: "2.0",
-                oninput: move |e: Event<FormData>| CONTROLLER.write().set_temp(e.parsed::<f32>().unwrap()),
-                value: "{CONTROLLER.read().settings.radio.temp}",
+                oninput: move |e: Event<FormData>| controller.write().set_temp(e.parsed::<f32>().unwrap()),
+                value: "{controller.read().settings.radio.temp}",
             }
+
             div { class: "settingbox",
                 span { "Track features to use" }
                 div { class: "selectwrapper",
@@ -116,70 +120,79 @@ fn RadioSettings() -> Element {
                     }
                 }
             }
+
             SettingsInput {
                 label: "Same artist penalty",
                 max: "1.0",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.artist_penalty}",
+                value: "{controller.read().settings.radio.artist_penalty}",
             }
+
             SettingsInput {
                 max: "1.0",
                 label: "Same album penalty",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.album_penalty = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.album_penalty}",
+                value: "{controller.read().settings.radio.album_penalty}",
             }
+
             hr {}
+
             SettingsInput {
                 max: "2.0",
                 label: "MFCC weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.mfcc_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.mfcc_weight}",
+                value: "{controller.read().settings.radio.mfcc_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Chroma weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.chroma_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.chroma_weight}",
+                value: "{controller.read().settings.radio.chroma_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Spectral weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.spectral_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.spectral_weight}",
+                value: "{controller.read().settings.radio.spectral_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "Energy weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.energy_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.energy_weight}",
+                value: "{controller.read().settings.radio.energy_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "BPM weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.bpm_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.bpm_weight}",
+                value: "{controller.read().settings.radio.bpm_weight}",
             }
+
             SettingsInput {
                 max: "2.0",
                 label: "ZCR weight",
                 oninput: move |e: Event<FormData>| {
-                    CONTROLLER.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap();
+                    controller.write().settings.radio.zcr_weight = e.parsed::<f32>().unwrap();
                 },
-                value: "{CONTROLLER.read().settings.radio.zcr_weight}",
+                value: "{controller.read().settings.radio.zcr_weight}",
             }
         }
     }
@@ -203,6 +216,7 @@ fn SettingsInput(
                     value: value.clone(),
                     oninput,
                 }
+
                 input { class: "smalltextinput", r#type: "text", value }
             }
         }
@@ -210,16 +224,17 @@ fn SettingsInput(
 }
 
 #[component]
-fn LibrarySettings() -> Element {
+fn LibrarySettings(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         div { class: "settingsmenu",
             h2 { class: "settingsbar", "Library" }
+
             div { class: "settingbox",
                 span { "Music Directory" }
                 input {
                     r#type: "text",
-                    value: "{CONTROLLER.read().settings.directory}",
-                    onchange: move |e| CONTROLLER.write().set_directory(e.value()),
+                    value: "{controller.read().settings.directory}",
+                    onchange: move |e| controller.write().set_directory(e.value()),
                 }
             }
         }

@@ -1,35 +1,37 @@
-use super::{View, CONTROLLER, TRACKOPTION, VIEW};
+use super::{View, TRACKOPTION, VIEW};
+use crate::app::MusicController;
+use crate::gui::icons::*;
 use dioxus::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;
 
 #[component]
-pub fn TrackView() -> Element {
-    let mut progress = use_signal(|| CONTROLLER.read().player.progress_secs());
+pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
+    let mut progress = use_signal(|| controller.read().progress_secs);
     let mut progress_held = use_signal(|| false);
 
+    // Skip to next song
     let skip = move |_: Event<MouseData>| {
-        CONTROLLER.write().skip();
+        controller.write().skip();
         progress.set(0.0);
-        info!("{:?}", CONTROLLER.read().current_track());
+        info!("{:?}", controller.read().current_track());
     };
 
+    // Skip to previous song, or start of current song
     let skipback = move |_: Event<MouseData>| {
-        CONTROLLER.write().skipback();
+        controller.write().skipback();
         progress.set(0.0);
-        info!("{:?}", CONTROLLER.read().current_track());
+        info!("{:?}", controller.read().current_track());
     };
 
+    // Updates song progress to UI from controller without breaking input slider functionality
     use_future(move || async move {
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
-            if !progress_held() {
-                *progress.write() = CONTROLLER.read().player.progress_secs();
-                if CONTROLLER.read().player.track_ended() && CONTROLLER.read().all_tracks.len() > 0
-                {
-                    CONTROLLER.write().skip();
-                }
+            if !progress_held() && controller.read().playing() {
+                controller.write().progress_secs += 0.25;
+                *progress.write() = controller.read().progress_secs;
             }
         }
     });
@@ -42,23 +44,23 @@ pub fn TrackView() -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                background_image: "url(/trackimage/{CONTROLLER.read().current_track_idx()})",
+                background_image: "url(/trackimage/{controller.read().current_track_idx()})",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    src: "/trackimage/{CONTROLLER.read().current_track_idx()}",
+                    src: "/trackimage/{controller.read().current_track_idx()}",
                     loading: "onvisible",
                 }
             }
 
             div { class: "trackcontrols",
-                h3 { "{CONTROLLER.read().current_track_title().unwrap_or_default()}" }
+                h3 { "{controller.read().current_track_title().unwrap_or_default()}" }
 
                 // Song artist list
                 span { class: "artistspecifier",
-                    for (idx , artist) in CONTROLLER
+                    for (idx , artist) in controller
                         .read()
                         .current_track_artist()
                         .cloned()
@@ -70,6 +72,7 @@ pub fn TrackView() -> Element {
                         if idx > 0 {
                             ", "
                         }
+
                         span {
                             onclick: move |_| {
                                 VIEW.write().open(View::Artists);
@@ -86,16 +89,16 @@ pub fn TrackView() -> Element {
                     // Open album view on click
                     onclick: move |_| {
                         VIEW.write().album = Some(
-                            CONTROLLER.read().current_track_album().unwrap_or_default().to_string(),
+                            controller.read().current_track_album().unwrap_or_default().to_string(),
                         );
                         VIEW.write().open(View::Albums);
                     },
-                    "{CONTROLLER.read().current_track_album().unwrap_or_default()}"
+                    "{controller.read().current_track_album().unwrap_or_default()}"
                 }
 
                 // Song genre list
                 span { class: "genresspecifier",
-                    if let Some(genres) = CONTROLLER.read().current_track_genres() {
+                    if let Some(genres) = controller.read().current_track_genres() {
                         for genre in genres.iter().cloned() {
                             span {
                                 // Open genre view on click
@@ -111,53 +114,53 @@ pub fn TrackView() -> Element {
 
                 // Track progress information
                 div { class: "progressrow",
-                    span { class: "songprogress",
-                        "{format_seconds(CONTROLLER.read().player.progress_secs())}"
-                    }
+                    span { class: "songprogress", "{format_seconds(progress())}" }
                     input {
                         r#type: "range",
                         value: progress,
                         step: 0.25,
-                        max: CONTROLLER.read().player.song_length(),
+                        max: controller.read().song_length,
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
-                            CONTROLLER.write().player.set_pos(value);
+                            controller.write().set_pos(value);
                             progress.set(value)
                         },
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),
                     }
-                    span { class: "songlength",
-                        "{format_seconds(CONTROLLER.read().player.song_length())}"
-                    }
+                    span { class: "songlength", "{format_seconds(controller.read().song_length)}" }
                 }
 
                 // Track controls
                 div { class: "buttonrow",
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/vert.svg)",
-                        onclick: move |_| *TRACKOPTION.write() = Some(CONTROLLER.read().current_track_idx()),
+                        background_image: "url({VERT_ICON})",
+                        onclick: move |_| *TRACKOPTION.write() = Some(controller.read().current_track_idx()),
                     }
+
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/skipprevious.svg)",
+                        background_image: "url({SKIP_BACK_ICON})",
                         onclick: skipback,
                     }
+
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().playing() { "url(assets/icons/pause.svg)" } else { "url(assets/icons/play.svg)" },
-                        onclick: move |_| CONTROLLER.write().toggle_playing(),
+                        background_image: if controller.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
+                        onclick: move |_| controller.write().toggle_playing(),
                     }
+
                     button {
                         class: "svg-button",
-                        background_image: "url(assets/icons/skip.svg)",
+                        background_image: "url({SKIP_ICON})",
                         onclick: skip,
                     }
+
                     button {
                         class: "svg-button",
-                        background_image: if CONTROLLER.read().shuffle { "url(assets/icons/shuffleon.svg)" } else { "url(assets/icons/shuffle.svg)" },
-                        onclick: move |_| CONTROLLER.write().toggle_shuffle(),
+                        background_image: if controller.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
+                        onclick: move |_| controller.write().toggle_shuffle(),
                     }
                 }
             }
@@ -166,7 +169,8 @@ pub fn TrackView() -> Element {
 }
 
 fn format_seconds(seconds: f64) -> String {
-    let s = seconds % 60.0;
-    let minutes = (seconds - s) / 60.0;
+    let seconds = seconds as i64;
+    let s = seconds % 60;
+    let minutes = (seconds - s) / 60;
     format!("{minutes:.0}:{s:02.0}")
 }

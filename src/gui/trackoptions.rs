@@ -1,86 +1,100 @@
-use super::{View, ADD_TO_PLAYLIST, CONTROLLER, TRACKOPTION, VIEW};
+use crate::app::MusicController;
+
+use super::icons::*;
+use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
 
 #[component]
-pub fn TrackOptions() -> Element {
+pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
+    // Only render if TRACKOPTION is set, eg user intended to open options
     if let Some(track) = TRACKOPTION() {
         rsx! {
             div {
                 class: "optionsbg",
                 onclick: move |_| *TRACKOPTION.write() = None,
                 div { class: "trackoptions optionbox",
-                    h3 { "{CONTROLLER.read().all_tracks[track].title}" }
+                    h3 { "{controller.read().all_tracks[track].title}" }
 
                     button {
-                        img { src: "assets/icons/info.svg" }
+                        img { src: INFO_ICON }
                         "Track Information"
                     }
 
                     // View separate options
                     match VIEW.read().current {
                         View::Song => rsx! {
-                            TrackOptionsExplorerView { track }
+                            TrackOptionsExplorerView { controller, track }
                         },
                         View::Queue => rsx! {
-                            TrackOptionsQueueView { track }
+                            TrackOptionsQueueView { controller, track }
                         },
                         View::Playlists => rsx! {
-                            TrackOptionsPlaylistsView { track }
+                            TrackOptionsPlaylistsView { controller, track }
                         },
                         _ => rsx! {
-                            TrackOptionsExplorerView { track }
+                            TrackOptionsExplorerView { controller, track }
                         },
                     }
 
                     hr {}
 
                     // Various track options
-                    button { onclick: move |_| CONTROLLER.write().start_radio(track),
-                        img { src: "assets/icons/radio.svg" }
+                    button { onclick: move |_| controller.write().start_radio(track),
+                        img { src: RADIO_ICON }
                         "Start radio"
                     }
+
                     button { onclick: move |_| *ADD_TO_PLAYLIST.write() = Some(track),
-                        img { src: "assets/icons/playlistadd.svg" }
+                        img { src: PLAYLIST_ADD_ICON }
                         "Add to a playlist"
                     }
+
                     button {
-                        img { src: "assets/icons/queue.svg" }
+                        img { src: QUEUE_ICON }
                         "Add to a queue"
                     }
-                    button { onclick: move |_| CONTROLLER.write().mut_current_queue().cached_order.push(track),
-                        img { src: "assets/icons/playlistplay.svg" }
+
+                    button { onclick: move |_| controller.write().mut_current_queue().cached_order.push(track),
+                        img { src: PLAYLIST_PLAY_ICON }
                         "Add to current queue"
                     }
-                    button { onclick: move |_| CONTROLLER.write().play_next(track),
-                        img { src: "assets/icons/skip.svg" }
+
+                    button { onclick: move |_| controller.write().play_next(track),
+                        img { src: SKIP_ICON }
                         "Play after this song"
                     }
+
                     hr {}
+
                     button {
                         onclick: move |_| {
-                            let artist = CONTROLLER.read().all_tracks[track].artists[0].clone();
+                            let artist = controller.read().all_tracks[track].artists[0].clone();
                             VIEW.write().open(View::Artists);
                             VIEW.write().artist = Some(artist.clone());
                         },
-                        img { src: "assets/icons/artist.svg" }
+                        img { src: ARTIST_ICON }
                         "Go to artist"
                     }
+
                     button {
                         onclick: move |_| {
-                            let album = CONTROLLER.read().all_tracks[track].album.clone();
+                            let album = controller.read().all_tracks[track].album.clone();
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(album.clone());
                         },
-                        img { src: "assets/icons/album.svg" }
+                        img { src: ALBUM_ICON }
                         "Go to album"
                     }
+
                     hr {}
+
                     button {
-                        img { src: "assets/icons/edit.svg" }
+                        img { src: EDIT_ICON }
                         "Edit tags"
                     }
+
                     button {
-                        img { src: "assets/icons/delete.svg" }
+                        img { src: DELETE_ICON }
                         "Delete song from files"
                     }
                 }
@@ -92,38 +106,40 @@ pub fn TrackOptions() -> Element {
 }
 
 #[component]
-pub fn TrackOptionsQueueView(track: usize) -> Element {
+pub fn TrackOptionsQueueView(controller: SyncSignal<MusicController>, track: usize) -> Element {
     rsx! {
         button {
-            img { src: "assets/icons/info.svg" }
+            img { src: INFO_ICON }
             "Remove from queue"
         }
     }
 }
 
 #[component]
-pub fn TrackOptionsTrackView(track: usize) -> Element {
+pub fn TrackOptionsTrackView(controller: SyncSignal<MusicController>, track: usize) -> Element {
     rsx! {
         span {}
     }
 }
 
 #[component]
-pub fn TrackOptionsExplorerView(track: usize) -> Element {
+pub fn TrackOptionsExplorerView(controller: SyncSignal<MusicController>, track: usize) -> Element {
     rsx! {
         span {}
     }
 }
 
 #[component]
-pub fn TrackOptionsPlaylistsView(track: usize) -> Element {
+pub fn TrackOptionsPlaylistsView(controller: SyncSignal<MusicController>, track: usize) -> Element {
     rsx! {
         button {
             onclick: move |_| {
-                CONTROLLER.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
-                CONTROLLER.write().save_playlist(VIEW.read().playlist.unwrap());
+                controller.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
+                controller.write().save_playlist(VIEW.read().playlist.unwrap());
             },
-            img { src: "assets/icons/remove.svg" }
+
+            img { src: REMOVE_ICON }
+
             "Remove from playlist"
         }
     }

@@ -1,15 +1,18 @@
-use dioxus::prelude::*;
-use crate::gui::{View, VIEW, CONTROLLER};
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
+use crate::{
+    app::MusicController,
+    gui::{icons::*, View, VIEW},
+};
+use dioxus::prelude::*;
 
 #[component]
-pub fn GenreList() -> Element {
+pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
     let mut genres = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
-        let mut genres_unsorted = CONTROLLER
+        let mut genres_unsorted = controller
             .read()
             .genres
             .clone()
@@ -27,17 +30,20 @@ pub fn GenreList() -> Element {
         div {
             class: "artists",
             display: if VIEW.read().current != View::Genres { "none" },
+
             div {
                 class: "searchbar",
                 display: if VIEW.read().genre.is_some() { "none" },
                 onclick: move |_| is_searching.set(true),
-                img { src: "assets/icons/search.svg" }
+                img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
             }
+
             div {
                 id: "genrelist",
                 class: "tracklist",
                 display: if VIEW.read().genre.is_some() { "none" },
+
                 for i in 0..genres.read().len() {
                     if genres.read()[i].1 > 1 {
                         div {
@@ -54,9 +60,11 @@ pub fn GenreList() -> Element {
                     }
                 }
             }
+
             if VIEW.read().genre.is_some() {
-                TracksView { viewtype: View::Genres }
+                TracksView { controller, viewtype: View::Genres }
             }
+
             if is_searching() {
                 GenreSearch { is_searching, genres }
             }
@@ -67,7 +75,7 @@ pub fn GenreList() -> Element {
 #[component]
 pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize)>>) -> Element {
     let mut search = use_signal(String::new);
-    
+
     let matches = use_memo(move || {
         let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
@@ -79,19 +87,19 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                 .read()
                 .iter()
                 .map(|t| t.0.clone())
-                .filter(|t| {
-                    strip_unnessecary(&t).starts_with(&search)
-                })
+                .filter(|t| strip_unnessecary(&t).starts_with(&search))
                 .collect::<Vec<String>>()
         }
     });
 
-    rsx!{
+    rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
+
             div { class: "searchpopup",
                 div { class: "searchpopupbar",
-                    img { src: "assets/icons/search.svg" }
+                    img { src: SEARCH_ICON }
+
                     input {
                         id: "genresearchbar",
                         value: search,
@@ -100,6 +108,7 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                         oninput: move |e| search.set(e.value()),
                     }
                 }
+
                 div { class: "searchtracks",
                     for genre in matches() {
                         div {
@@ -109,11 +118,13 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                                     &format!("document.getElementById('genre-{}').scrollIntoView();", genre),
                                 );
                             },
+
                             span { "{genre}" }
                         }
                     }
                 }
             }
+
             div { flex: 1 }
         }
     }

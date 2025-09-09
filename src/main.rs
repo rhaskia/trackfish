@@ -6,30 +6,42 @@ pub mod database;
 pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
-use dioxus::{mobile::WindowBuilder, prelude::*};
+use dioxus:: prelude::*;
 use http::Response;
 use log::{error, info};
 use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
-use tracing_log::LogTracer;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::use_asset_handler;
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
-use tokio::sync::mpsc::unbounded_channel;
 
 use app::{
     settings::RadioSettings,
-    track::{load_tracks, TrackInfo, get_track_image},
+    track::{get_track_image, load_tracks, TrackInfo},
     MusicController,
 };
 use gui::*;
 
+pub use gui::icons;
+
+// CSS
+static MAIN_CSS: Asset = asset!("/assets/style.css");
+static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
+static EXPLORER_CSS: Asset = asset!("/assets/explorer.css");
+static MENUBAR_CSS: Asset = asset!("/assets/menubar.css");
+static QUEUE_CSS: Asset = asset!("/assets/queue.css");
+static PLAYLISTS_CSS: Asset = asset!("/assets/playlists.css");
+static SETTINGS_CSS: Asset = asset!("/assets/settings.css");
+static TRACKOPTIONS_CSS: Asset = asset!("/assets/trackoptions.css");
+static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
+
 fn main() {
     // Hook panics into the logger to see them on android
+    #[cfg(target_os = "android")]
     std::panic::set_hook(Box::new(|panic_info| {
         if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             info!("panic occurred: {s:?} at {:?}", panic_info.location());
@@ -46,10 +58,18 @@ fn main() {
 #[cfg(target_os = "android")]
 fn init() {
     use android_logger::Config;
+    use env_filter::Builder;
     use log::LevelFilter;
+
+    let mut builder = Builder::new();
+    builder.filter(None, LevelFilter::Trace);
+    builder.filter(Some("tungstenite"), LevelFilter::Off);
+
+    let filter = builder.build();
 
     android_logger::init_once(
         Config::default()
+            .with_filter(filter)
             .with_max_level(LevelFilter::Trace)
             .with_tag("com.example.Music"),
     );
@@ -89,6 +109,7 @@ fn init() {
 fn SetUpRoute() -> Element {
     use app::settings::Settings;
     let mut set_up = use_signal(Settings::exists);
+    #[allow(unused_mut)]
     let mut dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
@@ -102,9 +123,7 @@ fn SetUpRoute() -> Element {
                 onclick: move |_| async move {
                     #[cfg(not(target_os = "android"))]
                     {
-                        let file = rfd::FileDialog::new()
-                            .set_directory("/")
-                            .pick_folder();
+                        let file = rfd::FileDialog::new().set_directory("/").pick_folder();
                         if let Some(file) = file {
                             dir.set(file.display().to_string());
                         }
@@ -116,6 +135,8 @@ fn SetUpRoute() -> Element {
             br {}
             br {}
             button {
+                width: "200px",
+                height: "50px",
                 onclick: move |_| {
                     Settings {
                         directory: dir(),
@@ -135,29 +156,24 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let mut loading_track_weights = use_signal(|| 0);
     let mut tracks_count = use_signal(|| 0);
+    let mut controller = use_signal_sync(|| MusicController::empty());
+    *gui::CONTROLLER.lock().unwrap() = Some(controller);
 
-    #[cfg(target_os = "android")]
-    let mut session = use_signal(|| None);
+    #[cfg(not(target_os = "android"))]
+    use_future(move || async move {
+        crate::gui::start_controller_thread();
+    });
 
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
-        #[cfg(target_os = "android")]
-        {
-            //let result = crossbow::Permission::StorageRead.request_async().await;
-            let result = crossbow_android::permission::request_permission(
-                &crossbow_android::permission::AndroidPermission::ReadMediaAudio,
-            )
-            .await;
-            info!("{result:?}");
-        }
 
-        let tracks = load_tracks(&CONTROLLER.read().settings.directory);
+        let tracks = load_tracks(&controller.read().settings.directory);
         if let Ok(t) = tracks {
             tracks_count.set(t.len());
-            let dir = CONTROLLER.read().settings.directory.clone();
-            *CONTROLLER.write() = MusicController::new(t, dir);
-            info!("Loaded tracks in {:?}", started.elapsed());
+            let dir = controller.read().settings.directory.clone();
+            controller.set(MusicController::new(t, dir));
+            info!("Loaded all tracks in {:?}", started.elapsed());
         } else {
             info!("{:?}", tracks);
         }
@@ -172,63 +188,18 @@ fn App() -> Element {
             weights.insert(hash, row_to_weights(&row).unwrap());
         }
 
-        let len = CONTROLLER.read().all_tracks.len();
+        let len = controller.read().all_tracks.len();
+
         for i in 0..len {
             loading_track_weights += 1;
-            let is_cached = CONTROLLER.write().load_weight(&cache, &weights, i);
+            let is_cached = controller.write().load_weight(&cache, &weights, i);
             if !is_cached {
-                tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.001)).await;
+                tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
             }
         }
     });
 
-    // Start up media session
-    #[cfg(target_os = "android")]
-    use_future(move || async move {
-        use crate::media::{MediaMsg, MEDIA_MSG_TX};
-        let result = crossbow_android::permission::request_permission(
-            &crossbow_android::permission::AndroidPermission::PostNotifications,
-        )
-        .await;
-        info!("{result:?}");
-
-        let (tx, mut rx) = unbounded_channel();
-        *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
-        session.set(Some(crate::gui::media::MediaSession::new()));
-        info!("Set up media session successfully");
-
-        while let Some(msg) = rx.recv().await {
-            match msg {
-                MediaMsg::Play => CONTROLLER.write().play(),
-                MediaMsg::Pause => CONTROLLER.write().pause(),
-                MediaMsg::Next => CONTROLLER.write().skip(),
-                MediaMsg::Previous => CONTROLLER.write().skipback(),
-                MediaMsg::SeekTo(pos) => CONTROLLER.write().player.set_pos(pos as f64 / 1000.0),
-            }
-        }
-    });
-
-    // Update mediasession as needed
-    #[cfg(target_os = "android")]
-    use_effect(move || {
-        if let Some(ref mut session) = *session.write() {
-            if let Some(track) = CONTROLLER.read().current_track() {
-                let image = get_track_image(&track.file);
-                session.update_metadata(
-                    &track.title,
-                    &track.artists[0],
-                    (track.len * 1000.0) as i64,
-                    image,
-                );
-                session.update_state(
-                    CONTROLLER.read().playing(),
-                    (CONTROLLER.read().player.progress_secs() * 1000.0) as i64,
-                );
-            }
-        }
-    });
-
-    use_asset_handler("trackimage",  |request, responder| {
+    use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(404).body(&[]).unwrap();
 
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
@@ -238,7 +209,7 @@ fn App() -> Element {
             return;
         };
 
-        let track = CONTROLLER.read().get_track(id).cloned();
+        let track = controller.read().get_track(id).cloned();
 
         if track.is_none() {
             responder.respond(r);
@@ -263,16 +234,15 @@ fn App() -> Element {
     });
 
     rsx! {
-        document::Link { href: "assets/style.css", rel: "stylesheet" }
-
-        document::Link { href: "assets/alltracks.css", rel: "stylesheet" }
-        document::Link { href: "assets/explorer.css", rel: "stylesheet" }
-        document::Link { href: "assets/menubar.css", rel: "stylesheet" }
-        document::Link { href: "assets/playlists.css", rel: "stylesheet" }
-        document::Link { href: "assets/settings.css", rel: "stylesheet" }
-        document::Link { href: "assets/trackview.css", rel: "stylesheet" }
-        document::Link { href: "assets/trackoptions.css", rel: "stylesheet" }
-        document::Link { href: "assets/queue.css", rel: "stylesheet" }
+        document::Stylesheet { href: MAIN_CSS }
+        document::Stylesheet { href: ALL_TRACKS_CSS }
+        document::Stylesheet { href: EXPLORER_CSS }
+        document::Stylesheet { href: MENUBAR_CSS }
+        document::Stylesheet { href: PLAYLISTS_CSS }
+        document::Stylesheet { href: SETTINGS_CSS }
+        document::Stylesheet { href: TRACKVIEW_CSS }
+        document::Stylesheet { href: TRACKOPTIONS_CSS }
+        document::Stylesheet { href: QUEUE_CSS }
 
         div {
             class: "loadingpopupbg",
@@ -283,16 +253,16 @@ fn App() -> Element {
         }
 
         div { class: "mainview", tabindex: 0, autofocus: true,
-            TrackView {}
-            TrackOptions {}
-            QueueList {}
-            AllTracks {}
-            GenreList {}
-            ArtistList {}
-            AlbumsList {}
-            PlaylistsView {}
-            SearchView {}
-            Settings {}
+            TrackView { controller }
+            TrackOptions { controller }
+            QueueList { controller }
+            AllTracks { controller }
+            GenreList { controller }
+            ArtistList { controller }
+            AlbumsList { controller }
+            PlaylistsView { controller }
+            SearchView { controller }
+            Settings { controller }
         }
 
         MenuBar {}
@@ -305,47 +275,47 @@ pub fn MenuBar() -> Element {
         div { class: "buttonrow nav",
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/song.svg)",
+                background_image: "url({asset!(\"/assets/icons/song.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Song),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/queue.svg)",
+                background_image: "url({asset!(\"/assets/icons/queue.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Queue),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/folder.svg)",
+                background_image: "url({asset!(\"/assets/icons/folder.svg\")})",
                 onclick: move |_| VIEW.write().open(View::AllTracks),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/album.svg)",
+                background_image: "url({asset!(\"/assets/icons/album.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Albums),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/artist.svg)",
+                background_image: "url({asset!(\"/assets/icons/artist.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Artists),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/genres.svg)",
+                background_image: "url({asset!(\"/assets/icons/genres.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Genres),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/playlist.svg)",
+                background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Playlists),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/search.svg)",
+                background_image: "url({asset!(\"/assets/icons/search.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Search),
             }
             button {
                 class: "svg-button",
-                background_image: "url(assets/icons/settings.svg)",
+                background_image: "url({asset!(\"/assets/icons/settings.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Settings),
             }
         }
