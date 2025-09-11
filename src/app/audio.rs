@@ -51,7 +51,7 @@ impl AudioPlayer {
         }
 
         // Seek to 0 to make sure the track starts from the beginning
-        let _ = self.sink.try_seek(Duration::from_secs_f64(0.0));
+        self.set_pos(0.0);
         info!("Track successfully played");
         self.current_song_len
     }
@@ -95,7 +95,10 @@ impl AudioPlayer {
     }
 
     pub fn set_pos(&mut self, pos: f64) {
-        let _ = self.sink.try_seek(Duration::from_secs_f64(pos));
+        let try_seek = self.sink.try_seek(Duration::from_secs_f64(0.0));
+        if let Err(seek_error) = try_seek {
+            info!("Recieved seek error: {seek_error:?}");
+        }
     }
 
     pub fn set_volume(&mut self, volume: f32) {

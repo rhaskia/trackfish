@@ -112,6 +112,7 @@ pub fn start_controller_thread() {
                         if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                             let mut controller = ctrl.clone();
                             controller.write().progress_secs = audio_player.progress_secs();
+                            controller.write().playing = audio_player.playing();
                             info!("progress {}", audio_player.progress_secs());
 
                             let track = controller.read().current_track().cloned();

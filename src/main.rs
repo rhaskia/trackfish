@@ -64,6 +64,7 @@ fn init() {
     let mut builder = Builder::new();
     builder.filter(None, LevelFilter::Trace);
     builder.filter(Some("tungstenite"), LevelFilter::Off);
+    builder.filter(Some("jni"), LevelFilter::Off);
 
     let filter = builder.build();
 
