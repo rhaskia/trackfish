@@ -15,7 +15,10 @@ use std::io::Cursor;
 use std::time::Instant;
 
 #[cfg(not(target_os = "android"))]
-use dioxus::desktop::use_asset_handler;
+use dioxus::desktop::{use_asset_handler, WindowBuilder};
+#[cfg(not(target_os = "android"))]
+use tracing_log::LogTracer;
+
 #[cfg(target_os = "android")]
 use dioxus::mobile::use_asset_handler;
 

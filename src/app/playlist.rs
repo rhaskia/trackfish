@@ -1,6 +1,5 @@
 use super::utils::strip_unnessecary;
 use crate::app::Track;
-use log::info;
 use std::path::PathBuf;
 use std::{fs, io};
 
@@ -41,7 +40,6 @@ impl Playlist {
                 track_paths.push(line.to_string());
 
                 let canon_path = PathBuf::from(dir).clone().join(line);
-                info!("{canon_path:?}");
                 let path = if PathBuf::from(line).exists() {
                     PathBuf::from(line)
                 } else if canon_path.exists() {

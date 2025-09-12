@@ -126,7 +126,7 @@ class KeepAliveService : Service() {
             abandonAudioFocus()
         }
 
-        Log.i("com.example.Music", "requested media notification with state " + isPlaying)
+        Log.i("com.example.Music", "requested media notification with playing state " + isPlaying)
 
         // Update MediaSession playback state
         val state = android.media.session.PlaybackState.Builder()
@@ -178,7 +178,7 @@ class KeepAliveService : Service() {
             
         startForeground(1, notification)
 
-        Log.i("com.example.Music", title)
+        Log.i("com.example.Music", "successfully started foreground service")
     }
 
     // JNI-callable

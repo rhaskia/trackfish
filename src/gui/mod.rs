@@ -62,9 +62,13 @@ pub fn start_controller_thread() {
 
             #[allow(unused_mut)]
             let (tx, mut media_rx) = channel();
-            *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+            #[cfg(target_os = "android")]
+            {
+                *MEDIA_MSG_TX.lock().unwrap() = Some(tx);
+            }
 
             info!("Started music message watcher");
+
             loop {
                 // Watches for Android media notification callbacks
                 // Possibly could move these into callback functions themselves to cut out the
@@ -113,21 +117,18 @@ pub fn start_controller_thread() {
                             let mut controller = ctrl.clone();
                             controller.write().progress_secs = audio_player.progress_secs();
                             controller.write().playing = audio_player.playing();
-                            info!("progress {}", audio_player.progress_secs());
 
                             let track = controller.read().current_track().cloned();
 
                             // Set media notification to update user and keep FGS alive
                             #[cfg(target_os = "android")]
                             if let Some(track) = track {
-                                info!("MEDIA NOTIF {track:?}");
                                 let image = get_track_image(&track.file);
 
                                 info!("Updating media notification");
                                 // Avoid accessing the controller twice in a statement, as the app
                                 // seems to freak out about it 
                                 let progress = (controller.read().progress_secs * 1000.0) as i64;
-                                info!("progress {}", progress);
 
                                 let result = crate::gui::media::update_media_notification(
                                     &track.title,
@@ -137,7 +138,7 @@ pub fn start_controller_thread() {
                                     controller.read().playing(),
                                     image,
                                 );
-                                info!("MEDIA RESULT {result:?}");
+                                info!("Media notification result: {result:?}");
                             }
                         }
                     }
@@ -147,8 +148,6 @@ pub fn start_controller_thread() {
                     } // channel closed
                     _ => {}
                 }
-
-                info!("TRACK ENDED {}", audio_player.track_ended());
 
                 // Manage track skipping
                 if audio_player.track_ended() && track_playing {

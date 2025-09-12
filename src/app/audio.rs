@@ -33,15 +33,23 @@ impl AudioPlayer {
     /// Plays a new track from file into the audio sink
     pub fn play_track(&mut self, file_path: &str) -> f64 {
         info!("Playing track: {file_path:?}");
-        let file = BufReader::new(File::open(file_path).unwrap());
-        let source = Decoder::new(file).unwrap();
+        let f = File::open(file_path).unwrap();
+        let len = f.metadata().unwrap().len();
+        let file = BufReader::new(f);
+
+        let source = Decoder::builder()
+            .with_data(file)
+            .with_seekable(true)
+            .with_gapless(true)
+            .build()
+            .unwrap();
+
         self.current_song_len = source
             .total_duration()
             .unwrap_or(Duration::ZERO)
             .as_secs_f64();
 
         let was_paused = self.sink.is_paused();
-        info!("was paused {was_paused}");
         self.sink.clear();
         self.sink.append(source);
         self.sink.play();
@@ -58,7 +66,6 @@ impl AudioPlayer {
 
     /// Toggles the audio device from playing the current track
     pub fn toggle_playing(&mut self) {
-        info!("{}", self.sink.is_paused());
         if self.sink.is_paused() {
             self.sink.play();
         } else {
@@ -95,7 +102,7 @@ impl AudioPlayer {
     }
 
     pub fn set_pos(&mut self, pos: f64) {
-        let try_seek = self.sink.try_seek(Duration::from_secs_f64(0.0));
+        let try_seek = self.sink.try_seek(Duration::from_secs_f64(pos));
         if let Err(seek_error) = try_seek {
             info!("Recieved seek error: {seek_error:?}");
         }

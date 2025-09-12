@@ -40,10 +40,8 @@ pub enum MusicMsg {
 // Send message to AudioPlayer in thread
 pub fn send_music_msg(msg: MusicMsg) {
     if let Some(tx) = MUSIC_PLAYER_ACTIONS.lock().unwrap().as_ref() {
-        info!("sending with tx at {:p}", tx);
-        match tx.send(msg) {
-            Ok(_) => info!("sent"),
-            Err(e) => info!("send error: {e:?}"),
+        if let Err(e) = tx.send(msg) {
+            info!("send error: {e:?}");
         }
     } else {
         info!("no MUSIC_PLAYER_ACTIONS set");
@@ -228,7 +226,6 @@ impl MusicController {
         self.current_started = Instant::now();
         self.progress_secs = 0.0;
 
-        info!("Playing {:?}", &self.all_tracks[idx].file);
         send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()))
     }
 
