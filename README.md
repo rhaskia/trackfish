@@ -9,9 +9,7 @@ Windows: WebView2 (packaged with Edge),
 and aubio on all platforms
 
 ## Android
-Currently, the app on Android is held together by modified/newer versions of dioxus and you may run into some issues. 
-You will need to copy the kotlin folder into `.\target\dx\trackfish\release\android\app\app\src\main\kotlin` before building the app. 
-You will also need to use the github version of dioxus and build the cli from github as well. 
+You will need to build the Dioxus CLI from [github](https://github.com/DioxusLabs/dioxus).
 
 # To Do:
  - [x] Audio playing, skipping, etc
