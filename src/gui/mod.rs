@@ -61,6 +61,7 @@ pub fn start_controller_thread() {
             *MUSIC_PLAYER_ACTIONS.lock().unwrap() = Some(music_tx);
 
             #[allow(unused_mut)]
+            #[cfg(target_os = "android")]
             let (tx, mut media_rx) = channel();
             #[cfg(target_os = "android")]
             {

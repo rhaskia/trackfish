@@ -13,8 +13,8 @@ identifier = "com.example.Trackfish"
 publisher = "Rhaskia"
 
 icon = [
-    "./assets/icons/favicon.svg",
-   "./assets/icons/icon256.png",
+   "assets/icons/icon256.png",
+   "assets/icons/favicon.svg",
 ]
 
 category = "Music"
