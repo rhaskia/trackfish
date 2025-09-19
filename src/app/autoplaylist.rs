@@ -1,12 +1,38 @@
 use super::utils::{strip_unnessecary, similar};
 use super::track::Track;
+use std::fmt::Display;
+use std::ops::{Index, IndexMut};
+use std::str::FromStr;
+use strum_macros::EnumString;
+use strum_macros::Display;
 
+/// Autoplaylist struct
+/// Can be used to get a set of tracks that fit a certain conditions or set of conditions
+#[derive(PartialEq, Clone)]
 pub struct AutoPlaylist {
-    name: String,
-    conditions: Vec<Condition>,
+    pub name: String,
+    pub conditions: Condition,
     // TODO: sort-by?
 }
 
+impl AutoPlaylist {
+    pub fn new(name: String) -> Self {
+        Self { name, conditions: Condition::All(vec![
+            Condition::Is(StrIdentifier::Title, "Test".to_string()),
+            Condition::Has(StrIdentifier::Title, "Test".to_string()),
+            Condition::Greater(NumIdentifier::Year, 1970),
+            Condition::Any(vec![
+                Condition::EqualTo(NumIdentifier::Year, 1980),
+                Condition::Lesser(NumIdentifier::Year, 1990),
+            ]),
+            Condition::Not(Box::new(Condition::Is(StrIdentifier::Title, "Random Title".to_string()))),
+            Condition::Missing(Identifier::Str(StrIdentifier::Title)),
+        ]) }
+    }
+}
+
+/// Condition enum for autoplaylists 
+#[derive(PartialEq, Clone, Debug)]
 pub enum Condition {
     Is(StrIdentifier, String), // Identifier, Query
     Has(StrIdentifier, String), // Identifier, Query
@@ -19,13 +45,13 @@ pub enum Condition {
     Missing(Identifier),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Identifier {
     Str(StrIdentifier),
     Num(NumIdentifier)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
 pub enum StrIdentifier {
     Title,
     Genre,
@@ -33,13 +59,21 @@ pub enum StrIdentifier {
     Artist,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
 pub enum NumIdentifier {
     Year,
     Length,
     Energy
 }
 
+impl Display for Identifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Identifier::Str(s) => s.fmt(f),
+            Identifier::Num(n) => n.fmt(f),
+        } 
+    }
+}
 
 impl Condition {
     pub fn track_qualifies(&self, track: &Track) -> bool {
@@ -51,14 +85,12 @@ impl Condition {
                 StrIdentifier::Artist => track.artists.iter().any(|a| similar(&a, &value)),
                 StrIdentifier::Genre => track.genres.iter().any(|g| similar(&g, &value)),
                 StrIdentifier::Album => similar(&track.album, &value),
-                _ => todo!(),
             },
             Has(ident, value) => match ident {
                 StrIdentifier::Title => strip_unnessecary(&track.title).contains(&strip_unnessecary(&value)),
                 StrIdentifier::Artist => track.artists.iter().any(|a| strip_unnessecary(&a).contains(&strip_unnessecary(&value))),
                 StrIdentifier::Genre => track.genres.iter().any(|g| strip_unnessecary(&g).contains(&strip_unnessecary(&value))),
                 StrIdentifier::Album => strip_unnessecary(&track.album).contains(&strip_unnessecary(&value)),
-                _ => todo!(),
             },
             Not(cond) => !cond.track_qualifies(&track),
             Missing(ident) => match ident {
@@ -102,6 +134,74 @@ impl Condition {
         }
 
         results
+    }
+
+    pub fn set_ident(&mut self, ident: String) {
+        match self {
+            Condition::Is(ref mut i, _) => *i = ident.into(), 
+            Condition::Has(ref mut i, _) => *i = ident.into(), 
+            _ => {}
+        }
+    } 
+}
+
+impl Index<Vec<usize>> for Condition {
+    type Output = Self;
+
+    fn index(&self, mut index: Vec<usize>) -> &Self::Output {
+        if index.len() == 0 {
+            return &self;
+        }
+
+        let first_index = index.remove(0);
+
+        let inner = match self {
+            Condition::Any(conditions) => &conditions[first_index],
+            Condition::All(conditions) => &conditions[first_index],
+            Condition::Not(condition) => if first_index == 0 { &condition } else { panic!("Index {first_index} out of range for Condition::Not") },
+            _ => panic!("{self:?} does not support indexing"),
+        };
+
+        if index.len() == 0 {
+            return inner;
+        } else {
+            &inner[index]
+        }
+    }
+}
+
+impl IndexMut<Vec<usize>> for Condition {
+    fn index_mut(&mut self, mut index: Vec<usize>) -> &mut Self::Output {
+        if index.len() == 0 {
+            return self;
+        }
+
+        let first_index = index.remove(0);
+
+        let inner = match self {
+            Condition::Any(conditions) => &mut conditions[first_index],
+            Condition::All(conditions) => &mut conditions[first_index],
+            Condition::Not(condition) => if first_index == 0 { condition } else { panic!("Index {first_index} out of range for Condition::Not") },
+            _ => panic!("{self:?} does not support indexing"),
+        };
+
+        if index.len() == 0 {
+            return inner;
+        } else {
+            &mut inner[index]
+        }
+    }
+}
+
+impl Into<StrIdentifier> for String {
+    fn into(self) -> StrIdentifier {
+        match self.as_str() {
+            "Title" => StrIdentifier::Title,
+            "Artist" => StrIdentifier::Artist,
+            "Album" => StrIdentifier::Album,
+            "Genre" => StrIdentifier::Genre,
+            _ => unreachable!(),
+        }
     }
 }
 

@@ -4,7 +4,7 @@ use super::{
     queue::{Listen, Queue, QueueType},
     settings::{RadioSettings, Settings, WeightMode},
     track::{Mood, Track, TrackInfo},
-    utils::{similar, strip_unnessecary},
+    utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
 use crate::database::{hash_filename, save_track_weights};
@@ -58,6 +58,7 @@ pub struct MusicController {
     pub listens: Vec<Listen>,
     pub shuffle: bool,
     pub playlists: Vec<Playlist>,
+    pub autoplaylists: Vec<AutoPlaylist>,
     current_started: Instant,
 
     pub current_queue: usize,
@@ -85,6 +86,7 @@ impl MusicController {
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            autoplaylists: Vec::new(),
             progress_secs: 0.0,
             song_length: 100.0,
             playing: false,
@@ -139,6 +141,7 @@ impl MusicController {
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            autoplaylists: Vec::new(),
             progress_secs: 0.0,
             song_length: 100.0,
             playing: true,

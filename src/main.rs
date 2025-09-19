@@ -34,6 +34,7 @@ pub use gui::icons;
 // CSS
 static MAIN_CSS: Asset = asset!("/assets/style.css");
 static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
+static AUTOPLAYLISTS_CSS: Asset = asset!("/assets/autoplaylists.css");
 static EXPLORER_CSS: Asset = asset!("/assets/explorer.css");
 static MENUBAR_CSS: Asset = asset!("/assets/menubar.css");
 static QUEUE_CSS: Asset = asset!("/assets/queue.css");
@@ -240,6 +241,7 @@ fn App() -> Element {
     rsx! {
         document::Stylesheet { href: MAIN_CSS }
         document::Stylesheet { href: ALL_TRACKS_CSS }
+        document::Stylesheet { href: AUTOPLAYLISTS_CSS }
         document::Stylesheet { href: EXPLORER_CSS }
         document::Stylesheet { href: MENUBAR_CSS }
         document::Stylesheet { href: PLAYLISTS_CSS }

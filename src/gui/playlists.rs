@@ -1,10 +1,15 @@
+pub mod autoplaylist;
+
 use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, VIEW};
 use crate::app::playlist::Playlist;
+use crate::app::autoplaylist::AutoPlaylist;
 use crate::app::MusicController;
 use dioxus::prelude::*;
+use autoplaylist::AutoplaylistView;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
+const CREATING_AUTOPLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
 use super::icons::*;
 
@@ -15,12 +20,15 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
     let mut deleting_playlist = use_signal(|| None);
     let renaming_playlist = use_signal(|| None);
 
+    let mut autoplaylist_name = use_signal(String::new);
+    let mut autoplaylist_options = use_signal(|| None);
+
     rsx! {
         div {
             class: "playlistsview",
             display: if VIEW.read().current != View::Playlists { "none" },
-            div { padding: "10px", hidden: VIEW.read().playlist.is_some(),
-                h3 { "Playlists" }
+            details { padding: "10px", hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
+                summary { "Playlists" }
                 hr {}
 
                 // Playlist list
@@ -76,6 +84,69 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
             if VIEW.read().playlist.is_some() {
                 TracksView { controller, viewtype: View::Playlists }
+            }
+
+            details { 
+                padding: "10px",
+                hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
+                open: "true",
+
+                summary { "Autoplaylists" }
+                hr {}
+
+                for i in 0..controller.read().autoplaylists.len() {
+                    div {
+                        class: "playlistitem",
+                        onclick: move |_| VIEW.write().autoplaylist = Some(i),
+                        img { src: PLAYLIST_PLAY_ICON }
+                        "{controller.read().autoplaylists[i].name}"
+                        div { flex: "1 1 0" }
+                        img {
+                            onclick: move |e| {
+                                e.stop_propagation();
+                                autoplaylist_options.set(Some(i));
+                            },
+                            src: VERT_ICON,
+                        }
+                    }
+                }
+
+                button { onclick: move |_| *CREATING_AUTOPLAYLIST.write() = true, "Create new autoplaylist" }
+
+                // Autoplaylist creation menu
+                div {
+                    class: "playlistcreatorbg",
+                    hidden: !CREATING_AUTOPLAYLIST(),
+                    onclick: move |_| *CREATING_AUTOPLAYLIST.write() = false,
+                    div {
+                        class: "playlistcreator",
+                        onclick: |e| e.stop_propagation(),
+
+                        label { "AutoPlaylist Name:" }
+
+                        input {
+                            oninput: move |e| autoplaylist_name.set(e.value()),
+                            onclick: move |e| e.stop_propagation(),
+                            r#type: "text",
+                            value: autoplaylist_name,
+                        }
+
+                        button {
+                            onclick: move |_| {
+                                let dir = controller.write().settings.directory.clone();
+                                controller.write().autoplaylists.push(AutoPlaylist::new(autoplaylist_name()));
+                                *CREATING_AUTOPLAYLIST.write() = false;
+                                autoplaylist_name.set(String::new());
+                            },
+                            disabled: autoplaylist_name.read().is_empty(),
+                            "Create"
+                        }
+                    }
+                }
+            }
+
+            if VIEW.read().autoplaylist.is_some() {
+                AutoplaylistView { controller }
             }
         }
 

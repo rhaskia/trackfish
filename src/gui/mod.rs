@@ -220,6 +220,7 @@ pub struct ViewData {
     pub album: Option<String>,
     pub artist: Option<String>,
     pub playlist: Option<usize>,
+    pub autoplaylist: Option<usize>,
     pub genre: Option<String>,
 }
 
@@ -232,6 +233,7 @@ impl ViewData {
             artist: None,
             genre: None,
             playlist: None,
+            autoplaylist: None,
         }
     }
 
