@@ -110,7 +110,7 @@ input[type="range"] {
     border-radius: 5px;
     margin: 10px 0;
     --sep: 10px;
-    --lin: 7.5%;
+    --lin: 13px;
     --g: calc(var(--dist) / 100% * (100% - var(--lin)) + (var(--lin) / 2));
     background: linear-gradient(to right, white 0%, white calc(var(--g) - var(--sep)), transparent calc(var(--g) - var(--sep)), transparent calc(var(--g) + var(--sep)), darkgrey calc(var(--g) + var(--sep)), darkgrey 100%);
 }

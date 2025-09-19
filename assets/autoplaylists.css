@@ -1,3 +1,31 @@
 .condition {
     color: white;
 }
+
+.condition-is, .condition-has, .condition-greater, .condition-lesser, .condition-equalto {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 400px;
+    display: flex;
+    align-items: center;
+    vertical-align: top;
+}
+
+.condition-all, .condition-any, .condition-not, .condition-missing {
+    padding: 10px;
+}
+
+.condition-slot {
+    border: 1px solid darkgrey;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.condition-not {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 0 10px;
+}

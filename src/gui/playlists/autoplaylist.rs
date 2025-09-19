@@ -22,9 +22,10 @@ pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
             }
 
             img { onclick: move |_| explorer_settings.set(true), src: VERT_ICON }
-
-            "{controller.read().autoplaylists[VIEW.write().autoplaylist.unwrap()].conditions:?}"
         }
+
+
+        span { color: "white", "{controller.read().autoplaylists[VIEW.write().autoplaylist.unwrap()].conditions:?}" }
 
         div {
             class: "tracksview",
@@ -44,7 +45,14 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                     h3 { "All" }
 
                     for i in 0..conditions.len() {
-                        ConditionView { controller, path: { let mut p = path.clone(); p.push(i); p } }
+                        div {
+                            class: "condition-slot",
+                            ConditionView { controller, path: { let mut p = path.clone(); p.push(i); p } }
+                        }
+                    }
+
+                    button {
+                        "+"
                     }
                 }
             },
@@ -54,7 +62,14 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                     h3 { "Any" }
 
                     for i in 0..conditions.len() {
-                        ConditionView { controller, path: { let mut p = path.clone(); p.push(i); p } }
+                        div {
+                            class: "condition-slot",
+                            ConditionView { controller, path: { let mut p = path.clone(); p.push(i); p } }
+                        }
+                    }
+
+                    button {
+                        "+"
                     }
                 }
             },
@@ -66,7 +81,7 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
 
                     "IS"
 
-                    input { value: "{value}" }
+                    ValueInput { controller, ident: *ident, value, path: path.clone() }
                 }
             },
             Condition::Has(ident, value) => rsx!{
@@ -125,7 +140,10 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                 div {
                     class: "condition condition-not",
                     "NOT",
-                    ConditionView { controller, path: { let mut p = path.clone(); p.push(0); p } }
+                    div {
+                        class: "condition-slot",
+                        ConditionView { controller, path: { let mut p = path.clone(); p.push(0); p } }
+                    } 
                 }
             },
             Condition::Missing(ident) => rsx!{
@@ -177,6 +195,16 @@ pub fn IdentSelect(controller: SyncSignal<MusicController>, ident: Identifier, p
             option { "Year" }
             option { "Length" }
             option { "Energy" }
+        }
+    }
+}
+
+#[component]
+pub fn ValueInput(controller: SyncSignal<MusicController>, ident: StrIdentifier, value: String, path: Vec<usize>) -> Element {
+    rsx!{
+        input {
+            oninput: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_value(e.value()),
+            value: "{value}"
         }
     }
 }

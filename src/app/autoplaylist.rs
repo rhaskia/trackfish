@@ -143,6 +143,14 @@ impl Condition {
             _ => {}
         }
     } 
+
+    pub fn set_value(&mut self, value: String) {
+        match self {
+            Condition::Is(_, ref mut v) => *v = value.into(), 
+            Condition::Has(_, ref mut v) => *v = value.into(), 
+            _ => {}
+        }
+    } 
 }
 
 impl Index<Vec<usize>> for Condition {
