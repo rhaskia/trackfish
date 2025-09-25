@@ -174,6 +174,11 @@ pub fn TracksSearch(
         }
     });
 
+    let row_size = use_memo(move || match VIEW.read().current {
+        View::Albums => 62 * 3,
+        _ => 62,
+    });
+
     rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
@@ -196,6 +201,7 @@ pub fn TracksSearch(
                         div {
                             class: "trackitem",
                             onclick: move |_| {
+                                let scroll_amount = track * row_size();
                                 document::eval(
                                     &format!(
                                         "document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();",

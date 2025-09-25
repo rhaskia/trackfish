@@ -83,13 +83,11 @@ fn AudioSettings(controller: SyncSignal<MusicController>) -> Element {
         div { class: "settingsmenu",
             h2 { class: "settingsbar", "Audio" }
             div { class: "settingbox",
-                span { "Volume" }
-                input {
-                    r#type: "range",
+                SettingsInput {
+                    label: "Volume",
                     max: "1",
-                    step: "0.01",
                     value: "{controller.read().settings.volume}",
-                    oninput: move |e| controller.write().set_volume(e.parsed::<f32>().unwrap()),
+                    oninput: move |e: Event<FormData>| controller.write().set_volume(e.parsed::<f32>().unwrap()),
                 }
             }
         }
@@ -210,6 +208,7 @@ fn SettingsInput(
             span { "{label}" }
             div { class: "settingsinput",
                 input {
+                    style: "--dist: calc({value} / {max} * 100.0%);",
                     r#type: "range",
                     max,
                     step: "0.01",

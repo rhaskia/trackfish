@@ -380,8 +380,16 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     let trackno = tag.track().unwrap_or(1) as usize;
 
     let mut year = String::new();
-    if let Some(tag_year) = tag.get("Date") {
-        year = tag_year.to_string();
+    if let Some(date) = tag.original_date_released() {
+        year = date.year.to_string();
+    } else {
+        if let Some(date) = tag.date_released() {
+            year = date.year.to_string();
+        } else {
+            if let Some(date) = tag.date_released() {
+                year = date.year.to_string();
+            }
+        }
     }
 
     Ok(Track {
