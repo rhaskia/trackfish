@@ -38,10 +38,12 @@ impl Track {
                 .iter()
                 .any(|artist| similar(artist, &target_artist)),
             QueueType::Album(album) => similar(&album, &self.album),
-            QueueType::Genre(_) => todo!(),
-            QueueType::Union(_) => todo!(),
-            QueueType::Exclusion(_) => todo!(),
+            QueueType::Genre(target_genre) => self
+                .genres
+                .iter()
+                .any(|genre| similar(genre, &target_genre)),
             QueueType::Playlist(_, _) => todo!(),
+            QueueType::AutoPlaylist(_, _) => todo!(),
         }
     }
 

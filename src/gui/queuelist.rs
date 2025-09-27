@@ -4,6 +4,7 @@ use crate::app::MusicController;
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use std::time::Duration;
+use log::info;
 
 #[component]
 pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
@@ -237,12 +238,13 @@ pub fn TrackItem(
                 VIEW.write().current = View::Song;
             },
 
-            div {
+            img {
                 class: "trackbutton draghandle",
-                background_image: DRAG_HANDLE_ICON,
+                src: DRAG_HANDLE_ICON,
                 onmousedown: move |e| {
                     current_dragging.set(Some(idx));
                     grab_y.set(e.data.coordinates().element().y as f32);
+                    info!("woah");
                 },
                 onmouseup: move_queue_item,
                 onclick: |e| e.stop_propagation(),

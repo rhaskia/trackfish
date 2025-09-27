@@ -175,7 +175,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                             View::Playlists => {
                                 controller
                                     .write()
-                                    .start_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[i])
+                                    .play_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[i])
                             }
                             _ => unreachable!(),
                         };
@@ -288,7 +288,7 @@ pub fn ExplorerOptions(
                             View::Playlists => {
                                 controller
                                     .write()
-                                    .start_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[0])
+                                    .play_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[0])
                             }
                             _ => unreachable!(),
                         };
@@ -311,7 +311,7 @@ pub fn ExplorerOptions(
                             View::Playlists => {
                                 controller
                                     .write()
-                                    .start_playlist_at(VIEW.read().playlist.unwrap(), track)
+                                    .play_playlist_at(VIEW.read().playlist.unwrap(), track)
                             }
                             _ => unreachable!(),
                         };

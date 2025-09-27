@@ -13,7 +13,6 @@ pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
     let base_path = Vec::new();
     let mut tracks: Signal<Vec<usize>> = use_signal(|| Vec::new());
 
-
     rsx!{
         div { class: "tracksviewheader",
             img {
@@ -28,30 +27,29 @@ pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
             img { onclick: move |_| explorer_settings.set(true), src: VERT_ICON }
         }
 
-
-        span { color: "white", "{controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions:?}" }
-
         div {
             class: "tracksview",
 
             ConditionView { controller, path: base_path }
+            div {
+                class: "autoplaylist-menu",
+                button { 
+                    onclick: move |_| tracks.set(controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions.qualify_tracks(&controller.read().all_tracks)),
+                    "Refresh"
+                }
 
-            button { 
-                onclick: move |_| tracks.set(controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions.qualify_tracks(&controller.read().all_tracks)),
-                "Refresh"
-            }
-
-            button { 
-                onclick: move |_| controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].save(),
-                "Save"
+                button { 
+                    onclick: move |_| controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].save(),
+                    "Save"
+                }
             }
 
             for i in 0..tracks.read().len() {
                 div {
                     class: "trackitem",
                     onclick: move |_| {
-                        // TODO play autoplaylist
                         VIEW.write().open(View::Song);
+                        controller.write().play_autoplaylist_at(tracks(), VIEW.read().autoplaylist.unwrap(), tracks.read()[i]);
                     },
 
                     img {

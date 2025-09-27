@@ -39,7 +39,6 @@ You will need to build the Dioxus CLI from [github](https://github.com/DioxusLab
     - [x] Radio settings (weights, temperature, etc)
     - [ ] Audio settings (volume, fade, etc)
     - [ ] Library settings
-    - [ ] Exceptions for albums, artists from shuffle (?)
     - [ ] View Settings
  - [x] Radio playing system
  - [x] More Weighting
@@ -54,9 +53,10 @@ You will need to build the Dioxus CLI from [github](https://github.com/DioxusLab
     - [x] Select song in queue
     - [x] Drag and drop
     - [x] Add track list to queue
-    - [ ] Locked queues/temp queues
+    - [ ] Locking queues to stop them being recached on new load/scan?
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
  - [ ] Auto Playlists
-    - [ ] Basics that foobar would have
+    - [ ] Sort by metadata
+    - [ ] Automatic re-caching onload or on any change?
     - [ ] Sort by audio features
  - [ ] Theming (loading of custom css)

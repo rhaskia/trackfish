@@ -493,10 +493,19 @@ impl MusicController {
     }
 
     /// Starts a playlist, with a given track to start
-    pub fn start_playlist_at(&mut self, playlist: usize, track: usize) {
+    pub fn play_playlist_at(&mut self, playlist: usize, track: usize) {
         self.add_queue_at(
             self.playlists[playlist].tracks.clone(),
             QueueType::Playlist(self.playlists[playlist].name.clone(), playlist),
+            track,
+        );
+    }
+
+    /// Starts an autoplaylist, with a given track to start
+    pub fn play_autoplaylist_at(&mut self, tracks: Vec<usize>, autoplaylist: usize, track: usize) {
+        self.add_queue_at(
+            tracks,
+            QueueType::AutoPlaylist(self.autoplaylists[autoplaylist].name.clone(), autoplaylist),
             track,
         );
     }
