@@ -5,7 +5,11 @@ use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 use strum_macros::EnumString;
 use strum_macros::Display;
+use std::path::PathBuf;
 use log::info;
+
+pub mod serialize;
+pub mod deserialize;
 
 /// Autoplaylist struct
 /// Can be used to get a set of tracks that fit a certain conditions or set of conditions
@@ -29,6 +33,16 @@ impl AutoPlaylist {
             Condition::Not(Some(Box::new(Condition::Is(StrIdentifier::Title, "Random Title".to_string())))),
             Condition::Missing(Identifier::Str(StrIdentifier::Title)),
         ]) }
+    }
+
+    pub fn load(path: PathBuf) -> anyhow::Result<Self> {
+        let s = std::fs::read_to_string(&path)?;
+        let name = path.file_stem().unwrap_or_default().to_str().unwrap_or_default().to_string();
+
+        Ok(AutoPlaylist {
+            name,
+            conditions: Condition::deserialize(s)?
+        })
     }
 }
 
@@ -54,16 +68,23 @@ pub enum Identifier {
 
 #[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
 pub enum StrIdentifier {
+    #[strum(ascii_case_insensitive)]
     Title,
+    #[strum(ascii_case_insensitive)]
     Genre,
+    #[strum(ascii_case_insensitive)]
     Album,
+    #[strum(ascii_case_insensitive)]
     Artist,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
 pub enum NumIdentifier {
+    #[strum(ascii_case_insensitive)]
     Year,
+    #[strum(ascii_case_insensitive)]
     Length,
+    #[strum(ascii_case_insensitive)]
     Energy
 }
 
@@ -291,7 +312,7 @@ mod tests {
             simple_track("song 2", "jimmy bob"),
             simple_track("song 3", "Jane Doe")];
 
-        let query = Condition::Not(Box::new((Condition::Is(StrIdentifier::Artist, "John Doe".to_string()))));
+        let query = Condition::Not(Some(Box::new((Condition::Is(StrIdentifier::Artist, "John Doe".to_string())))));
 
         assert_eq!(query.qualify_tracks(&tracks), vec![1,2]);
     }

@@ -13,6 +13,7 @@ pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
     let base_path = Vec::new();
     let mut tracks: Signal<Vec<usize>> = use_signal(|| Vec::new());
 
+
     rsx!{
         div { class: "tracksviewheader",
             img {
@@ -38,6 +39,11 @@ pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
             button { 
                 onclick: move |_| tracks.set(controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions.qualify_tracks(&controller.read().all_tracks)),
                 "Refresh"
+            }
+
+            button { 
+                onclick: move |_| controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].save(),
+                "Save"
             }
 
             for i in 0..tracks.read().len() {

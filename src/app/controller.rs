@@ -150,6 +150,7 @@ impl MusicController {
         send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
 
         controller.load_playlists();
+        controller.load_autoplaylists();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -169,6 +170,23 @@ impl MusicController {
         for file in files {
             let playlist = Playlist::load(&self.settings.directory, &file, &self.all_tracks);
             self.playlists.push(playlist);
+        }
+    }
+
+    /// Loads all autoplaylists saved in cache (.auto files)
+    pub fn load_autoplaylists(&mut self) {
+        for entry in std::fs::read_dir(Settings::dir()).unwrap() {
+            let path = entry.unwrap().path();
+            let filename = path.to_str().unwrap().to_string();
+
+            if path.is_file() {
+                if path.extension().unwrap_or_default().to_str().unwrap_or_default() == "auto" {
+                    if let Ok(ap) = AutoPlaylist::load(path) {
+                        self.autoplaylists.push(ap);
+                    }
+                    info!("something wrong");
+                }
+            }
         }
     }
 
