@@ -27,7 +27,11 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
         div {
             class: "playlistsview",
             display: if VIEW.read().current != View::Playlists { "none" },
-            details { padding: "10px", hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
+            details {
+                padding: "10px",
+                hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
+                open: true,
+
                 summary { "Playlists" }
                 hr {}
 

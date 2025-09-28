@@ -22,17 +22,7 @@ pub struct AutoPlaylist {
 
 impl AutoPlaylist {
     pub fn new(name: String) -> Self {
-        Self { name, conditions: Condition::All(vec![
-            Condition::Is(StrIdentifier::Title, "Test".to_string()),
-            Condition::Has(StrIdentifier::Title, "Test".to_string()),
-            Condition::Greater(NumIdentifier::Year, 1970),
-            Condition::Any(vec![
-                Condition::EqualTo(NumIdentifier::Year, 1980),
-                Condition::Lesser(NumIdentifier::Year, 1990),
-            ]),
-            Condition::Not(Some(Box::new(Condition::Is(StrIdentifier::Title, "Random Title".to_string())))),
-            Condition::Missing(Identifier::Str(StrIdentifier::Title)),
-        ]) }
+        Self { name, conditions: Condition::All(vec![]) }
     }
 
     pub fn load(path: PathBuf) -> anyhow::Result<Self> {
@@ -49,21 +39,18 @@ impl AutoPlaylist {
 /// Condition enum for autoplaylists 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Condition {
-    Is(StrIdentifier, String), // Identifier, Query
-    Has(StrIdentifier, String), // Identifier, Query
-    Greater(NumIdentifier, i64),
-    Lesser(NumIdentifier, i64),
-    EqualTo(NumIdentifier, i64),
+    StrCondition(StrIdentifier, StrOperator, String), // Identifier, Query
+    NumCondition(NumIdentifier, NumOperator, i64), // Identifier, Query
+    TimeCondition(TimeIdentifier, NumOperator, i64), // Identifier, Query
     Any(Vec<Condition>),
     All(Vec<Condition>),
-    Not(Option<Box<Condition>>),
-    Missing(Identifier),
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Identifier {
     Str(StrIdentifier),
-    Num(NumIdentifier)
+    Num(NumIdentifier),
+    Time(TimeIdentifier)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
@@ -83,9 +70,41 @@ pub enum NumIdentifier {
     #[strum(ascii_case_insensitive)]
     Year,
     #[strum(ascii_case_insensitive)]
-    Length,
-    #[strum(ascii_case_insensitive)]
     Energy
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+pub enum TimeIdentifier {
+    #[strum(ascii_case_insensitive)]
+    Length,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+pub enum NumOperator {
+    #[strum(ascii_case_insensitive)]
+    Greater,
+    #[strum(ascii_case_insensitive)]
+    Lesser,
+    #[strum(ascii_case_insensitive)]
+    Equals,
+    #[strum(ascii_case_insensitive)]
+    NotEqual,
+    #[strum(ascii_case_insensitive)]
+    Missing
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+pub enum StrOperator {
+    #[strum(ascii_case_insensitive)]
+    Is,
+    #[strum(ascii_case_insensitive)]
+    IsNot,
+    #[strum(ascii_case_insensitive)]
+    Has,
+    #[strum(ascii_case_insensitive)]
+    HasNot,
+    #[strum(ascii_case_insensitive)]
+    Missing
 }
 
 impl Display for Identifier {
@@ -93,6 +112,7 @@ impl Display for Identifier {
         match self {
             Identifier::Str(s) => s.fmt(f),
             Identifier::Num(n) => n.fmt(f),
+            Identifier::Time(t) => t.fmt(f),
         } 
     }
 }
@@ -102,48 +122,51 @@ impl Condition {
         use Condition::*;
         use StrIdentifier::*;
         match self {
-            Is(ident, value) => match ident {
-                StrIdentifier::Title => similar(&track.title, &value),
-                StrIdentifier::Artist => track.artists.iter().any(|a| similar(&a, &value)),
-                StrIdentifier::Genre => track.genres.iter().any(|g| similar(&g, &value)),
-                StrIdentifier::Album => similar(&track.album, &value),
-            },
-            Has(ident, value) => match ident {
-                StrIdentifier::Title => strip_unnessecary(&track.title).contains(&strip_unnessecary(&value)),
-                StrIdentifier::Artist => track.artists.iter().any(|a| strip_unnessecary(&a).contains(&strip_unnessecary(&value))),
-                StrIdentifier::Genre => track.genres.iter().any(|g| strip_unnessecary(&g).contains(&strip_unnessecary(&value))),
-                StrIdentifier::Album => strip_unnessecary(&track.album).contains(&strip_unnessecary(&value)),
-            },
-            Not(cond) => !cond.as_ref().and_then(|c| Some(c.track_qualifies(&track))).unwrap_or(false),
-            Missing(ident) => match ident {
-                Identifier::Str(str_ident) => match str_ident {
-                    StrIdentifier::Title => strip_unnessecary(&track.title).is_empty(),
-                    StrIdentifier::Artist => track.artists.is_empty() || track.artists.iter().all(|a| strip_unnessecary(&a).is_empty()),
-                    StrIdentifier::Genre => track.genres.is_empty() || track.genres.iter().all(|g| strip_unnessecary(&g).is_empty()),
-                    StrIdentifier::Album => strip_unnessecary(&track.title).is_empty(),
-                }
-                Identifier::Num(num_ident) => match num_ident {
-                    NumIdentifier::Year => strip_unnessecary(&track.year).is_empty(),
-                    NumIdentifier::Length => track.len == 0.0,
-                    NumIdentifier::Energy => false,
-                }
-            },
             All(conditions) => conditions.iter().all(|a| a.track_qualifies(&track)),
             Any(conditions) => conditions.iter().any(|a| a.track_qualifies(&track)),
-            Greater(ident, value) => match ident {
-                NumIdentifier::Year => track.year.parse().and_then(|y: i64| Ok(&y > value)).unwrap_or(false),
-                NumIdentifier::Length => (track.len as i64) > *value,
-                _ => todo!(),
+            StrCondition(ident, op, value) => {
+                let actual_value = match ident {
+                    Title => vec![track.title.clone()],
+                    Genre => track.genres.clone(),
+                    Album => vec![track.album.clone()],
+                    Artist => track.artists.clone(),
+                };
+
+                match op {
+                    StrOperator::Is => actual_value.iter().any(|v| similar(&v, &value)),
+                    StrOperator::IsNot => !actual_value.iter().any(|v| similar(&v, &value)),
+                    StrOperator::Has => actual_value.iter().any(|v| strip_unnessecary(&v).contains(&strip_unnessecary(&value))),
+                    StrOperator::HasNot => !actual_value.iter().any(|v| strip_unnessecary(&v).contains(&strip_unnessecary(&value))),
+                    StrOperator::Missing => actual_value.is_empty() || actual_value.iter().all(|v| v.is_empty()),
+                }
             }
-            Lesser(ident, value) => match ident {
-                NumIdentifier::Year => track.year.parse().and_then(|y: i64| Ok(&y < value)).unwrap_or(false),
-                NumIdentifier::Length => (track.len as i64) < *value,
-                _ => todo!(),
+            NumCondition(ident, op, value) => {
+                let actual_value = match ident {
+                    NumIdentifier::Year => track.year.parse::<i64>().unwrap_or(0),
+                    NumIdentifier::Energy => 1,
+                };
+
+                match op {
+                    NumOperator::Greater => actual_value > *value,
+                    NumOperator::Lesser => actual_value < *value,
+                    NumOperator::Equals => actual_value == *value,
+                    NumOperator::NotEqual => actual_value != *value,
+                    NumOperator::Missing => actual_value == 0, // Assume missing to be set to 0 for
+                                                               // things such as years
+                }
             }
-            EqualTo(ident, value) => match ident {
-                NumIdentifier::Year => track.year.parse().and_then(|y: i64| Ok(&y == value)).unwrap_or(false),
-                NumIdentifier::Length => (track.len as i64) == *value,
-                _ => todo!(),
+            TimeCondition(ident, op, value) => {
+                let actual_value = match ident {
+                    TimeIdentifier::Length => track.len,
+                } as i64;
+
+                match op {
+                    NumOperator::Greater => actual_value > *value,
+                    NumOperator::Lesser => actual_value < *value,
+                    NumOperator::Equals => actual_value == *value,
+                    NumOperator::NotEqual => actual_value != *value,
+                    NumOperator::Missing => actual_value == 0,
+                }
             }
         }
     }
@@ -161,29 +184,42 @@ impl Condition {
     }
 
     pub fn set_ident(&mut self, ident: String) {
-        info!("{ident}");
+        if let Ok(str_ident) = StrIdentifier::from_str(&ident) {
+            match self {
+                Condition::StrCondition(ref mut i, _, _) => *i = str_ident,
+                _ => *self = Condition::StrCondition(str_ident, StrOperator::Is, String::new()),
+            }
+        }
+
+        if let Ok(num_ident) = NumIdentifier::from_str(&ident) {
+            match self {
+                Condition::NumCondition(ref mut i, _, _) => *i = num_ident,
+                _ => *self = Condition::NumCondition(num_ident, NumOperator::Greater, 0),
+            }
+        }
+
+        if let Ok(time_ident) = TimeIdentifier::from_str(&ident) {
+            match self {
+                Condition::TimeCondition(ref mut i, _, _) => *i = time_ident,
+                _ => *self = Condition::TimeCondition(time_ident, NumOperator::Greater, 0),
+            }
+        }
+    } 
+
+    pub fn set_op(&mut self, op: String) {
         match self {
-            Condition::Is(ref mut i, _) => *i = StrIdentifier::from_str(&ident).unwrap(), 
-            Condition::Has(ref mut i, _) => *i = StrIdentifier::from_str(&ident).unwrap(), 
-            Condition::Greater(ref mut i, _) => *i = NumIdentifier::from_str(&ident).unwrap(), 
-            Condition::Lesser(ref mut i, _) => *i = NumIdentifier::from_str(&ident).unwrap(), 
-            Condition::EqualTo(ref mut i, _) => *i = NumIdentifier::from_str(&ident).unwrap(), 
-            Condition::Missing(ref mut i) => *i = if let Ok(str) = StrIdentifier::from_str(&ident) {
-                Identifier::Str(str)
-            } else {
-                Identifier::Num(NumIdentifier::from_str(&ident).unwrap())
-            },
+            Condition::StrCondition(_, ref mut o, _) => *o = StrOperator::from_str(&op).unwrap(),
+            Condition::NumCondition(_, ref mut o, _)=> *o = NumOperator::from_str(&op).unwrap(),
+            Condition::TimeCondition(_, ref mut o, _) => *o = NumOperator::from_str(&op).unwrap(),
             _ => {}
         }
     } 
 
     pub fn set_value(&mut self, value: String) {
         match self {
-            Condition::Is(_, ref mut v) => *v = value.into(), 
-            Condition::Has(_, ref mut v) => *v = value.into(), 
-            Condition::Lesser(_, ref mut v) => *v = value.parse().unwrap_or(0),
-            Condition::Greater(_, ref mut v) => *v = value.parse().unwrap_or(0),
-            Condition::EqualTo(_, ref mut v) => *v = value.parse().unwrap_or(0),
+            Condition::StrCondition(_, _, ref mut v) => *v = value,
+            Condition::NumCondition(_, _, ref mut v) => *v = value.parse::<i64>().unwrap_or(0),
+            Condition::TimeCondition(_, _, ref mut v) => *v = value.parse::<i64>().unwrap_or(0),
             _ => {}
         }
     } 
@@ -192,7 +228,6 @@ impl Condition {
         match self {
             Condition::All(ref mut all) => all.push(condition),
             Condition::Any(ref mut any) => any.push(condition),
-            Condition::Not(ref mut not) => *not = Some(Box::new(condition)),
             _ => {}
         }
     }
@@ -201,8 +236,22 @@ impl Condition {
         match self {
             Condition::All(ref mut all) => { all.remove(index); },
             Condition::Any(ref mut any) => { any.remove(index); },
-            Condition::Not(ref mut not) => *not = None,
             _ => {}
+        }
+    }
+
+    pub fn toggle_group(&mut self) {
+        match self {
+            Condition::Any(conditions) => *self = Condition::All(conditions.clone()),
+            Condition::All(conditions) => *self = Condition::Any(conditions.clone()),
+            _ => {}
+        }
+    }
+
+    pub fn is_all_or_any(&self) -> bool {
+        match self {
+            Condition::Any(_) | Condition::All(_) => true,
+            _ => false
         }
     }
 }
@@ -220,7 +269,6 @@ impl Index<Vec<usize>> for Condition {
         let inner = match self {
             Condition::Any(conditions) => &conditions[first_index],
             Condition::All(conditions) => &conditions[first_index],
-            Condition::Not(condition) => if first_index == 0 { &condition.as_ref().unwrap() } else { panic!("Index {first_index} out of range for Condition::Not") },
             _ => panic!("{self:?} does not support indexing"),
         };
 
@@ -243,7 +291,6 @@ impl IndexMut<Vec<usize>> for Condition {
         let inner = match self {
             Condition::Any(conditions) => &mut conditions[first_index],
             Condition::All(conditions) => &mut conditions[first_index],
-            Condition::Not(condition) => if first_index == 0 { condition.as_mut().unwrap() } else { panic!("Index {first_index} out of range for Condition::Not") },
             _ => panic!("{self:?} does not support indexing"),
         };
 
@@ -290,7 +337,7 @@ mod tests {
             simple_track("song 2", "jimmy bob"),
             simple_track("song 3", "Jane Doe")];
 
-        let query = Condition::Is(StrIdentifier::Artist, "John Doe".to_string());
+        let query = Condition::StrCondition(StrIdentifier::Artist, StrOperator::Is, "John Doe".to_string());
 
         assert_eq!(query.qualify_tracks(&tracks), vec![0]);
     }
@@ -301,7 +348,7 @@ mod tests {
             simple_track("song 2", "jimmy bob"),
             simple_track("song 3", "Jane Doe")];
 
-        let query = Condition::Has(StrIdentifier::Artist, "Doe".to_string());
+        let query = Condition::StrCondition(StrIdentifier::Artist, StrOperator::Has, "Doe".to_string());
 
         assert_eq!(query.qualify_tracks(&tracks), vec![0, 2]);
     }
@@ -312,7 +359,7 @@ mod tests {
             simple_track("song 2", "jimmy bob"),
             simple_track("song 3", "Jane Doe")];
 
-        let query = Condition::Not(Some(Box::new((Condition::Is(StrIdentifier::Artist, "John Doe".to_string())))));
+        let query = Condition::StrCondition(StrIdentifier::Artist, StrOperator::IsNot, "John Doe".to_string());
 
         assert_eq!(query.qualify_tracks(&tracks), vec![1,2]);
     }
@@ -325,7 +372,7 @@ mod tests {
             simple_track("song 4", "Jane Doe"),
             simple_track("song 5", "    ")];
 
-        let query = Condition::Missing(Identifier::Str(StrIdentifier::Artist));
+        let query = Condition::StrCondition(StrIdentifier::Artist, StrOperator::Missing, String::new());
 
         assert_eq!(query.qualify_tracks(&tracks), vec![1,2,4]);
     }
@@ -339,14 +386,14 @@ mod tests {
             simple_track("track 5", "John Doe")];
 
         let query = Condition::All(vec![
-            Condition::Is(StrIdentifier::Artist, "John Doe".to_string()),
-            Condition::Has(StrIdentifier::Title, "track".to_string())]);
+            Condition::StrCondition(StrIdentifier::Artist, StrOperator::Is, "John Doe".to_string()),
+            Condition::StrCondition(StrIdentifier::Title, StrOperator::Has, "track".to_string())]);
 
         assert_eq!(query.qualify_tracks(&tracks), vec![4]);
 
         let query = Condition::Any(vec![
-            Condition::Is(StrIdentifier::Artist, "John Doe".to_string()),
-            Condition::Has(StrIdentifier::Title, "track".to_string())]);
+            Condition::StrCondition(StrIdentifier::Artist, StrOperator::Is, "John Doe".to_string()),
+            Condition::StrCondition(StrIdentifier::Title, StrOperator::Has, "track".to_string())]);
 
         assert_eq!(query.qualify_tracks(&tracks), vec![0,2,4]);
     }
@@ -359,15 +406,15 @@ mod tests {
             year_track(2010),
             year_track(2024)];
 
-        let query = Condition::Greater(NumIdentifier::Year, 1980);
+        let query = Condition::NumCondition(NumIdentifier::Year, NumOperator::Greater, 1980);
 
         assert_eq!(query.qualify_tracks(&tracks), vec![3,4]);
 
-        let query = Condition::Lesser(NumIdentifier::Year, 1980);
+        let query = Condition::NumCondition(NumIdentifier::Year, NumOperator::Lesser, 1980);
 
         assert_eq!(query.qualify_tracks(&tracks), vec![1,2]);
 
-        let query = Condition::EqualTo(NumIdentifier::Year, 1980);
+        let query = Condition::NumCondition(NumIdentifier::Year, NumOperator::Equals, 1980);
 
         assert_eq!(query.qualify_tracks(&tracks), vec![0]);
     }

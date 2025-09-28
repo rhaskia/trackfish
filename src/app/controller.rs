@@ -8,7 +8,7 @@ use super::{
 };
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
 use crate::database::{hash_filename, save_track_weights};
-use log::{info, warn};
+use log::{info, warn, error};
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
@@ -181,10 +181,10 @@ impl MusicController {
 
             if path.is_file() {
                 if path.extension().unwrap_or_default().to_str().unwrap_or_default() == "auto" {
-                    if let Ok(ap) = AutoPlaylist::load(path) {
-                        self.autoplaylists.push(ap);
+                    match AutoPlaylist::load(path) {
+                        Ok(ap) => self.autoplaylists.push(ap),
+                        Err(e) => error!("{e:?}"),
                     }
-                    info!("something wrong");
                 }
             }
         }

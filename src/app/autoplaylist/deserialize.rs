@@ -1,8 +1,9 @@
 use anyhow::anyhow;
 use log::info;
 use std::str::FromStr;
-use super::{AutoPlaylist, Condition, StrIdentifier, NumIdentifier, Identifier};
+use super::{AutoPlaylist, Condition, StrIdentifier, NumIdentifier, Identifier, TimeIdentifier};
 use std::path::PathBuf;
+use crate::app::autoplaylist::{NumOperator, StrOperator};
 use crate::app::utils::strip_unnessecary;
 use std::iter::{Peekable, IntoIterator};
  use std::array::IntoIter;
@@ -25,25 +26,26 @@ impl Condition {
                     let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
 
                     let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_string()?;
+                    let op = StrOperator::from_str(&op)?;
 
-                    match op.as_str() {
-                        "is" => Ok(Condition::Is(StrIdentifier::from_str(&ident)?, value)),
-                        "has" => Ok(Condition::Has(StrIdentifier::from_str(&ident)?, value)),
-                        _ => Err(anyhow!("Expected operator, found {op:?}"))
-                    }
+                    Ok(Condition::StrCondition(StrIdentifier::from_str(&ident)?, op, value))
                 },
-                "year" | "length" | "energy" => {
+                "year" |"energy" => {
                     let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
 
                     let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_num()?;
+                    let op = NumOperator::from_str(&op)?;
 
-                    match op.as_str() {
-                        "greater" => Ok(Condition::Greater(NumIdentifier::from_str(&ident)?, value)),
-                        "lesser" => Ok(Condition::Lesser(NumIdentifier::from_str(&ident)?, value)),
-                        "equals" | "equalto" => Ok(Condition::EqualTo(NumIdentifier::from_str(&ident)?, value)),
-                        _ => Err(anyhow!("Expected operator, found {op:?}"))
-                    }
+                    Ok(Condition::NumCondition(NumIdentifier::from_str(&ident)?, op, value))
                 },
+                "length" => {
+                    let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
+
+                    let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_num()?;
+                    let op = NumOperator::from_str(&op)?;
+
+                    Ok(Condition::TimeCondition(TimeIdentifier::from_str(&ident)?, op, value))
+                }
                 "all" | "any" => {
                     let _ = tokens.next().ok_or(anyhow!("Missing open paren for {ident} statement"))?.ensure_open_paren()?;
                     let mut conditions = Vec::new();
@@ -66,25 +68,6 @@ impl Condition {
                         _ => unreachable!(),
                     }
                 },
-                "missing" => {
-                    let ident = strip_unnessecary(&tokens.next().ok_or(anyhow!("No identifier for missing operator found"))?.as_identifier()?);
-
-                    let ident = if let Ok(str) = StrIdentifier::from_str(&ident) {
-                        Identifier::Str(str)
-                    } else {
-                        Identifier::Num(NumIdentifier::from_str(&ident).unwrap())
-                    };
-
-                    Ok(Condition::Missing(ident))
-                }
-                "not" => {
-                    if tokens.peek() == Some(&Token::QuestionMark) {
-                        let _ = tokens.next();
-                        return Ok(Condition::Not(None));
-                    }
-
-                    Ok(Condition::Not(Some(Box::new(Self::deserialize_tokens(tokens)?))))
-                }
                 _ => panic!("Unknown identifier {ident} found in autoplaylist"),
             },
             Token::OpenParen => {

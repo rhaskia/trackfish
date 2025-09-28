@@ -28,18 +28,11 @@ impl AutoPlaylist {
 impl Condition {
     pub fn serialize(&self) -> String {
         match self {
-            Condition::Is(ident, value) => format!("{ident} IS {value:?}"),
-            Condition::Has(ident, value) => format!("{ident} HAS {value:?}"),
-            Condition::Greater(ident, value) => format!("{ident} GREATER {value}"),
-            Condition::Lesser(ident, value) => format!("{ident} GREATER {value}"),
-            Condition::EqualTo(ident, value) => format!("{ident} EQUALS {value}"),
+            Condition::StrCondition(ident, op, value) => format!("{ident} {op} {value:?}"),
+            Condition::NumCondition(ident, op, value) => format!("{ident} {op} {value}"),
+            Condition::TimeCondition(ident, op, value) => format!("{ident} {op} {value}"),
             Condition::Any(conditions) => format!("ANY({})", conditions.iter().map(|c| c.serialize()).collect::<Vec<String>>().join(", ")),
             Condition::All(conditions) => format!("ALL({})", conditions.iter().map(|c| c.serialize()).collect::<Vec<String>>().join(", ")),
-            Condition::Not(maybe_cond) => match maybe_cond { 
-                Some(cond) => format!("NOT {}", cond.serialize()),
-                None => format!("NOT ?"),
-            }
-            Condition::Missing(ident) => format!("MISSING {ident}"),
         }
     }
 }

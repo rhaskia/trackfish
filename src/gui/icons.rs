@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 // Reused Icons
+pub static ADD_ICON: Asset = asset!("/assets/icons/add.svg");
 pub static ALBUM_ICON: Asset = asset!("/assets/icons/album.svg");
 pub static ARTIST_ICON: Asset = asset!("/assets/icons/artist.svg");
 pub static AUDIO_ICON: Asset = asset!("/assets/icons/audio.svg");
