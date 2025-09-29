@@ -244,7 +244,7 @@ pub fn RemoveCondition(controller: SyncSignal<MusicController>, path: Vec<usize>
             style: "background: url({crate::gui::icons::DELETE_ICON})",
             width: "24px",
             height: "24px",
-            margin: "4px 4px 0 0",
+            margin: "4px",
             border: "none",
             filter: "sepia(1) hue-rotate(-45deg) saturate(5)",
         }

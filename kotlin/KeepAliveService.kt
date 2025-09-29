@@ -58,6 +58,11 @@ class KeepAliveService : Service() {
         startRustBackground()
     }
 
+    fun stopService() {
+        serviceInstance = null
+        stopSelf()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceInstance = null

@@ -72,7 +72,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
     // Start index is where the list is rendered from
     let mut start_index = use_signal(|| 0);
     // Rows in view is the rendered number of items
-    let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
+    let mut rows_in_view = use_signal(|| 15);
     // End index is where rendering stops
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
 
@@ -95,7 +95,9 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                     continue;
                 } // Stops app freezing on opening a different view
                 window_size.set(height);
+                rows_in_view.set((height / ROW_HEIGHT) + BUFFER_ROWS);
                 info!("Window Height {height}");
+                info!("ROWS: {}", window_size() / ROW_HEIGHT);
             }
         }
     });

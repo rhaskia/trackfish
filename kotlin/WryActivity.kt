@@ -1,4 +1,4 @@
-/* THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!! */
+// Modified Tauri Kotlin Code
 
 // Copyright 2020-2023 Tauri Programme within The Commons Conservancy
 // SPDX-License-Identifier: Apache-2.0
@@ -28,6 +28,9 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.os.PowerManager
+import android.view.WindowManager
+import android.view.View
+import android.graphics.Color
 
 abstract class WryActivity : AppCompatActivity() {
     private lateinit var mWebView: RustWebView
@@ -76,6 +79,17 @@ abstract class WryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         requestPermissions()
 
+        if (Build.VERSION.SDK_INT >= 19 && Build.VERSION.SDK_INT < 21) {
+            setWindowFlag(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, true)
+        }
+        if (Build.VERSION.SDK_INT >= 19) {
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        }
+        if (Build.VERSION.SDK_INT >= 21) {
+            setWindowFlag(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, false)
+            window.statusBarColor = Color.TRANSPARENT
+        }
+
         if (KeepAliveService.serviceInstance == null) {
             Intent().setClassName("com.example.Trackfish", "dev.dioxus.main.KeepAliveService")
             val intent = Intent(this, KeepAliveService::class.java)
@@ -91,6 +105,17 @@ abstract class WryActivity : AppCompatActivity() {
         } else {
             Log.i("com.example.Trackfish", "Keep Alive Service already exists")
         }
+    }
+
+    private fun setWindowFlag(bits: Int, on: Boolean) {
+        val win = window
+        val winParams = win.attributes
+        if (on) {
+            winParams.flags = winParams.flags or bits
+        } else {
+            winParams.flags = winParams.flags and bits.inv()
+        }
+        win.attributes = winParams
     }
 
     override fun onStart() {
@@ -109,6 +134,7 @@ abstract class WryActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        KeepAliveService.serviceInstance?.stopService()
         super.onStop()
         stop()
     }

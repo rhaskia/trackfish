@@ -19,6 +19,7 @@
 
 .condition-all .condition-slot {
     margin: 10px 20px;
+    margin-right: 0px;
 }
 
 .condition-slot {
@@ -97,7 +98,7 @@
     margin-left: 10px;
     border-radius: 8px !important;
     width: fit-content !important;
-    padding: 0 5px;
+    padding: 0 14px 0px 5px;
 }
 
 .current-conditon-toggle {

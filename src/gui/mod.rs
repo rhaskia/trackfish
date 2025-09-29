@@ -239,6 +239,18 @@ impl ViewData {
 
     /// Opens a View
     pub fn open(&mut self, view: View) {
+        if view == self.current {
+            match view {
+                View::Artists => self.artist = None,
+                View::Genres => self.genre = None,
+                View::Albums => self.album = None,
+                View::Playlists => {
+                    self.autoplaylist = None;
+                    self.playlist = None;
+                },
+                _ => {}
+            }
+        }
         self.current = view;
     }
 }

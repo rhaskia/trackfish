@@ -9,7 +9,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     let clean_search = use_memo(move || strip_unnessecary(&search.read()));
 
     let tracks = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             (0..controller.read().all_tracks.len())
@@ -22,7 +22,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let artists = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -36,7 +36,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let albums = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -51,7 +51,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let genres = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -160,7 +160,7 @@ pub fn TracksSearch(
         let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
 
-        if search.is_empty() {
+        if search.len() < 2 {
             Vec::new()
         } else {
             tracks
@@ -204,12 +204,12 @@ pub fn TracksSearch(
                                 let scroll_amount = track * row_size();
                                 document::eval(
                                     &format!(
-                                        "document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();",
-                                        track,
+                                        "document.getElementById('{id_prefix}').scrollTop = {};",
+                                        scroll_amount,
                                     ),
                                 );
                             },
-                            img { src: "/trackimage/{track}" }
+                            img { src: "/trackimage/{track}", loading: "lazy" }
                             span { "{controller.read().all_tracks[track].title}" }
                         }
                     }

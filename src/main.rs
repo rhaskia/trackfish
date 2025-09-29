@@ -259,6 +259,7 @@ fn App() -> Element {
         }
 
         div { class: "mainview", tabindex: 0, autofocus: true,
+            padding_top: if cfg!(target_os = "android") { "24pt" },
             TrackView { controller }
             TrackOptions { controller }
             QueueList { controller }
@@ -267,7 +268,7 @@ fn App() -> Element {
             ArtistList { controller }
             AlbumsList { controller }
             PlaylistsView { controller }
-            SearchView { controller }
+            //SearchView { controller }
             Settings { controller }
         }
 
@@ -314,11 +315,11 @@ pub fn MenuBar() -> Element {
                 background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
                 onclick: move |_| VIEW.write().open(View::Playlists),
             }
-            button {
-                class: "svg-button",
-                background_image: "url({asset!(\"/assets/icons/search.svg\")})",
-                onclick: move |_| VIEW.write().open(View::Search),
-            }
+            // button {
+            //     class: "svg-button",
+            //     background_image: "url({asset!(\"/assets/icons/search.svg\")})",
+            //     onclick: move |_| VIEW.write().open(View::Search),
+            // }
             button {
                 class: "svg-button",
                 background_image: "url({asset!(\"/assets/icons/settings.svg\")})",
