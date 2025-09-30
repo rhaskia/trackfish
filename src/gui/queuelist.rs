@@ -150,7 +150,7 @@ pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
 
             // Track items in selected queue
             div { id: "queuelist", class: "tracklist",
-                for idx in 0..controller.read().get_queue(selected_queue()).cached_order.len() {
+                for idx in 0..controller.read().get_queue(selected_queue()).cached_order.len().min(10) {
                     if current_dragging.read().is_some() {
                         if current_dragging().unwrap() > idx && hovering_over() == idx
                             || current_dragging().unwrap() < idx && hovering_over() == idx.max(1) - 1

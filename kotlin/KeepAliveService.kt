@@ -5,6 +5,9 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Canvas
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSession
@@ -19,6 +22,7 @@ import android.content.Context
 import android.media.AudioFocusRequest
 import android.media.AudioAttributes
 import android.os.PowerManager
+import android.app.PendingIntent
 
 class KeepAliveService : Service() {
     private lateinit var mediaSession: MediaSession
@@ -120,7 +124,7 @@ class KeepAliveService : Service() {
         val iconId = resources.getIdentifier("ic_notification", "drawable", packageName)
 
         val bitmap = artworkBytes?.let {
-            android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size)
+            scaleBitmapToSquare(android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size), 512)
         }
 
         if (isPlaying) {
@@ -132,6 +136,7 @@ class KeepAliveService : Service() {
         }
 
         Log.i("com.example.Music", "requested media notification with playing state " + isPlaying)
+
 
         // Update MediaSession playback state
         val state = android.media.session.PlaybackState.Builder()
@@ -164,26 +169,56 @@ class KeepAliveService : Service() {
 
         mediaSession.setMetadata(metadata)
 
-        val notification: Notification = Notification.Builder(this, "media_channel")
-            .setContentTitle(title)
-            .setContentText(artist)
-            .setLargeIcon(bitmap)
-            .setSmallIcon(iconId)
-            .setContentIntent(mediaController.sessionActivity)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setStyle(
-                MediaStyle()
-                    .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0, 1, 2)
-            )
-            .addAction(Notification.Action(android.R.drawable.ic_media_previous, "Prev", null))
-            .addAction(Notification.Action(android.R.drawable.ic_media_pause, "Pause", null))
-            .addAction(Notification.Action(android.R.drawable.ic_media_next, "Next", null))
-            .build()
-            
-        startForeground(1, notification)
+        val pm = packageManager
+        val launchIntent = pm.getLaunchIntentForPackage(packageName)
 
-        Log.i("com.example.Music", "successfully started foreground service")
+        if (launchIntent != null) {
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val notification: Notification = Notification.Builder(this, "media_channel")
+                .setContentTitle(title)
+                .setContentText(artist)
+                .setLargeIcon(bitmap)
+                .setSmallIcon(iconId)
+                .setContentIntent(pendingIntent)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setStyle(
+                    MediaStyle()
+                        .setMediaSession(mediaSession.sessionToken)
+                        .setShowActionsInCompactView(0, 1, 2)
+                )
+                .addAction(Notification.Action(android.R.drawable.ic_media_previous, "Prev", null))
+                .addAction(Notification.Action(android.R.drawable.ic_media_pause, "Pause", null))
+                .addAction(Notification.Action(android.R.drawable.ic_media_next, "Next", null))
+                .build()
+                
+            startForeground(1, notification)
+
+            Log.i("com.example.Music", "successfully started foreground service")
+        }
+    }
+
+    fun scaleBitmapToSquare(bitmap: Bitmap, size: Int): Bitmap {
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.isFilterBitmap = true
+
+        val scale = size.toFloat() / maxOf(bitmap.width, bitmap.height)
+        val scaledWidth = (bitmap.width * scale).toInt()
+        val scaledHeight = (bitmap.height * scale).toInt()
+
+        val left = (size - scaledWidth) / 2f
+        val top = (size - scaledHeight) / 2f
+
+        val rect = RectF(left, top, left + scaledWidth, top + scaledHeight)
+        canvas.drawBitmap(bitmap, null, rect, paint)
+        return output
     }
 
     // JNI-callable

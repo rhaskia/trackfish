@@ -3,9 +3,9 @@
     left: 0;
     top: 0;
     background: rgb(0 0 0 / 48%);
-    width: 100vw;
-    z-index: 10;
-    height: 100vw; 
+    width: 400vw;
+    z-index: 50;
+    height: 400vw; 
 }
 
 .trackoptions {

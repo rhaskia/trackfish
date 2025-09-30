@@ -6,18 +6,18 @@ use std::path::PathBuf;
 impl AutoPlaylist {
     /// Gets the directory for caching information
     /// Probably should have a sort of thing to make it so you can save them to the main dir
-    pub fn dir() -> PathBuf {
-        if cfg!(target_os = "android") {
+    pub fn dir(&self) -> PathBuf {
+        let dir = if cfg!(target_os = "android") {
             cache_dir::get_cache_dir().unwrap()
         } else {
             dirs::config_dir().unwrap().join("trackfish/")
-        }
+        };
+        dir.join(format!("{}.auto", self.name))
     }
 
     pub fn save(&self) {
-        let dir = Self::dir().join(format!("{}.auto", self.name));
-        info!("Saving autoplaylist {} at path {dir:?}", self.name);
-        std::fs::write(dir, self.conditions.serialize()); 
+        info!("Saving autoplaylist {} at path {:?}", self.name, self.dir());
+        std::fs::write(self.dir(), self.conditions.serialize()); 
     }
 
     pub fn serialize(&self) -> String {

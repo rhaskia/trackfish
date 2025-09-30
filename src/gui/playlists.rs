@@ -6,7 +6,7 @@ use crate::app::playlist::Playlist;
 use crate::app::autoplaylist::AutoPlaylist;
 use crate::app::MusicController;
 use dioxus::prelude::*;
-use autoplaylist::AutoplaylistView;
+use autoplaylist::{AutoPlaylistView, AutoPlaylistOptions, AutoPlaylistRename};
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 const CREATING_AUTOPLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
@@ -22,6 +22,8 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
     let mut autoplaylist_name = use_signal(String::new);
     let mut autoplaylist_options = use_signal(|| None);
+    let mut deleting_autoplaylist = use_signal(|| None);
+    let renaming_autoplaylist = use_signal(|| None);
 
     rsx! {
         div {
@@ -150,7 +152,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
             }
 
             if VIEW.read().autoplaylist.is_some() {
-                AutoplaylistView { controller }
+                AutoPlaylistView { controller }
             }
         }
 
@@ -176,6 +178,27 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 label: "Delete playlist {controller.read().playlists[deleting_playlist().unwrap()].name}?",
                 confirm: move |_| controller.write().delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
+            }
+        }
+
+        if autoplaylist_options.read().is_some() && VIEW.read().current == View::Playlists {
+            AutoPlaylistOptions {
+                controller,
+                autoplaylist_options,
+                deleting_autoplaylist,
+                renaming_autoplaylist,
+            }
+        }
+
+        if renaming_autoplaylist.read().is_some() {
+            AutoPlaylistRename { controller, renaming_autoplaylist }
+        }
+
+        if deleting_autoplaylist.read().is_some() {
+            Confirmation {
+                label: "Delete autoplaylist {controller.read().autoplaylists[deleting_autoplaylist().unwrap()].name}?",
+                confirm: move |_| controller.write().delete_autoplaylist(deleting_autoplaylist().unwrap()),
+                cancel: move |_| deleting_autoplaylist.set(None),
             }
         }
     }

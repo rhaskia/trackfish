@@ -259,7 +259,7 @@ fn App() -> Element {
         }
 
         div { class: "mainview", tabindex: 0, autofocus: true,
-            padding_top: if cfg!(target_os = "android") { "24pt" },
+            padding_top: if cfg!(target_os = "android") { "30pt" },
             TrackView { controller }
             TrackOptions { controller }
             QueueList { controller }

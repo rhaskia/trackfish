@@ -190,7 +190,22 @@ impl MusicController {
         }
     }
 
-    /// Deletes a playlist from storage
+    /// Deletes an autoplaylist from storage and memory
+    pub fn rename_autoplaylist(&mut self, autoplaylist: usize, name: String) {
+        let path = self.autoplaylists[autoplaylist].dir();
+        std::fs::remove_file(path).unwrap();
+        self.autoplaylists[autoplaylist].name = name;
+        self.autoplaylists[autoplaylist].save();
+    }
+
+    /// Deletes an autoplaylist from storage and memory
+    pub fn delete_autoplaylist(&mut self, autoplaylist: usize) {
+        let path = self.autoplaylists[autoplaylist].dir();
+        std::fs::remove_file(path).unwrap();
+        self.autoplaylists.remove(autoplaylist);
+    }
+
+    /// Deletes a playlist from storage and memory
     pub fn delete_playlist(&mut self, playlist: usize) {
         let path = self.playlists[playlist].file.clone();
         std::fs::remove_file(path).unwrap();

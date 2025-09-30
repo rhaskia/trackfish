@@ -134,7 +134,6 @@ abstract class WryActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        KeepAliveService.serviceInstance?.stopService()
         super.onStop()
         stop()
     }
@@ -150,6 +149,7 @@ abstract class WryActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        KeepAliveService.serviceInstance?.stopService()
         super.onDestroy()
         destroy()
         onActivityDestroy()

@@ -154,23 +154,30 @@ pub fn TracksSearch(
     id_prefix: String,
 ) -> Element {
     let mut search = use_signal(String::new);
+    let mut last_search = use_signal(String::new);
     let id_prefix = use_signal(|| id_prefix);
+    let mut matches = use_signal(Vec::new);
 
-    let matches = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
-        log::info!("searching {search}");
+    use_effect(move || {
+        if last_search() != search() {
+            last_search.set(search());
+            
+            let search = strip_unnessecary(&search.read());
 
-        if search.len() < 2 {
-            Vec::new()
-        } else {
-            tracks
-                .read()
-                .iter()
-                .filter(|t| {
-                    strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
-                })
-                .cloned()
-                .collect::<Vec<usize>>()
+            log::info!("searching {search}");
+
+            matches.set(if search.len() < 2 {
+                Vec::new()
+            } else {
+                tracks
+                    .read()
+                    .iter()
+                    .filter(|t| {
+                        strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
+                    })
+                    .cloned()
+                    .collect::<Vec<usize>>()
+            })
         }
     });
 

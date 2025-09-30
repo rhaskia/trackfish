@@ -58,8 +58,9 @@ You will need to build the Dioxus CLI from [github](https://github.com/DioxusLab
     - [x] Add track list to queue
     - [ ] Locking queues to stop them being recached on new load/scan?
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
+    - [ ] Sorting features
  - [ ] Auto Playlists
-    - [ ] Sort by metadata
+    - [x] Sort by metadata
     - [ ] Automatic re-caching onload or on any change?
     - [ ] Sort by audio features
  - [ ] Theming (loading of custom css)

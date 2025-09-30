@@ -8,7 +8,7 @@ use crate::gui::View;
 use crate::gui::TRACKOPTION;
 
 #[component]
-pub fn AutoplaylistView(controller: SyncSignal<MusicController>) -> Element {
+pub fn AutoPlaylistView(controller: SyncSignal<MusicController>) -> Element {
     let mut explorer_settings = use_signal(|| false);
     let base_path = Vec::new();
     let mut tracks: Signal<Vec<usize>> = use_signal(|| Vec::new());
@@ -312,6 +312,57 @@ pub fn NumInput(controller: SyncSignal<MusicController>, ident: NumIdentifier, v
             r#type: "number",
             oninput: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_value(e.value()),
             value: "{value}"
+        }
+    }
+}
+
+#[component]
+pub fn AutoPlaylistOptions(
+    controller: SyncSignal<MusicController>,
+    autoplaylist_options: Signal<Option<usize>>,
+    deleting_autoplaylist: Signal<Option<usize>>,
+    renaming_autoplaylist: Signal<Option<usize>>,
+) -> Element {
+    rsx! {
+        div { class: "optionsbg", onclick: move |_| autoplaylist_options.set(None),
+            div { class: "optionbox", style: "--width: 300px; --height: 50px;",
+                h3 { "{controller.read().autoplaylists[autoplaylist_options().unwrap()].name}" }
+                button { onclick: move |_| renaming_autoplaylist.set(autoplaylist_options()),
+                    img { src: EDIT_ICON }
+                    "Rename autoplaylist"
+                }
+
+                button { onclick: move |_| deleting_autoplaylist.set(autoplaylist_options()),
+                    img { src: DELETE_ICON }
+                    "Delete autoplaylist"
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn AutoPlaylistRename(
+    controller: SyncSignal<MusicController>,
+    renaming_autoplaylist: Signal<Option<usize>>,
+) -> Element {
+    let mut new_name = use_signal(String::new);
+    rsx! {
+        div { class: "optionsbg", onclick: move |_| renaming_autoplaylist.set(None),
+            div { class: "playlistadder",
+                input {
+                    r#type: "text",
+                    onclick: |e| e.stop_propagation(),
+                    onchange: move |e| new_name.set(e.data.value()),
+                }
+
+                button {
+                    onclick: move |_| {
+                        controller.write().rename_autoplaylist(renaming_autoplaylist().unwrap(), new_name());
+                    },
+                    "Rename"
+                }
+            }
         }
     }
 }
