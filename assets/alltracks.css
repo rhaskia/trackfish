@@ -13,6 +13,8 @@
 
 .trackitem img {
     aspect-ratio: 1;
+    width: 40px;
+    border-radius: 4px;
     object-fit: cover;
 }
 

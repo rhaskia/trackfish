@@ -97,6 +97,8 @@
 .trackview h3 {
     text-align: center;
     margin: 0;
+    font-size: 22px;
+    line-height: 25px;
 }
  
 .trackview span {
@@ -120,12 +122,18 @@
     justify-content: center;
     gap: 10px;
     white-space: nowrap;
+
+    mask-repeat: no-repeat;
+    height: 21px;
+    flex-wrap: wrap;
+    overflow: hidden;
 }
 
 .artistspecifier {
     display: flex;
     justify-content: center;
     white-space: pre;
+    font-size: 18px;
 }
 
 .albumspecifier {
@@ -133,6 +141,8 @@
     justify-content: center;
     gap: 10px;
     white-space: nowrap;
+
+
 }
 
 /* Track Interactions */

@@ -10,6 +10,7 @@ use tokio::time;
 pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
     let mut progress = use_signal(|| controller.read().progress_secs);
     let mut progress_held = use_signal(|| false);
+    let mut handle_position = use_signal(|| 0.0);
 
     // Skip to next song
     let skip = move |_: Event<MouseData>| {
@@ -117,13 +118,18 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                     span { class: "songprogress", "{format_seconds(progress())}" }
                     input {
                         r#type: "range",
-                        value: progress,
+                        style: "--dist: {progress() / controller.read().song_length * 100.0}%;",
+                        value: "{progress}",
                         step: 0.25,
                         max: controller.read().song_length,
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
                             controller.write().set_pos(value);
                             progress.set(value)
+                        },
+                        oninput: move |e| {
+                            let value = e.value().parse().unwrap();
+                            progress.set(value);
                         },
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),

@@ -4,11 +4,11 @@ use super::{
     queue::{Listen, Queue, QueueType},
     settings::{RadioSettings, Settings, WeightMode},
     track::{Mood, Track, TrackInfo},
-    utils::{similar, strip_unnessecary},
+    utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
 use crate::analysis::{generate_track_info, utils::cosine_similarity};
 use crate::database::{hash_filename, save_track_weights};
-use log::{info, warn};
+use log::{info, warn, error};
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
@@ -58,6 +58,7 @@ pub struct MusicController {
     pub listens: Vec<Listen>,
     pub shuffle: bool,
     pub playlists: Vec<Playlist>,
+    pub autoplaylists: Vec<AutoPlaylist>,
     current_started: Instant,
 
     pub current_queue: usize,
@@ -85,6 +86,7 @@ impl MusicController {
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            autoplaylists: Vec::new(),
             progress_secs: 0.0,
             song_length: 100.0,
             playing: false,
@@ -139,6 +141,7 @@ impl MusicController {
             settings: Settings::load(),
             shuffle: false,
             playlists: Vec::new(),
+            autoplaylists: Vec::new(),
             progress_secs: 0.0,
             song_length: 100.0,
             playing: true,
@@ -147,6 +150,7 @@ impl MusicController {
         send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
 
         controller.load_playlists();
+        controller.load_autoplaylists();
 
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -169,7 +173,39 @@ impl MusicController {
         }
     }
 
-    /// Deletes a playlist from storage
+    /// Loads all autoplaylists saved in cache (.auto files)
+    pub fn load_autoplaylists(&mut self) {
+        for entry in std::fs::read_dir(Settings::dir()).unwrap() {
+            let path = entry.unwrap().path();
+            let filename = path.to_str().unwrap().to_string();
+
+            if path.is_file() {
+                if path.extension().unwrap_or_default().to_str().unwrap_or_default() == "auto" {
+                    match AutoPlaylist::load(path) {
+                        Ok(ap) => self.autoplaylists.push(ap),
+                        Err(e) => error!("{e:?}"),
+                    }
+                }
+            }
+        }
+    }
+
+    /// Deletes an autoplaylist from storage and memory
+    pub fn rename_autoplaylist(&mut self, autoplaylist: usize, name: String) {
+        let path = self.autoplaylists[autoplaylist].dir();
+        std::fs::remove_file(path).unwrap();
+        self.autoplaylists[autoplaylist].name = name;
+        self.autoplaylists[autoplaylist].save();
+    }
+
+    /// Deletes an autoplaylist from storage and memory
+    pub fn delete_autoplaylist(&mut self, autoplaylist: usize) {
+        let path = self.autoplaylists[autoplaylist].dir();
+        std::fs::remove_file(path).unwrap();
+        self.autoplaylists.remove(autoplaylist);
+    }
+
+    /// Deletes a playlist from storage and memory
     pub fn delete_playlist(&mut self, playlist: usize) {
         let path = self.playlists[playlist].file.clone();
         std::fs::remove_file(path).unwrap();
@@ -472,10 +508,19 @@ impl MusicController {
     }
 
     /// Starts a playlist, with a given track to start
-    pub fn start_playlist_at(&mut self, playlist: usize, track: usize) {
+    pub fn play_playlist_at(&mut self, playlist: usize, track: usize) {
         self.add_queue_at(
             self.playlists[playlist].tracks.clone(),
             QueueType::Playlist(self.playlists[playlist].name.clone(), playlist),
+            track,
+        );
+    }
+
+    /// Starts an autoplaylist, with a given track to start
+    pub fn play_autoplaylist_at(&mut self, tracks: Vec<usize>, autoplaylist: usize, track: usize) {
+        self.add_queue_at(
+            tracks,
+            QueueType::AutoPlaylist(self.autoplaylists[autoplaylist].name.clone(), autoplaylist),
             track,
         );
     }

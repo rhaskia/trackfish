@@ -9,7 +9,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     let clean_search = use_memo(move || strip_unnessecary(&search.read()));
 
     let tracks = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             (0..controller.read().all_tracks.len())
@@ -22,7 +22,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let artists = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -36,7 +36,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let albums = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -51,7 +51,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     let genres = use_memo(move || {
-        if clean_search().is_empty() {
+        if clean_search().len() < 2 {
             Vec::new()
         } else {
             controller
@@ -154,24 +154,36 @@ pub fn TracksSearch(
     id_prefix: String,
 ) -> Element {
     let mut search = use_signal(String::new);
+    let mut last_search = use_signal(String::new);
     let id_prefix = use_signal(|| id_prefix);
+    let mut matches = use_signal(Vec::new);
 
-    let matches = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
-        log::info!("searching {search}");
+    use_effect(move || {
+        if last_search() != search() {
+            last_search.set(search());
+            
+            let search = strip_unnessecary(&search.read());
 
-        if search.is_empty() {
-            Vec::new()
-        } else {
-            tracks
-                .read()
-                .iter()
-                .filter(|t| {
-                    strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
-                })
-                .cloned()
-                .collect::<Vec<usize>>()
+            log::info!("searching {search}");
+
+            matches.set(if search.len() < 2 {
+                Vec::new()
+            } else {
+                tracks
+                    .read()
+                    .iter()
+                    .filter(|t| {
+                        strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
+                    })
+                    .cloned()
+                    .collect::<Vec<usize>>()
+            })
         }
+    });
+
+    let row_size = use_memo(move || match VIEW.read().current {
+        View::Albums => 62 * 3,
+        _ => 62,
     });
 
     rsx! {
@@ -196,14 +208,15 @@ pub fn TracksSearch(
                         div {
                             class: "trackitem",
                             onclick: move |_| {
+                                let scroll_amount = track * row_size();
                                 document::eval(
                                     &format!(
-                                        "document.getElementById('{id_prefix}-trackitem-{}').scrollIntoView();",
-                                        track,
+                                        "document.getElementById('{id_prefix}').scrollTop = {};",
+                                        scroll_amount,
                                     ),
                                 );
                             },
-                            img { src: "/trackimage/{track}" }
+                            img { src: "/trackimage/{track}", loading: "lazy" }
                             span { "{controller.read().all_tracks[track].title}" }
                         }
                     }

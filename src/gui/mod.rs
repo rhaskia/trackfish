@@ -220,6 +220,7 @@ pub struct ViewData {
     pub album: Option<String>,
     pub artist: Option<String>,
     pub playlist: Option<usize>,
+    pub autoplaylist: Option<usize>,
     pub genre: Option<String>,
 }
 
@@ -232,11 +233,24 @@ impl ViewData {
             artist: None,
             genre: None,
             playlist: None,
+            autoplaylist: None,
         }
     }
 
     /// Opens a View
     pub fn open(&mut self, view: View) {
+        if view == self.current {
+            match view {
+                View::Artists => self.artist = None,
+                View::Genres => self.genre = None,
+                View::Albums => self.album = None,
+                View::Playlists => {
+                    self.autoplaylist = None;
+                    self.playlist = None;
+                },
+                _ => {}
+            }
+        }
         self.current = view;
     }
 }

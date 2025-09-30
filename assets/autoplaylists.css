@@ -1,0 +1,107 @@
+.condition {
+    color: white;
+    width: calc(100%); 
+}
+
+.tracksview > .condition-all {
+    margin: 20px;
+    width: calc(100% - 30px);
+}
+
+.condition-is, .condition-has, .condition-greater, .condition-lesser, .condition-equalto {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 400px;
+    display: flex;
+    align-items: center;
+    vertical-align: top;
+}
+
+.condition-all .condition-slot {
+    margin: 10px 20px;
+    margin-right: 0px;
+}
+
+.condition-slot {
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-right: 0px;
+}
+
+.condition-slot select {
+    margin: 0;
+    flex: 1 1 0;
+}
+
+.condition-slot input {
+    flex: 1 1 0;
+    background-color: transparent;
+    border: 1px solid grey;
+    border-radius: 8px;
+    color: white;
+    height: 28px;
+}
+
+.condition-not {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 0 10px;
+}
+
+.autoplaylist-menu {
+    display: flex;
+    justify-content: space-around;
+    gap: 5px;
+    padding: 0 5px;
+}
+
+.autoplaylist-menu button {
+    flex: 1 1 0;
+} 
+
+.condition-group-toggle {
+    display: flex;
+}
+
+.condition-group-toggle button {
+    width: 80px;
+    height: 32px;
+    font-size: 16px;
+    transition: background-color 1s;
+}
+
+.toggle-left {
+    border-radius: 0px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-left-radius: 8px !important;
+    border-right: none !important;
+}
+
+.toggle-right {
+    border-left: none !important;
+    border-radius: 0px !important;
+    border-bottom-right-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+}
+
+.condition-add {
+    display: flex ;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin-left: 10px;
+    border-radius: 8px !important;
+    width: fit-content !important;
+    padding: 0 14px 0px 5px;
+}
+
+.current-conditon-toggle {
+    background-color: #4da6ff !important;
+    border: 1px solid #46a6ff !important
+}

@@ -126,7 +126,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                     controller,
                     tracks,
                     is_searching,
-                    id_prefix: "alltracks",
+                    id_prefix: "alltrackslist",
                 }
             }
         }
