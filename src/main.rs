@@ -250,6 +250,15 @@ fn App() -> Element {
         document::Stylesheet { href: TRACKOPTIONS_CSS }
         document::Stylesheet { href: QUEUE_CSS }
 
+        style {
+            r#"
+                @font-face {{
+                    font-family: Rubik;
+                    src: url({asset!("/assets/Rubik/Rubik-VariableFont_wght.ttf")}); 
+                }}
+            "#
+        }
+
         div {
             class: "loadingpopupbg",
             hidden: loading_track_weights() == tracks_count(),
