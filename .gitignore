@@ -19,3 +19,7 @@ lastfm/fasttext_categories.model.wv.vectors_ngrams.npy
 .idea
 music.iml
 __pycache__
+
+my-release-key.jks
+
+apk
