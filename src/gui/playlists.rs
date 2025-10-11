@@ -34,7 +34,10 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
                 open: true,
 
-                summary { "Playlists" }
+                summary { 
+                    "Playlists" 
+                    button { class: "svg-button", onclick: move |_| *CREATING_PLAYLIST.write() = true, background_image: "url({ADD_ICON})" }
+                }
                 hr {}
 
                 // Playlist list
@@ -54,8 +57,6 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                         }
                     }
                 }
-
-                button { onclick: move |_| *CREATING_PLAYLIST.write() = true, "Create new playlist" }
 
                 // Player creation menu
                 div {
@@ -97,7 +98,10 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
                 open: "true",
 
-                summary { "Autoplaylists" }
+                summary { 
+                    "Autoplaylists"
+                    button { class: "svg-button", onclick: move |_| *CREATING_AUTOPLAYLIST.write() = true, background_image: "url({ADD_ICON})" }
+                }
                 hr {}
 
                 for i in 0..controller.read().autoplaylists.len() {
@@ -116,8 +120,6 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                         }
                     }
                 }
-
-                button { onclick: move |_| *CREATING_AUTOPLAYLIST.write() = true, "Create new autoplaylist" }
 
                 // Autoplaylist creation menu
                 div {

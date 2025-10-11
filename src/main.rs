@@ -121,6 +121,13 @@ fn SetUpRoute() -> Element {
         if set_up() {
             App {}
         } else {
+            // spacer for android status bar area
+            if cfg!(target_os = "android") {
+                div {
+                    height: "30pt",
+                }
+            }
+
             label { r#for: "directory", "Current directory: " }
             kbd { "{dir}" }
             br {}

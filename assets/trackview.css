@@ -105,6 +105,10 @@
     text-align: center;
 }
 
+.songprogress {
+    width: 33px;
+}
+
 .trackblur {
     position: absolute;
     width: 120%;
@@ -141,11 +145,13 @@
     justify-content: center;
     gap: 10px;
     white-space: nowrap;
-
-
 }
 
 /* Track Interactions */
+.buttonrow {
+    align-items: center;
+}
+
 .progressrow {
     width: 100%;
     display: flex;
@@ -156,4 +162,18 @@
 
 .progressrow input {
     flex: 1 1 0;
+}
+
+.trackcontrols .svg-button {
+    height: 24px;
+}
+
+.trackcontrols .svg-button:nth-child(even) {
+    height: 35px;
+    background-size: 35px;
+}
+
+.trackcontrols .svg-button:nth-child(3) {
+    height: 50px;
+    background-size: 50px;
 }

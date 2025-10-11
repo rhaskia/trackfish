@@ -21,6 +21,7 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
             class: "settingsview",
             button {
                 class: "settingslistbutton",
+                background: "url({MENU_ICON})",
                 onclick: move |_| extended_list.set(!extended_list()),
             }
 

@@ -19,7 +19,7 @@
     border: 1px solid #696969;
     border-radius: 8px;
     width: var(--width);
-    top: calc(50vh - (var(--height) / 2));
+    top: calc(40vh - (var(--height) / 2));
     min-height: var(--height);
     height: fit-content;
     left: calc(50vw - (var(--width) / 2));

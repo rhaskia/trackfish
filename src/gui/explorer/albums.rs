@@ -1,7 +1,7 @@
 use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 use crate::{
-    app::MusicController,
+    app::{MusicController, utils::similar},
     gui::{icons::*, View, VIEW},
 };
 use dioxus::document::eval;
@@ -103,10 +103,10 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
             div {
                 class: "searchbar",
-                onclick: move |_| is_searching.set(true),
+                onclick: move |e| { is_searching.set(true); e.stop_propagation()},
                 display: if VIEW.read().album.is_some() { "none" },
                 img { src: SEARCH_ICON }
-                input {}
+                div { class: "pseudoinput" }
             }
 
             div {
@@ -115,7 +115,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
                 position: "relative",
                 display: if VIEW.read().album.is_some() { "none" },
 
-                div { min_height: "{row_height() * albums.read().len()}px" }
+                div { min_height: "{row_height() * albums.read().len() / items_per_row()}px" }
 
                 div {
                     class: "albumsholder",
@@ -151,7 +151,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
             }
 
             if is_searching() {
-                AlbumsSearch { controller, is_searching }
+                AlbumsSearch { controller, is_searching, albums, row_height, items_per_row }
             }
         }
     }
@@ -161,6 +161,9 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 pub fn AlbumsSearch(
     controller: SyncSignal<MusicController>,
     is_searching: Signal<bool>,
+    albums: Signal<Vec<(String, usize)>>,
+    row_height: Signal<usize>,
+    items_per_row: Signal<usize>
 ) -> Element {
     let mut search = use_signal(String::new);
 
@@ -206,13 +209,19 @@ pub fn AlbumsSearch(
                             onclick: {
                                 let album = album.clone();
                                 move |_| {
+                                    let index = albums.read().iter().position(|a| similar(&a.0, &album)).unwrap_or(0);
+                                    let row = index / items_per_row();
+                                    let scroll_amount = row * row_height();
                                     document::eval(
-                                        &format!("document.getElementById('album-{}').scrollIntoView();", &album),
+                                        &format!(
+                                            "document.getElementById('albumlist').scrollTop = {};",
+                                            scroll_amount,
+                                        ),
                                     );
                                 }
                             },
 
-                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}" }
+                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}", loading: "lazy" }
                             span { "{album}" }
                         }
                     }

@@ -698,6 +698,11 @@ impl MusicController {
         return usize::MAX;
     }
 
+    /// Returns the index of an album in the controller's inner list
+    pub fn get_album_index(&self, album: &str) -> usize {
+        self.albums.iter().position(|a| similar(album, a.0)).unwrap_or(0)
+    }
+
     /// Toggles between playing and paused
     pub fn toggle_playing(&mut self) {
         send_music_msg(MusicMsg::Toggle);

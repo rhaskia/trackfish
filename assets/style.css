@@ -110,7 +110,7 @@ input[type="range"] {
     border-radius: 5px;
     margin: 10px 0;
     --sep: 10px;
-    --lin: 13px;
+    --lin: 14px;
     --g: calc(var(--dist) / 100% * (100% - var(--lin)) + (var(--lin) / 2));
     background: linear-gradient(to right, white 0%, white calc(var(--g) - var(--sep)), transparent calc(var(--g) - var(--sep)), transparent calc(var(--g) + var(--sep)), darkgrey calc(var(--g) + var(--sep)), darkgrey 100%);
 }
@@ -121,6 +121,24 @@ input[type="range"]::-webkit-slider-thumb {
     height: 22px;
     background: var(--fg);
     border-radius: 10px;
+}
+
+input[type="range"]:hover {
+    --sep: 11px;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    width: 14px;
+    height: 23px;
+}
+
+input[type="range"]:active {
+    --sep: 12px;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    width: 15px;
+    height: 24px;
 }
 
 select {

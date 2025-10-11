@@ -68,7 +68,7 @@
 }
 
 .searchbar {
-    width: calc(100% - 20px);
+    width: calc(100% - 10px);
     border-bottom: 1px solid grey;
     padding: 5px;
     display: flex;

@@ -44,8 +44,14 @@ summary {
     left: 0;
     top: 0;
     background: rgb(0 0 0 / 48%);
-    width: 100vw;
-    height: 100vw; 
+    width: 400vw;
+    height: 400vw; 
+}
+
+summary .svg-button {
+    background: 50% 4px;
+    border: none;
+    margin: 4px;
 }
 
 .playlistcreator {
