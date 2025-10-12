@@ -39,8 +39,9 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "trackview",
-            display: if VIEW.read().current != View::Song { "none" },
+            id: "trackview",
+            class: "trackview view",
+            // display: if VIEW.read().current != View::Song { "none" },
 
             // Background image blur
             div {

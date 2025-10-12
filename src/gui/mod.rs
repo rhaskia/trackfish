@@ -173,9 +173,9 @@ pub enum View {
     Song = 0,
     Queue = 1,
     AllTracks = 2,
-    Artists = 3,
-    Genres = 4,
-    Albums = 5,
+    Albums = 3,
+    Artists = 4,
+    Genres = 5,
     Playlists = 6,
     Search = 7,
     Settings = 8,
@@ -198,17 +198,16 @@ impl View {
     }
 
     /// Turns a number value into a view state
-    fn from_usize(n: usize) -> Self {
+    pub fn from_usize(n: usize) -> Self {
         match n {
             0 => Self::Song,
             1 => Self::Queue,
             2 => Self::AllTracks,
-            3 => Self::Artists,
-            4 => Self::Genres,
-            5 => Self::Albums,
+            3 => Self::Albums,
+            4 => Self::Artists,
+            5 => Self::Genres,
             6 => Self::Playlists,
-            7 => Self::Search,
-            8 => Self::Settings,
+            7 => Self::Settings,
             _ => Self::Song,
         }
     }

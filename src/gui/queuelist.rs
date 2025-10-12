@@ -117,8 +117,8 @@ pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "queue",
-            display: if VIEW.read().current != View::Queue { "none" },
+            id: "queueview",
+            class: "queue view",
             onclick: move_queue_item.clone(),
 
             // Queue selector

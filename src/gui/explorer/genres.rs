@@ -28,8 +28,8 @@ pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "artists",
-            display: if VIEW.read().current != View::Genres { "none" },
+            class: "artists view",
+            id: "genreview",
 
             div {
                 class: "searchbar",

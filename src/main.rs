@@ -13,6 +13,7 @@ use rusqlite::{params, Rows};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
+use dioxus::document::eval;
 
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, WindowBuilder};
@@ -69,6 +70,10 @@ fn init() {
     builder.filter(None, LevelFilter::Trace);
     builder.filter(Some("tungstenite"), LevelFilter::Off);
     builder.filter(Some("jni"), LevelFilter::Off);
+    builder.filter(Some("symphonia_bundle_mp3"), LevelFilter::Off);
+    builder.filter(Some("symphonia_core"), LevelFilter::Off);
+    builder.filter(Some("symphonia_core"), LevelFilter::Off);
+    builder.filter(Some("symphonia_metadata"), LevelFilter::Off);
 
     let filter = builder.build();
 
@@ -176,6 +181,31 @@ fn App() -> Element {
         crate::gui::start_controller_thread();
     });
 
+    use_effect(move || {
+        let scroll_index = VIEW.read().current.clone() as usize; 
+        eval(&format!(r#"
+            const mainview = document.getElementById("mainview");
+            const scrollWidth = mainview.scrollWidth;
+            mainview.scrollLeft = scrollWidth / 8 * {scroll_index}
+        "#));
+    });
+
+    // Attach on scroll snap change to main view
+    use_future(move || async move {
+        let mut js = eval(r#"
+            const mainview = document.getElementById("mainview");
+            mainview.addEventListener("scrollsnapchange", (event) => {
+                console.log(mainview.scrollLeft / mainview.scrollWidth * 8);
+                dioxus.send(mainview.scrollLeft / mainview.scrollWidth * 8);
+            });
+        "#);  
+
+        while let Ok(res) = js.recv::<f64>().await {
+            info!("{}", res.round());
+            VIEW.write().current = View::from_usize(res.round() as usize);
+        }
+    });
+
     // Load in all tracks
     use_future(move || async move {
         let started = Instant::now();
@@ -197,7 +227,10 @@ fn App() -> Element {
         let mut weights: HashMap<String, TrackInfo> = HashMap::new();
         while let Ok(Some(row)) = result.next() {
             let hash = row.get(0).unwrap();
-            weights.insert(hash, row_to_weights(&row).unwrap());
+            match row_to_weights(&row) {
+                Ok(row) => { weights.insert(hash, row); },
+                Err(err) => error!("Error retrieving data: {err}"),
+            } 
         }
 
         let len = controller.read().all_tracks.len();
@@ -274,18 +307,23 @@ fn App() -> Element {
             }
         }
 
-        div { class: "mainview", tabindex: 0, autofocus: true,
+        div { class: "mainview", id: "mainview",
+            tabindex: 0,
+            autofocus: true,
             padding_top: if cfg!(target_os = "android") { "30pt" },
+            background: if cfg!(target_os = "android") && VIEW.read().current != View::Song { "var(--bg)" },
+            onscroll: move |e| info!("{e:?}"),
+
             TrackView { controller }
-            TrackOptions { controller }
             QueueList { controller }
             AllTracks { controller }
-            GenreList { controller }
-            ArtistList { controller }
             AlbumsList { controller }
+            ArtistList { controller }
+            GenreList { controller }
             PlaylistsView { controller }
-            //SearchView { controller }
             Settings { controller }
+
+            TrackOptions { controller }
         }
 
         MenuBar {}
@@ -296,6 +334,7 @@ fn App() -> Element {
 pub fn MenuBar() -> Element {
     rsx! {
         div { class: "buttonrow nav",
+            background_color: if VIEW.read().current != View::Song { "var(--bg)" },
             button {
                 class: "svg-button",
                 background_image: "url({asset!(\"/assets/icons/song.svg\")})",

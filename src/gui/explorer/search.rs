@@ -66,10 +66,9 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "searchview",
+            class: "searchview view",
             height: "calc(100vh - 50px)",
             overflow: "hidden",
-            display: if VIEW.read().current != View::Search { "none" },
 
             div { class: "searchbar",
                 img { src: SEARCH_ICON }

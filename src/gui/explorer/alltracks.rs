@@ -79,10 +79,10 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "alltracksview",
-            display: if VIEW.read().current != View::AllTracks { "none" },
+            id: "alltracksview",
+            class: "alltracksview view",
             div { class: "searchbar", onclick: move |_| is_searching.set(true),
-                img { src: SEARCH_ICON }
+                img { src: SEARCH_ICON, loading: "lazy" }
                 div { class: "pseudoinput" }
             }
             div { color: "white", padding: "10px",
@@ -107,19 +107,18 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                         },
                         img {
                             class: "trackitemicon",
-                            loading: "onvisible",
+                            loading: "lazy",
                             src: "/trackimage/{i}",
                         }
                         span { "{controller.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }
                         img {
                             class: "trackbutton",
-                            loading: "onvisible",
+                            loading: "lazy",
                             src: VERT_ICON,
                         }
                     }
                 }
-            
             }
             if is_searching() {
                 TracksSearch {

@@ -17,10 +17,11 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            display: if VIEW.read().current != View::Settings { "none" },
-            class: "settingsview",
+            class: "settingsview view",
+            id: "settingsview",
             button {
                 class: "settingslistbutton",
+                top: if cfg!(target_os = "android") { "calc(10px + 30pt)" },
                 background: "url({MENU_ICON})",
                 onclick: move |_| extended_list.set(!extended_list()),
             }

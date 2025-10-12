@@ -40,7 +40,6 @@ impl AudioPlayer {
         let source = Decoder::builder()
             .with_data(file)
             .with_seekable(true)
-            .with_gapless(true)
             .build()
             .unwrap();
 

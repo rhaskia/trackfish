@@ -95,8 +95,8 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
     rsx! {
         div {
-            class: "albums",
-            display: if VIEW.read().current != View::Albums { "none" },
+            id: "albumsview",
+            class: "albums view",
             autofocus: true,
             onkeydown: move |e| log::info!("{e:?}"),
             onclick: move |_| is_searching.set(false),

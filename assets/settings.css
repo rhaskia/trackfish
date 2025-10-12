@@ -8,6 +8,9 @@
     padding: 10px;
     flex-direction: row;
     height: 100%;
+    min-width: calc(100vw - 20px);
+    position: relative;
+    overflow: hidden;
 }
 
 .settingsmenu {
