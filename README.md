@@ -2,9 +2,6 @@
 ![](https://raw.githubusercontent.com/rhaskia/trackfish/refs/heads/main/image.png)
 TrackFish is a music player made for offline usage without having to sacrifice features typically only associated with streaming services - the ability to have similar songs to continue playing after one ends, called autoplay or a radio in many apps. TrackFish also seeks to be a generally comprehensive music player with features such as playlists, autoplaylists, comprehensive queue management. Planned features include scrobbling, tagging, and more. 
 
-# Features
- - 
-
 # Compiling
 On desktop, you will need the dioxus-cli, and to install the following packages:
 Linux: WebkitGtk, xdotool
@@ -59,7 +56,7 @@ You will need to build the Dioxus CLI from [github](https://github.com/DioxusLab
     - [ ] Locking queues to stop them being recached on new load/scan?
     - [ ] End of queue options - stop, next, repeat, reshuffle etc
     - [ ] Sorting features
- - [ ] Auto Playlists
+ - [x] Auto Playlists
     - [x] Sort by metadata
     - [ ] Automatic re-caching onload or on any change?
     - [ ] Sort by audio features
