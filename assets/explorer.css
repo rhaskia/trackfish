@@ -144,6 +144,30 @@
     overflow-x: hidden;
     height: fit-content;
     scroll-behavior: smooth;
+    position: relative;
+}
+
+.explorerswitch {
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: calc(100vw - 20px);
+    padding: 10px;
+}
+
+.explorerswitch button {
+    background: none;
+    border: 1px solid darkgrey;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    flex: 1 1 0;
+}
+
+.explorerselected {
+    border: 1px solid #4da6ff !important;
+    background: #4da6ff !important;
 }
 
 #genrelist {

@@ -26,6 +26,16 @@
     position: absolute;
     box-shadow: 0 0 2px rgba(0, 0, 0, .32);
     padding: 10px;
+    transition: bottom 0.2s;
+}
+
+.largerheader {
+    font-size: 24px;
+}
+
+.optionsboxmobile button {
+    flex: 1 1 0;
+    font-size: 16px;
 }
 
 .optionbox hr {
@@ -43,6 +53,7 @@
     justify-content: flex-start;
     align-items: center;
     margin: 5px 0;
+    user-select: none;
 }
 
 .optionbox button img {

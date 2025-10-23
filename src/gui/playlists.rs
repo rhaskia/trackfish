@@ -12,6 +12,7 @@ const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 const CREATING_AUTOPLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
 use super::icons::*;
+use super::explorer::ExplorerSwitch;
 
 #[component]
 pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
@@ -29,6 +30,9 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
         div {
             class: "playlistsview view",
             id: "playlistsview",
+
+            ExplorerSwitch { controller }
+
             details {
                 padding: "10px",
                 hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),

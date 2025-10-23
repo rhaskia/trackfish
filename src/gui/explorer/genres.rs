@@ -5,6 +5,7 @@ use crate::{
     gui::{icons::*, View, VIEW},
 };
 use dioxus::prelude::*;
+use super::ExplorerSwitch;
 
 #[component]
 pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
@@ -30,6 +31,8 @@ pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
         div {
             class: "artists view",
             id: "genreview",
+
+            ExplorerSwitch { controller }
 
             div {
                 class: "searchbar",

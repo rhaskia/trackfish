@@ -6,6 +6,7 @@ use crate::{
 };
 use dioxus::document::eval;
 use dioxus::prelude::*;
+use super::ExplorerSwitch;
 
 #[component]
 pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
@@ -100,6 +101,8 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
             autofocus: true,
             onkeydown: move |e| log::info!("{e:?}"),
             onclick: move |_| is_searching.set(false),
+
+            ExplorerSwitch { controller }
 
             div {
                 class: "searchbar",

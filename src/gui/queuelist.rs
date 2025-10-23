@@ -38,7 +38,7 @@ pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
             if let Ok(pos) = position {
                 mouse_y.set(pos as f32);
                 hovering_over
-                    .set((((mouse_y() + scroll_y()) - 35.0 - 31.0) / 62.0).floor() as usize);
+                    .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
             }
         }
     });
@@ -102,7 +102,7 @@ pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
             if let Ok(scroll) = scroll {
                 scroll_y.set(scroll as f32);
                 hovering_over
-                    .set((((mouse_y() + scroll_y()) - 35.0 - 31.0) / 62.0).floor() as usize);
+                    .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
             }
         }
     });
@@ -244,7 +244,6 @@ pub fn TrackItem(
                 onmousedown: move |e| {
                     current_dragging.set(Some(idx));
                     grab_y.set(e.data.coordinates().element().y as f32);
-                    info!("woah");
                 },
                 onmouseup: move_queue_item,
                 onclick: |e| e.stop_propagation(),

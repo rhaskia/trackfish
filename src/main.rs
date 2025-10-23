@@ -28,8 +28,8 @@ use app::{
     track::{get_track_image, load_tracks, TrackInfo},
     MusicController,
 };
-use gui::*;
 
+use gui::*;
 pub use gui::icons;
 
 // CSS
@@ -103,7 +103,14 @@ fn load_image() -> Icon {
 
 #[cfg(not(target_os = "android"))]
 fn init() {
-    LogTracer::init().expect("Failed to initialize LogTracer");
+    use env_filter::Builder;
+    use log::LevelFilter;
+    LogTracer::builder()
+        .ignore_crate("symphonia_core")
+        .ignore_crate("symphonia_metadata")
+        .ignore_crate("symphonia_bundle_mp3")
+        .ignore_crate("symphonia")
+        .init().expect("Failed to initialize LogTracer");
 
     dioxus_logger::init(dioxus_logger::tracing::Level::INFO).unwrap();
 
@@ -238,6 +245,7 @@ fn App() -> Element {
         for i in 0..len {
             loading_track_weights += 1;
             let is_cached = controller.write().load_weight(&cache, &weights, i);
+            info!("Track {i}/{len} analyzed");
             if !is_cached {
                 tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
             }
@@ -350,31 +358,34 @@ pub fn MenuBar() -> Element {
                 background_image: "url({asset!(\"/assets/icons/folder.svg\")})",
                 onclick: move |_| VIEW.write().open(View::AllTracks),
             }
-            button {
-                class: "svg-button",
-                background_image: "url({asset!(\"/assets/icons/album.svg\")})",
-                onclick: move |_| VIEW.write().open(View::Albums),
+            if !MOBILE() && false {
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/album.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::Albums),
+                }
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/artist.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::Artists),
+                }
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/genres.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::Genres),
+                }
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::Playlists),
+                }
+            } else {
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::Playlists),
+                }
             }
-            button {
-                class: "svg-button",
-                background_image: "url({asset!(\"/assets/icons/artist.svg\")})",
-                onclick: move |_| VIEW.write().open(View::Artists),
-            }
-            button {
-                class: "svg-button",
-                background_image: "url({asset!(\"/assets/icons/genres.svg\")})",
-                onclick: move |_| VIEW.write().open(View::Genres),
-            }
-            button {
-                class: "svg-button",
-                background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
-                onclick: move |_| VIEW.write().open(View::Playlists),
-            }
-            // button {
-            //     class: "svg-button",
-            //     background_image: "url({asset!(\"/assets/icons/search.svg\")})",
-            //     onclick: move |_| VIEW.write().open(View::Search),
-            // }
             button {
                 class: "svg-button",
                 background_image: "url({asset!(\"/assets/icons/settings.svg\")})",

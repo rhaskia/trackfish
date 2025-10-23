@@ -42,6 +42,8 @@ pub const TRACKOPTION: GlobalSignal<Option<usize>> = Signal::global(|| None);
 /// To be set when a song is to be added to the playlist by a user
 pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None);
 
+pub const MOBILE: GlobalSignal<bool> = Signal::global(|| cfg!(target_os = "android"));
+
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component
 pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =

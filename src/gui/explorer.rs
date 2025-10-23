@@ -21,6 +21,35 @@ use rand::Rng;
 use super::icons::*;
 
 #[component]
+pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
+    rsx!{
+        div {
+            class: "explorerswitch",
+            button {
+                onclick: move |_| VIEW.write().current = View::Albums,
+                class: if VIEW.read().current == View::Albums { "explorerselected" },
+                "Albums"
+            }
+            button {
+                onclick: move |_| VIEW.write().current = View::Artists,
+                class: if VIEW.read().current == View::Artists { "explorerselected" },
+                "Artists"
+            }
+            button {
+                onclick: move |_| VIEW.write().current = View::Genres,
+                class: if VIEW.read().current == View::Genres { "explorerselected" },
+                "Genres"
+            }
+            button {
+                onclick: move |_| VIEW.write().current = View::Playlists,
+                class: if VIEW.read().current == View::Playlists { "explorerselected" },
+                "Playlists"
+            }
+        }
+    }
+}
+
+#[component]
 pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
     let mut explorer_settings = use_signal(|| false);
