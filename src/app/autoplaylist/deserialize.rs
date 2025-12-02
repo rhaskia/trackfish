@@ -26,25 +26,25 @@ impl Condition {
                     let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
 
                     let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_string()?;
-                    let op = StrOperator::from_str(&op)?;
+                    let op = StrOperator::from_str(&op).unwrap();
 
-                    Ok(Condition::StrCondition(StrIdentifier::from_str(&ident)?, op, value))
+                    Ok(Condition::StrCondition(StrIdentifier::from_str(&ident).unwrap(), op, value))
                 },
                 "year" |"energy" => {
                     let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
 
                     let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_num()?;
-                    let op = NumOperator::from_str(&op)?;
+                    let op = NumOperator::from_str(&op).unwrap();
 
-                    Ok(Condition::NumCondition(NumIdentifier::from_str(&ident)?, op, value))
+                    Ok(Condition::NumCondition(NumIdentifier::from_str(&ident).unwrap(), op, value))
                 },
                 "length" => {
                     let op = strip_unnessecary(&tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_identifier()?);
 
                     let value = tokens.next().ok_or(anyhow!("No matching operator for identifier"))?.as_num()?;
-                    let op = NumOperator::from_str(&op)?;
+                    let op = NumOperator::from_str(&op).unwrap();
 
-                    Ok(Condition::TimeCondition(TimeIdentifier::from_str(&ident)?, op, value))
+                    Ok(Condition::TimeCondition(TimeIdentifier::from_str(&ident).unwrap(), op, value))
                 }
                 "all" | "any" => {
                     let _ = tokens.next().ok_or(anyhow!("Missing open paren for {ident} statement"))?.ensure_open_paren()?;

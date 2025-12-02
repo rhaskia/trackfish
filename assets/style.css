@@ -93,6 +93,26 @@ svg {
     display: none;
 }
 
+.mainview {
+    &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: transparent;
+}
+    &::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+    &::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+        background-color: transparent;
+    }
+}
+
+.mainview {
+    -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+}
+
 .svg-button {
     width: 24px;
     aspect-ratio: 1;
@@ -138,8 +158,8 @@ input[type="range"] {
     height: 5px;
     border-radius: 5px;
     margin: 10px 0;
-    --sep: 10px;
-    --lin: 14px;
+    --sep: 0px;
+    --lin: 7px;
     --g: calc(var(--dist) / 100% * (100% - var(--lin)) + (var(--lin) / 2));
     background: linear-gradient(to right, white 0%, white calc(var(--g) - var(--sep)), transparent calc(var(--g) - var(--sep)), transparent calc(var(--g) + var(--sep)), darkgrey calc(var(--g) + var(--sep)), darkgrey 100%);
 }

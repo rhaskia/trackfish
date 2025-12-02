@@ -262,7 +262,8 @@ impl MusicController {
         self.current_started = Instant::now();
         self.progress_secs = 0.0;
 
-        send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()))
+        send_music_msg(MusicMsg::PlayTrack(self.all_tracks[idx].file.clone()));
+        info!("sent music msg to thread");
     }
 
     /// Returns the current track weights, or average track weights accross the queue
@@ -416,6 +417,8 @@ impl MusicController {
                 }
             }
         }
+
+        info!("successfully skipped song");
     }
 
     /// Sets the current queue playing and at which track

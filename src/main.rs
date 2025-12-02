@@ -245,7 +245,6 @@ fn App() -> Element {
         for i in 0..len {
             loading_track_weights += 1;
             let is_cached = controller.write().load_weight(&cache, &weights, i);
-            info!("Track {i}/{len} analyzed");
             if !is_cached {
                 tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
             }
@@ -261,6 +260,8 @@ fn App() -> Element {
             responder.respond(r);
             return;
         };
+
+        info!("sending track image {id}");
 
         let track = controller.read().get_track(id).cloned();
 

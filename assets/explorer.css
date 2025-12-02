@@ -159,7 +159,7 @@
 .explorerswitch button {
     background: none;
     border: 1px solid darkgrey;
-    border-radius: 10px;
+    border-radius: 10px !important;
     color: white;
     font-size: 16px;
     flex: 1 1 0;

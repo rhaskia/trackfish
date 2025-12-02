@@ -7,7 +7,9 @@ fn main() {
     watch_dir("./kotlin".into());
     watch_dir("./res".into());
 
-    let dest = PathBuf::from(format!("./target/dx/trackfish/release/android/app/app/src/main/kotlin/dev/dioxus/main"));
+    let build_type = env::var("PROFILE").unwrap();
+
+    let dest = PathBuf::from(format!("./target/dx/trackfish/{build_type}/android/app/app/src/main/kotlin/dev/dioxus/main"));
 
     fs::create_dir_all(&dest).unwrap();
     for entry in fs::read_dir("./kotlin/").unwrap() {
@@ -15,7 +17,7 @@ fn main() {
         fs::copy(entry.path(), dest.join(entry.file_name())).unwrap();
     }
 
-    let res_dest = PathBuf::from("./target/dx/trackfish/release/android/app/app/src/main/res");
+    let res_dest = PathBuf::from(&format!("./target/dx/trackfish/{build_type}/android/app/app/src/main/res"));
     copy_dir_recursive(PathBuf::from("./res"), res_dest);
 }
 

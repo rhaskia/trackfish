@@ -478,7 +478,7 @@ pub fn get_track_image(file: &str) -> Option<Vec<u8>> {
             // let picture = metaflac::block::Picture::from_bytes(&decoded).ok()?;
             //
             // Some(picture.data)
-            Some(Vec::new())
+            None
         }
         _ => {
             let tag = id3::Tag::read_from_path(file).ok()?;

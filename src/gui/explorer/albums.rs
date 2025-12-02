@@ -97,6 +97,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         div {
             id: "albumsview",
+            position: "relative",
             class: "albums view",
             autofocus: true,
             onkeydown: move |e| log::info!("{e:?}"),
@@ -133,7 +134,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
                             img {
                                 loading: "onvisible",
-                                src: "/trackimage/{controller.read().get_album_artwork(albums.read()[i].0.clone())}",
+                                src: if VIEW.read().current == View::Albums { "/trackimage/{controller.read().get_album_artwork(albums.read()[i].0.clone())}" },
                             }
 
                             div { class: "albuminfo",

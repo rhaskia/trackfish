@@ -106,9 +106,10 @@ pub fn start_controller_thread() {
                                 if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                                     let mut controller = ctrl.clone();
                                     controller.write().song_length = audio_player.play_track(&file);
-                                    controller.write().progress_secs = 0.0;
+                                    //controller.write().progress_secs = 0.0;
 
                                     track_playing = true;
+                                    info!("played track from thread");
                                 }
                             }
                             MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
@@ -118,10 +119,13 @@ pub fn start_controller_thread() {
 
                         if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                             let mut controller = ctrl.clone();
-                            controller.write().progress_secs = audio_player.progress_secs();
-                            controller.write().playing = audio_player.playing();
+                            info!("grabbed controller");
+                            //controller.write().progress_secs = audio_player.progress_secs();
+                            info!("set progress secs");
+                            //controller.write().playing = audio_player.playing();
 
                             let track = controller.read().current_track().cloned();
+                            info!("{track:?}");
 
                             // Set media notification to update user and keep FGS alive
                             #[cfg(target_os = "android")]

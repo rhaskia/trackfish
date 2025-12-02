@@ -1,0 +1,52 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to Android",
+            "type": "lldb",
+            "request": "attach",
+            "pid": "25935",
+            "processCreateCommands": [
+                "platform select remote-android",
+                "platform connect connect://localhost:10086",
+                "settings set target.inherit-env false",
+                "settings set target.inline-breakpoint-strategy always",
+                "settings set target.process.thread.step-avoid-regexp \"JavaBridge|JDWP|Binder|ReferenceQueueDaemon\"",
+                "process handle SIGSEGV --pass true --stop false --notify true",
+                "image add target/dx/trackfish/debug/android/app/app/src/main/jniLibs/arm64-v8a/libdioxusmain.so",
+                "settings append target.exec-search-paths target/dx/trackfish/debug/android/app/app/src/main/jniLibs/arm64-v8a/libdioxusmain.so",
+                "attach --pid 25935",
+                "continue"
+            ]
+        },
+        {
+            "name": "Debug Rust Desktop App",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/trackfish.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            },
+            "sourceLanguages": [
+                "rust"
+            ]
+        },
+        {
+            "name": "Launch Dioxus Desktop",
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "rust"
+            ],
+            "stopOnEntry": false,
+            "preLaunchTask": "cargo build --features desktop",
+            "program": "${workspaceFolder}/target/debug/trackfish.exe",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
+        }
+    ]
+}

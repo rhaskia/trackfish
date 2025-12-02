@@ -3,8 +3,6 @@ use super::track::Track;
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
-use strum_macros::EnumString;
-use strum_macros::Display;
 use std::path::PathBuf;
 use log::info;
 
@@ -53,58 +51,126 @@ pub enum Identifier {
     Time(TimeIdentifier)
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrIdentifier {
-    #[strum(ascii_case_insensitive)]
     Title,
-    #[strum(ascii_case_insensitive)]
     Genre,
-    #[strum(ascii_case_insensitive)]
     Album,
-    #[strum(ascii_case_insensitive)]
     Artist,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum NumIdentifier {
-    #[strum(ascii_case_insensitive)]
     Year,
-    #[strum(ascii_case_insensitive)]
     Energy
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum TimeIdentifier {
-    #[strum(ascii_case_insensitive)]
     Length,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum NumOperator {
-    #[strum(ascii_case_insensitive)]
     Greater,
-    #[strum(ascii_case_insensitive)]
     Lesser,
-    #[strum(ascii_case_insensitive)]
     Equals,
-    #[strum(ascii_case_insensitive)]
     NotEqual,
-    #[strum(ascii_case_insensitive)]
     Missing
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, EnumString, Display)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrOperator {
-    #[strum(ascii_case_insensitive)]
     Is,
-    #[strum(ascii_case_insensitive)]
     IsNot,
-    #[strum(ascii_case_insensitive)]
     Has,
-    #[strum(ascii_case_insensitive)]
     HasNot,
-    #[strum(ascii_case_insensitive)]
     Missing
+}
+
+impl StrOperator {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "is" => Some(Self::Is),
+            "isNot" => Some(Self::IsNot),
+            "has" => Some(Self::Has),
+            "hasNot" => Some(Self::HasNot),
+            "missing" => Some(Self::Missing),
+            _ => None
+        }
+    } 
+}
+
+impl NumOperator {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "greater" => Some(Self::Greater),
+            "lesser" => Some(Self::Lesser),
+            "equals" => Some(Self::Equals),
+            "notequal" => Some(Self::NotEqual),
+            "missing" => Some(Self::Missing),
+            _ => None
+        }
+    } 
+}
+
+impl NumIdentifier {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "year" => Some(Self::Year),
+            "energy" => Some(Self::Energy),
+            _ => None
+        }
+    }
+}
+
+impl TimeIdentifier {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "length" => Some(Self::Length),
+            _ => None
+        }
+    }
+}
+
+impl StrIdentifier {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_ascii_lowercase().as_str() {
+            "title" => Some(Self::Title),
+            "genre" => Some(Self::Genre),
+            "artist" => Some(Self::Artist),
+            "album" => Some(Self::Album),
+            _ => None
+        }
+    }
+}
+
+impl Display for StrIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StrIdentifier::Title => f.write_str("Title"),
+            StrIdentifier::Genre => f.write_str("Genre"),
+            StrIdentifier::Album => f.write_str("Album"),
+            StrIdentifier::Artist => f.write_str("Artist"),
+        }
+    }
+}
+
+impl Display for NumIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NumIdentifier::Year => f.write_str("Year"),
+            NumIdentifier::Energy => f.write_str("Energy"),
+        }
+    }
+}
+
+impl Display for TimeIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TimeIdentifier::Length => f.write_str("Length")
+        }
+    }
 }
 
 impl Display for Identifier {
@@ -114,6 +180,30 @@ impl Display for Identifier {
             Identifier::Num(n) => n.fmt(f),
             Identifier::Time(t) => t.fmt(f),
         } 
+    }
+}
+
+impl Display for StrOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StrOperator::Has => f.write_str("Has"),
+            StrOperator::Is => f.write_str("Is"),
+            StrOperator::HasNot => f.write_str("HasNot"),
+            StrOperator::IsNot => f.write_str("IsNot"),
+            StrOperator::Missing => f.write_str("Missing")
+        }
+    }
+}
+
+impl Display for NumOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NumOperator::Equals => f.write_str("Equals"),
+            NumOperator::Greater => f.write_str("Greater"),
+            NumOperator::Lesser => f.write_str("Lesser"),
+            NumOperator::NotEqual => f.write_str("NotEqual"),
+            NumOperator::Missing => f.write_str("Missing"),
+        }
     }
 }
 
@@ -184,21 +274,21 @@ impl Condition {
     }
 
     pub fn set_ident(&mut self, ident: String) {
-        if let Ok(str_ident) = StrIdentifier::from_str(&ident) {
+        if let Some(str_ident) = StrIdentifier::from_str(&ident) {
             match self {
                 Condition::StrCondition(ref mut i, _, _) => *i = str_ident,
                 _ => *self = Condition::StrCondition(str_ident, StrOperator::Is, String::new()),
             }
         }
 
-        if let Ok(num_ident) = NumIdentifier::from_str(&ident) {
+        if let Some(num_ident) = NumIdentifier::from_str(&ident) {
             match self {
                 Condition::NumCondition(ref mut i, _, _) => *i = num_ident,
                 _ => *self = Condition::NumCondition(num_ident, NumOperator::Greater, 0),
             }
         }
 
-        if let Ok(time_ident) = TimeIdentifier::from_str(&ident) {
+        if let Some(time_ident) = TimeIdentifier::from_str(&ident) {
             match self {
                 Condition::TimeCondition(ref mut i, _, _) => *i = time_ident,
                 _ => *self = Condition::TimeCondition(time_ident, NumOperator::Greater, 0),
