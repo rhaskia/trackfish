@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::app::MusicController;
 use crate::app::autoplaylist::Condition;
-use crate::app::autoplaylist::{StrIdentifier, NumIdentifier, Identifier, StrOperator, NumOperator, TimeIdentifier};
+use crate::app::autoplaylist::{StrIdentifier, NumIdentifier, Identifier, StrOperator};
 use crate::gui::icons::*;
 use crate::gui::VIEW;
 use crate::gui::View;
@@ -183,7 +183,7 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
 
                 NumInput { controller, ident: *ident, value, path: path() }
             },
-            Condition::TimeCondition(ident, op, value) => rsx!{
+            Condition::TimeCondition(ident, op, _) => rsx!{
                 IdentSelect { controller, ident: Identifier::Time(*ident), path: path() }
 
                 select {

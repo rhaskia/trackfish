@@ -3,9 +3,9 @@ use http::{header::*, response::Builder as ResponseBuilder, status::StatusCode};
 use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
-#[cfg(not(target_os = "android"))]
+#[cfg(not(feature = "mobile"))]
 use dioxus::desktop::AssetRequest;
-#[cfg(target_os = "android")]
+#[cfg(feature = "mobile")]
 use dioxus::mobile::AssetRequest;
 
 // This was taken from wry's example

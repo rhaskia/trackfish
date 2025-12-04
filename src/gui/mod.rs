@@ -114,11 +114,17 @@ pub fn start_controller_thread() {
                             }
                             MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
                             MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
+                            MusicMsg::UpdateInfo => {
+                                if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                                    let mut controller = ctrl.clone();
+                                    controller.write().progress_secs = audio_player.progress_secs();
+                                }
+                            }
                             _ => {}
                         }
 
                         if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
-                            let mut controller = ctrl.clone();
+                            let controller = ctrl.clone();
                             info!("grabbed controller");
                             //controller.write().progress_secs = audio_player.progress_secs();
                             info!("set progress secs");

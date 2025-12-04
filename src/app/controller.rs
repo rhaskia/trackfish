@@ -35,6 +35,7 @@ pub enum MusicMsg {
     PlayTrack(String),
     SetVolume(f32),
     SetPos(f64),
+    UpdateInfo,
 }
 
 // Send message to AudioPlayer in thread
@@ -177,7 +178,6 @@ impl MusicController {
     pub fn load_autoplaylists(&mut self) {
         for entry in std::fs::read_dir(Settings::dir()).unwrap() {
             let path = entry.unwrap().path();
-            let filename = path.to_str().unwrap().to_string();
 
             if path.is_file() {
                 if path.extension().unwrap_or_default().to_str().unwrap_or_default() == "auto" {
@@ -802,7 +802,8 @@ impl MusicController {
     }
 
     /// Sets audio player position
-    pub fn set_pos(&self, pos: f64) {
+    pub fn set_pos(&mut self, pos: f64) {
+        self.progress_secs = pos;
         send_music_msg(MusicMsg::SetPos(pos));
     }
 }

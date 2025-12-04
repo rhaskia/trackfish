@@ -6,6 +6,8 @@ pub mod database;
 pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
+#[cfg(target_os="android")]
+use dioxus::mobile::use_wry_event_handler;
 use dioxus:: prelude::*;
 use http::Response;
 use log::{error, info};
@@ -103,8 +105,6 @@ fn load_image() -> Icon {
 
 #[cfg(not(target_os = "android"))]
 fn init() {
-    use env_filter::Builder;
-    use log::LevelFilter;
     LogTracer::builder()
         .ignore_crate("symphonia_core")
         .ignore_crate("symphonia_metadata")
@@ -248,6 +248,22 @@ fn App() -> Element {
             if !is_cached {
                 tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
             }
+        }
+    });
+
+    // Watch for app focus (mobile)
+    #[cfg(target_os="android")]
+    use_wry_event_handler(|event, window| {
+        use dioxus::mobile::tao::event::{Event as WryEvent, WindowEvent};
+
+        use crate::app::controller::{MusicMsg, send_music_msg};
+
+        match event {
+            WryEvent::WindowEvent{ event: window_event, window_id: _, .. } => match window_event {
+                WindowEvent::Focused(f) => send_music_msg(MusicMsg::UpdateInfo),
+                _ => {}
+            },
+            _ => {},
         }
     });
 

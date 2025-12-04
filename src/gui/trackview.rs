@@ -126,10 +126,12 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
                             controller.write().set_pos(value);
+                            info!("{:?}", controller.read().progress_secs);
                             progress.set(value)
                         },
                         oninput: move |e| {
                             let value = e.value().parse().unwrap();
+                            info!("oninput");
                             progress.set(value);
                         },
                         onmousedown: move |_| progress_held.set(true),

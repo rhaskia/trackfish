@@ -50,6 +50,7 @@ crossbow-android = "0.2.3"
 rfd =  "=0.12.0"
 
 [features]
+default = ["dioxus/desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop", "aubio/pkg-config"]
 mobile = ["dioxus/mobile", "aubio/bindgen"]

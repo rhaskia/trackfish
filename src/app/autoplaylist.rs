@@ -4,7 +4,6 @@ use std::fmt::Display;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 use std::path::PathBuf;
-use log::info;
 
 pub mod serialize;
 pub mod deserialize;

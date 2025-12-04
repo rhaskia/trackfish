@@ -4,7 +4,6 @@ use super::icons::*;
 use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW};
 use dioxus::prelude::*;
 use super::MOBILE;
-use log::info;
 
 #[component]
 pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
@@ -15,7 +14,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
     let mut track_option = use_signal(|| None);
 
     use_effect(move || {
-        if let Some(track) = TRACKOPTION() {
+        if TRACKOPTION().is_some() {
             track_option.set(TRACKOPTION());
         }
     });

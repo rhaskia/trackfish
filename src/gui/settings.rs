@@ -1,5 +1,4 @@
 use super::icons::*;
-use super::{View, VIEW};
 use crate::app::MusicController;
 use dioxus::prelude::*;
 use log::info;
