@@ -96,6 +96,8 @@ pub fn ArtistsSearch(
         }
     });
 
+    let row_height = 58;
+
     rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
             div { flex: 1 }
@@ -118,8 +120,13 @@ pub fn ArtistsSearch(
                         div {
                             class: "thinitem",
                             onclick: move |_| {
+                                let scroll_amount = artists.read().iter().position(|a| a.1.0 == artist).unwrap();
+
                                 document::eval(
-                                    &format!("document.getElementById('artist-{}').scrollIntoView();", artist),
+                                    &format!(
+                                        "document.getElementById('artistlist').scrollTop = {};",
+                                        scroll_amount,
+                                    ),
                                 );
                             },
 

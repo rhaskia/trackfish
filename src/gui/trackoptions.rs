@@ -92,7 +92,11 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                         "Add to current queue"
                     }
 
-                    button { onclick: move |_| controller.write().play_next(track),
+                    button { 
+                        onclick: move |_| {
+                            controller.write().play_next(track);
+                            TRACKOPTION.set(None);
+                        },
                         img { src: SKIP_ICON }
                         "Play after this song"
                     }
@@ -104,6 +108,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                             let artist = controller.read().all_tracks[track].artists[0].clone();
                             VIEW.write().open(View::Artists);
                             VIEW.write().artist = Some(artist.clone());
+                            TRACKOPTION.set(None);
                         },
                         img { src: ARTIST_ICON }
                         "Go to artist"
@@ -114,6 +119,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                             let album = controller.read().all_tracks[track].album.clone();
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(album.clone());
+                            TRACKOPTION.set(None);
                         },
                         img { src: ALBUM_ICON }
                         "Go to album"
