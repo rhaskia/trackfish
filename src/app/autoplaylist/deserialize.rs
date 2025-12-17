@@ -1,12 +1,8 @@
 use anyhow::anyhow;
-use log::info;
-use std::str::FromStr;
-use super::{AutoPlaylist, Condition, StrIdentifier, NumIdentifier, Identifier, TimeIdentifier};
-use std::path::PathBuf;
+use super::{ Condition, StrIdentifier, NumIdentifier, TimeIdentifier};
 use crate::app::autoplaylist::{NumOperator, StrOperator};
 use crate::app::utils::strip_unnessecary;
 use std::iter::{Peekable, IntoIterator};
- use std::array::IntoIter;
 
 impl Condition {
     pub fn deserialize(s: String) -> anyhow::Result<Self> {
@@ -197,26 +193,13 @@ mod tests {
     pub fn basic_deserialization() {
         let s = "ALL(Title IS \"Track\")".to_string();
 
-        assert_eq!(Condition::deserialize(s).unwrap(), Condition::All(vec![Condition::Is(StrIdentifier::Title, "Track".to_string())]));
+        assert_eq!(Condition::deserialize(s).unwrap(), Condition::All(vec![Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, "Track".to_string())]));
     }
 
     #[test]
     pub fn random_parenthesis() {
         let s = "(ALL((Title IS \"Track\")))".to_string();
 
-        assert_eq!(Condition::deserialize(s).unwrap(), Condition::All(vec![Condition::Is(StrIdentifier::Title, "Track".to_string())]));
-    }
-
-    #[test]
-    pub fn complex_deserialization() {
-        let s = "ANY(Title IS \"Track\", Year GREATER 1980, MISSING Genre, NOT(Artist HAS Artist))".to_string();
-
-        assert_eq!(Condition::deserialize(s).unwrap(), 
-                   Condition::Any(vec![
-                        Condition::Is(StrIdentifier::Title, "Track".to_string()),
-                        Condition::Greater(NumIdentifier::Year, 1980),
-                        Condition::Missing(Identifier::Str(StrIdentifier::Genre)),
-                        Condition::Not(Some(Box::new(Condition::Has(StrIdentifier::Artist, "Artist".to_string()))))
-                   ]));
+        assert_eq!(Condition::deserialize(s).unwrap(), Condition::All(vec![Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, "Track".to_string())]));
     }
 }

@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::{io, fs};
+use std::fs;
 use std::env;
 
 fn main() {

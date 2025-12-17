@@ -225,7 +225,7 @@ pub fn AlbumsSearch(
                                 }
                             },
 
-                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}", loading: "lazy" }
+                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums", loading: "lazy" }
                             span { "{album}" }
                         }
                     }

@@ -108,7 +108,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                         img {
                             class: "trackitemicon",
                             loading: "lazy",
-                            src: "/trackimage/{i}",
+                            src: if VIEW.read().current == View::AllTracks { "/trackimage/{i}?origin=alltracks" },
                         }
                         span { "{controller.read().all_tracks[i].title}" }
                         div { flex_grow: 1 }

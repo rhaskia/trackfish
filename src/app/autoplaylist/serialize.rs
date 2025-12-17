@@ -1,6 +1,6 @@
 use log::info;
 
-use super::{AutoPlaylist, Condition, StrIdentifier, NumIdentifier, Identifier};
+use super::{AutoPlaylist, Condition};
 use std::path::PathBuf;
 
 impl AutoPlaylist {
@@ -17,7 +17,7 @@ impl AutoPlaylist {
 
     pub fn save(&self) {
         info!("Saving autoplaylist {} at path {:?}", self.name, self.dir());
-        std::fs::write(self.dir(), self.conditions.serialize()); 
+        let _ = std::fs::write(self.dir(), self.conditions.serialize()); 
     }
 
     pub fn serialize(&self) -> String {
@@ -40,17 +40,19 @@ impl Condition {
 
 #[cfg(test)]
 mod tests {
+    use crate::app::autoplaylist::{StrOperator, StrIdentifier};
+
     use super::*;
 
     #[test]
     pub fn basic_serialization() {
-        assert_eq!(Condition::Is(StrIdentifier::Title, "Track".to_string()).serialize(), "Title IS \"Track\"".to_string());
-        assert_eq!(Condition::Is(StrIdentifier::Title, "Track with space".to_string()).serialize(), "Title IS \"Track with space\"".to_string());
+        assert_eq!(Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, "Track".to_string()).serialize(), "Title IS \"Track\"".to_string());
+        assert_eq!(Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, "Track with space".to_string()).serialize(), "Title IS \"Track with space\"".to_string());
     }
 
     #[test]
     pub fn list_serialize() {
-        let cond = Condition::All(vec![Condition::Is(StrIdentifier::Title, "Track".to_string()), Condition::Has(StrIdentifier::Album, "Album".to_string())]);
+        let cond = Condition::All(vec![Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, "Track".to_string()), Condition::StrCondition(StrIdentifier::Album, StrOperator::Has, "Album".to_string())]);
 
         assert_eq!(cond.serialize(), "ALL(Title IS \"Track\", Album HAS \"Album\")");
     }

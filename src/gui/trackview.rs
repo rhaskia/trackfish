@@ -10,7 +10,6 @@ use tokio::time;
 pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
     let mut progress = use_signal(|| controller.read().progress_secs);
     let mut progress_held = use_signal(|| false);
-    let mut handle_position = use_signal(|| 0.0);
 
     // Skip to next song
     let skip = move |_: Event<MouseData>| {
@@ -46,13 +45,13 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                background_image: "url(/trackimage/{controller.read().current_track_idx()})",
+                background_image: "url(/trackimage/{controller.read().current_track_idx()}?origin=trackview)",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    src: "/trackimage/{controller.read().current_track_idx()}",
+                    src: "/trackimage/{controller.read().current_track_idx()}?origin=trackview",
                     loading: "onvisible",
                 }
             }

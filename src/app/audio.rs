@@ -34,7 +34,7 @@ impl AudioPlayer {
     pub fn play_track(&mut self, file_path: &str) -> f64 {
         info!("Playing track: {file_path:?}");
         let f = File::open(file_path).unwrap();
-        let len = f.metadata().unwrap().len();
+        let _len = f.metadata().unwrap().len();
         let file = BufReader::new(f);
 
         let source = Decoder::builder()

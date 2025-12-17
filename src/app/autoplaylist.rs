@@ -2,7 +2,6 @@ use super::utils::{strip_unnessecary, similar};
 use super::track::Track;
 use std::fmt::Display;
 use std::ops::{Index, IndexMut};
-use std::str::FromStr;
 use std::path::PathBuf;
 
 pub mod serialize;

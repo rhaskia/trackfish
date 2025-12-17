@@ -4,7 +4,6 @@ use crate::app::MusicController;
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use std::time::Duration;
-use log::info;
 
 #[component]
 pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
@@ -252,7 +251,7 @@ pub fn TrackItem(
             img {
                 class: "trackitemicon",
                 loading: "onvisible",
-                src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}",
+                src: "/trackimage/{controller.read().get_queue(selected_queue()).track(idx)}?origin=queue",
             }
 
             span { "{title}" }

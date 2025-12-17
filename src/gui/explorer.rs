@@ -215,7 +215,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
 
                     img {
                         class: "trackitemicon",
-                        src: if VIEW.read().current == View::AllTracks { "/trackimage/{tracks.read()[i]}" },
+                        src: if VIEW.read().current == View::AllTracks { "/trackimage/{tracks.read()[i]}?origin=tracksview" },
                         loading: "onvisible",
                     }
 

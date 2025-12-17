@@ -1,4 +1,5 @@
 #![windows_subsystem = "windows"]
+#![allow(const_item_mutation)]
 
 pub mod analysis;
 pub mod app;
@@ -6,8 +7,14 @@ pub mod database;
 pub mod gui;
 
 use crate::database::{init_db, row_to_weights};
+
 #[cfg(target_os="android")]
-use dioxus::mobile::use_wry_event_handler;
+use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
+#[cfg(not(target_os = "android"))]
+use dioxus::desktop::{use_asset_handler, WindowBuilder};
+#[cfg(not(target_os = "android"))]
+use tracing_log::LogTracer;
+
 use dioxus:: prelude::*;
 use http::Response;
 use log::{error, info};
@@ -16,14 +23,6 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::time::Instant;
 use dioxus::document::eval;
-
-#[cfg(not(target_os = "android"))]
-use dioxus::desktop::{use_asset_handler, WindowBuilder};
-#[cfg(not(target_os = "android"))]
-use tracing_log::LogTracer;
-
-#[cfg(target_os = "android")]
-use dioxus::mobile::use_asset_handler;
 
 use app::{
     settings::RadioSettings,
@@ -93,6 +92,7 @@ fn init() {
 
 use dioxus::mobile::tao::window::Icon;
 
+#[cfg(not(target_os = "android"))]
 fn load_image() -> Icon {
     let png = &include_bytes!("../assets/icons/icon256.png")[..];
     let header = minipng::decode_png_header(png).expect("bad PNG");
@@ -268,6 +268,7 @@ fn App() -> Element {
     });
 
     use_asset_handler("trackimage", move |request, responder| {
+        info!("requested image from {:?}", request);
         let r = Response::builder().status(404).body(&[]).unwrap();
 
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
@@ -276,8 +277,6 @@ fn App() -> Element {
             responder.respond(r);
             return;
         };
-
-        info!("sending track image {id}");
 
         let track = controller.read().get_track(id).cloned();
 

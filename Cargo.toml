@@ -8,7 +8,7 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { version="0.7.1", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { version="0.7.2", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8"
 tokio = "1.41.1"
@@ -28,7 +28,6 @@ dirs = "6.0.0"
 rusqlite = { version = "0.35", features = ["bundled", "array"] }
 aubio = { version = "0.2.1" }
 rustfft = "6.2.0"
-minipng = "0.1.1"
 cache-dir = "0.1.8"
 once_cell = "1.21.3"
 #metaflac = "0.2.8"
@@ -48,6 +47,7 @@ crossbow-android = "0.2.3"
 # Desktop only dependencies
 [target.'cfg(not(target_os = "android"))'.dependencies]
 rfd =  "=0.12.0"
+minipng = "0.1.1"
 
 [features]
 default = ["dioxus/desktop"]

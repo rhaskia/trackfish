@@ -145,7 +145,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
                         button {
                             onclick: move |_| {
-                                let dir = controller.write().settings.directory.clone();
+                                let _dir = controller.write().settings.directory.clone();
                                 controller.write().autoplaylists.push(AutoPlaylist::new(autoplaylist_name()));
                                 *CREATING_AUTOPLAYLIST.write() = false;
                                 autoplaylist_name.set(String::new());

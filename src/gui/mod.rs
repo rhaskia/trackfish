@@ -12,6 +12,8 @@ pub mod trackview;
 pub mod media;
 #[cfg(target_os = "android")]
 use crate::gui::media::{MediaMsg, MEDIA_MSG_TX};
+#[cfg(target_os = "android")]
+use crate::app::track::get_track_image;
 
 use dioxus::prelude::*;
 use log::info;
@@ -22,7 +24,6 @@ use std::sync::Mutex;
 
 use crate::app::audio::AudioPlayer;
 use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
-use crate::app::track::get_track_image;
 use crate::app::MusicController;
 
 pub use confirm::Confirmation;

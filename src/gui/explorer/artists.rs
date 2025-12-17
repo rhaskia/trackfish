@@ -120,7 +120,8 @@ pub fn ArtistsSearch(
                         div {
                             class: "thinitem",
                             onclick: move |_| {
-                                let scroll_amount = artists.read().iter().position(|a| a.1.0 == artist).unwrap();
+                                // Requires the scroll amount to be one less height than that of the object to actually show it
+                                let scroll_amount = (artists.read().iter().position(|a| a.1.0 == artist).unwrap().max(1) - 1) * row_height;
 
                                 document::eval(
                                     &format!(
