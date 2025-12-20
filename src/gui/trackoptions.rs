@@ -27,6 +27,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                 style: if MOBILE() { "width: 100vw; height: 100vh;" },
                 onclick: move |_| { *TRACKOPTION.write() = None; dragging.set(false); drag_amount.set(0.0) },
                 z_index: if TRACKOPTION.read().is_none() { "-1" },
+                display: if !MOBILE() && TRACKOPTION.read().is_none() { "none" },
                 div { class: "trackoptions optionbox",
                     class: if MOBILE() { "optionsboxmobile" },
                     style: if MOBILE() { r#"width: 100vw; height: 60vh; left: 0; top: revert; 

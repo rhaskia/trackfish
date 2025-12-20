@@ -18,9 +18,7 @@ use std::io::BufReader;
 use std::{fs::File, time::Duration};
 
 pub fn generate_track_info(track: &Track) -> TrackInfo {
-    info!("{track:?}");
     let (samples, sample_rate) = load_samples(&track.file, Some((10.0, 10.0)));
-    info!("{}", samples.len() as f32 / sample_rate as f32);
 
     let mfcc = extract_mfcc(&samples, sample_rate);
     let chroma = extract_mfcc(&samples, sample_rate);

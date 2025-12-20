@@ -6,27 +6,18 @@ pub mod app;
 pub mod database;
 pub mod gui;
 
-use crate::database::{init_db, row_to_weights};
-
 #[cfg(target_os="android")]
 use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
 #[cfg(not(target_os = "android"))]
 use dioxus::desktop::{use_asset_handler, WindowBuilder};
 #[cfg(not(target_os = "android"))]
 use tracing_log::LogTracer;
-
 use dioxus:: prelude::*;
 use http::Response;
-use log::{error, info};
-use rusqlite::{params, Rows};
-use std::collections::HashMap;
-use std::io::Cursor;
-use std::time::Instant;
+use log::info;
 use dioxus::document::eval;
-
 use app::{
-    settings::RadioSettings,
-    track::{get_track_image, load_tracks, TrackInfo},
+    track::get_track_image,
     MusicController,
 };
 
@@ -90,6 +81,7 @@ fn init() {
     launch(SetUpRoute);
 }
 
+#[cfg(not(target_os = "android"))]
 use dioxus::mobile::tao::window::Icon;
 
 #[cfg(not(target_os = "android"))]
@@ -165,7 +157,7 @@ fn SetUpRoute() -> Element {
                     Settings {
                         directory: dir(),
                         volume: 1.0,
-                        radio: RadioSettings::default(),
+                        ..Default::default()
                     }
                         .save();
                     set_up.set(Settings::exists());
@@ -178,14 +170,22 @@ fn SetUpRoute() -> Element {
 
 #[component]
 fn App() -> Element {
-    let mut loading_track_weights = use_signal(|| 0);
-    let mut tracks_count = use_signal(|| 0);
-    let mut controller = use_signal_sync(|| MusicController::empty());
+    let loading_track_weights = use_signal(|| 0);
+    let tracks_count = use_signal(|| 0);
+    let controller = use_signal_sync(|| MusicController::empty());
     *gui::CONTROLLER.lock().unwrap() = Some(controller);
+    
+    let mut handle = use_signal(|| None);
 
     #[cfg(not(target_os = "android"))]
     use_future(move || async move {
         crate::gui::start_controller_thread();
+    });
+
+    use_future(move || async move {
+        let res = crate::gui::init_tracks();
+
+        handle.set(Some(res));
     });
 
     use_effect(move || {
@@ -208,46 +208,8 @@ fn App() -> Element {
         "#);  
 
         while let Ok(res) = js.recv::<f64>().await {
-            info!("{}", res.round());
+            info!("Scrolled to view {}", res.round());
             VIEW.write().current = View::from_usize(res.round() as usize);
-        }
-    });
-
-    // Load in all tracks
-    use_future(move || async move {
-        let started = Instant::now();
-
-        let tracks = load_tracks(&controller.read().settings.directory);
-        if let Ok(t) = tracks {
-            tracks_count.set(t.len());
-            let dir = controller.read().settings.directory.clone();
-            controller.set(MusicController::new(t, dir));
-            info!("Loaded all tracks in {:?}", started.elapsed());
-        } else {
-            info!("{:?}", tracks);
-        }
-
-        let cache = init_db().unwrap();
-
-        let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
-        let mut result: Rows = stmt.query(params!()).unwrap();
-        let mut weights: HashMap<String, TrackInfo> = HashMap::new();
-        while let Ok(Some(row)) = result.next() {
-            let hash = row.get(0).unwrap();
-            match row_to_weights(&row) {
-                Ok(row) => { weights.insert(hash, row); },
-                Err(err) => error!("Error retrieving data: {err}"),
-            } 
-        }
-
-        let len = controller.read().all_tracks.len();
-
-        for i in 0..len {
-            loading_track_weights += 1;
-            let is_cached = controller.write().load_weight(&cache, &weights, i);
-            if !is_cached {
-                tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
-            }
         }
     });
 
@@ -268,8 +230,7 @@ fn App() -> Element {
     });
 
     use_asset_handler("trackimage", move |request, responder| {
-        info!("requested image from {:?}", request);
-        let r = Response::builder().status(404).body(&[]).unwrap();
+        let r = Response::builder().status(200).body(&[]).unwrap();
 
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
             id
@@ -278,28 +239,38 @@ fn App() -> Element {
             return;
         };
 
-        let track = controller.read().get_track(id).cloned();
+        let track = match controller.try_read() {
+            Ok(ctrl) => ctrl.get_track(id).cloned(),
+            Err(_) => {
+                responder.respond(r);
+                return;
+            },
+        };
 
         if track.is_none() {
             responder.respond(r);
             return;
         }
 
-        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
-            Cursor::new(file)
+        let file = if let Some(file) = get_track_image(&track.unwrap().file) {
+            file
         } else {
             responder.respond(r);
             return;
         };
 
-        spawn(async move {
-            match get_stream_response(&mut file, &request).await {
-                Ok(response) => {
-                    responder.respond(response);
-                }
-                Err(err) => error!("Error: {:?}", err),
-            }
-        });
+        responder.respond(Response::builder().body(file).unwrap());
+
+        // spawn(async move {
+        //     let result = timeout(Duration::from_secs(9), async {
+        //         get_stream_response(&mut file, &request).await
+        //     }).await;
+
+        //     match result {
+        //         Ok(Ok(res)) => responder.respond(res),
+        //         _ => responder.respond(r),
+        //     }
+        // });
     });
 
     rsx! {
@@ -336,7 +307,6 @@ fn App() -> Element {
             autofocus: true,
             padding_top: if cfg!(target_os = "android") { "30pt" },
             background: if cfg!(target_os = "android") && VIEW.read().current != View::Song { "var(--bg)" },
-            onscroll: move |e| info!("{e:?}"),
 
             TrackView { controller }
             QueueList { controller }
@@ -350,12 +320,12 @@ fn App() -> Element {
             TrackOptions { controller }
         }
 
-        MenuBar {}
+        MenuBar { controller }
     }
 }
 
 #[component]
-pub fn MenuBar() -> Element {
+pub fn MenuBar(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
         div { class: "buttonrow nav",
             background_color: if VIEW.read().current != View::Song { "var(--bg)" },
@@ -374,7 +344,7 @@ pub fn MenuBar() -> Element {
                 background_image: "url({asset!(\"/assets/icons/folder.svg\")})",
                 onclick: move |_| VIEW.write().open(View::AllTracks),
             }
-            if !MOBILE() && false {
+            if !controller.read().settings.ui.hide_explorer_buttons {
                 button {
                     class: "svg-button",
                     background_image: "url({asset!(\"/assets/icons/album.svg\")})",

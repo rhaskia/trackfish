@@ -6,14 +6,12 @@ use super::{
     track::{Mood, Track, TrackInfo},
     utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
-use crate::analysis::{generate_track_info, utils::cosine_similarity};
-use crate::database::{hash_filename, save_track_weights};
+use crate::analysis::utils::cosine_similarity;
 use log::{info, warn, error};
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::thread_rng;
-use rusqlite::Connection;
 use rustfft::num_traits::Zero;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -121,6 +119,7 @@ impl MusicController {
 
             *albums.entry(track.album.clone()).or_insert(0) += 1;
         }
+        info!("Calculated weights in {:?}", started.elapsed());
 
         let mut controller = MusicController {
             all_tracks: all_tracks.clone(),
@@ -147,18 +146,19 @@ impl MusicController {
             song_length: 100.0,
             playing: true,
         };
-
         send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
 
+        info!("Loading playlists {:?}", started.elapsed());
         controller.load_playlists();
+        info!("Loaded playlists in {:?}", started.elapsed());
         controller.load_autoplaylists();
 
-        info!("Calculated weights in {:?}", started.elapsed());
+        info!("Loaded playlists in {:?}", started.elapsed());
 
         if let Some(track) = controller.current_track().cloned() {
             send_music_msg(MusicMsg::PlayTrack(track.file.clone()));
             controller.toggle_playing();
-            info!("Started track {track:?}");
+            info!("Started track {track:?} in {:?}", started.elapsed());
         }
 
         controller
@@ -226,26 +226,6 @@ impl MusicController {
             + "\n"
             + &relative_paths.join("\n\n");
         std::fs::write(&playlist.file, file).unwrap();
-    }
-
-    /// Loads a weight, either using the database or by calculating them 
-    pub fn load_weight(
-        &mut self,
-        cache: &Connection,
-        weights: &HashMap<String, TrackInfo>,
-        track_idx: usize,
-    ) -> bool {
-        let track = &self.all_tracks[track_idx];
-        let file_hash = hash_filename(&track.file);
-        if weights.contains_key(&file_hash) {
-            self.track_info.push(weights[&file_hash].clone());
-            return true;
-        } else {
-            let track_info = generate_track_info(&track);
-            save_track_weights(&cache, &track.file, &track_info).unwrap();
-            self.track_info.push(track_info);
-            return false;
-        }
     }
 
     /// Plays a given track

@@ -49,7 +49,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
             let height = js.recv::<usize>().await;
             if let Ok(height) = height {
                 window_size.set(height);
-                info!("{height}");
+                info!("window height {height}");
             }
         }
     });
@@ -120,6 +120,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                     }
                 }
             }
+
             if is_searching() {
                 TracksSearch {
                     controller,

@@ -23,27 +23,29 @@ use super::icons::*;
 #[component]
 pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
     rsx!{
-        div {
-            class: "explorerswitch",
-            button {
-                onclick: move |_| VIEW.write().current = View::Albums,
-                class: if VIEW.read().current == View::Albums { "explorerselected" },
-                "Albums"
-            }
-            button {
-                onclick: move |_| VIEW.write().current = View::Artists,
-                class: if VIEW.read().current == View::Artists { "explorerselected" },
-                "Artists"
-            }
-            button {
-                onclick: move |_| VIEW.write().current = View::Genres,
-                class: if VIEW.read().current == View::Genres { "explorerselected" },
-                "Genres"
-            }
-            button {
-                onclick: move |_| VIEW.write().current = View::Playlists,
-                class: if VIEW.read().current == View::Playlists { "explorerselected" },
-                "Playlists"
+        if controller.read().settings.ui.hide_explorer_buttons {
+            div {
+                class: "explorerswitch",
+                button {
+                    onclick: move |_| VIEW.write().current = View::Albums,
+                    class: if VIEW.read().current == View::Albums { "explorerselected" },
+                    "Albums"
+                }
+                button {
+                    onclick: move |_| VIEW.write().current = View::Artists,
+                    class: if VIEW.read().current == View::Artists { "explorerselected" },
+                    "Artists"
+                }
+                button {
+                    onclick: move |_| VIEW.write().current = View::Genres,
+                    class: if VIEW.read().current == View::Genres { "explorerselected" },
+                    "Genres"
+                }
+                button {
+                    onclick: move |_| VIEW.write().current = View::Playlists,
+                    class: if VIEW.read().current == View::Playlists { "explorerselected" },
+                    "Playlists"
+                }
             }
         }
     }

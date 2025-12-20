@@ -26,6 +26,7 @@ pub static PLAY_ICON: Asset = asset!("/assets/icons/play.svg");
 pub static PLAYLIST_ADD_ICON: Asset = asset!("/assets/icons/playlistadd.svg");
 pub static PLAYLIST_PLAY_ICON: Asset = asset!("/assets/icons/playlistplay.svg");
 pub static PLAYLIST_REMOVE_ICON: Asset = asset!("/assets/icons/playlistremove.svg");
+pub static PALETTE_ICON: Asset = asset!("/assets/icons/palette.svg");
 
 pub static QUEUE_ICON: Asset = asset!("/assets/icons/queue.svg");
 pub static RADIO_ICON: Asset = asset!("/assets/icons/radio.svg");

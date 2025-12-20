@@ -15,7 +15,7 @@ tokio = "1.41.1"
 http = "1.2.0"
 http-range = "0.1.5"
 dioxus-logger = "0.6.1"
-anyhow = "1.0.94"
+anyhow = "1.0.91"
 log = "0.4.22"
 ndarray = "0.16"
 ndarray-npy = "0.9"
@@ -68,5 +68,5 @@ lto = false
 [profile.dev]
 opt-level = 0
 debug = true
-debug-assertions = true
-overflow-checks = true
+incremental = true
+codegen-units = 256

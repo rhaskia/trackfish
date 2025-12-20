@@ -7,7 +7,14 @@ pub struct Settings {
     pub volume: f32,
     pub directory: String,
     pub radio: RadioSettings,
+    pub ui: UiSettings,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
+pub struct UiSettings {
+    pub hide_explorer_buttons: bool,
+}
+
 
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub struct RadioSettings {
@@ -38,6 +45,7 @@ impl Default for Settings {
             volume: 1.0,
             directory: Self::default_audio_dir(),
             radio: RadioSettings::default(),
+            ui: UiSettings::default()
         }
     }
 }
@@ -56,6 +64,12 @@ impl Default for RadioSettings {
             bpm_weight: 0.0,
             zcr_weight: 0.0,
         }
+    }
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        UiSettings { hide_explorer_buttons: false }
     }
 }
 

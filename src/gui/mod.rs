@@ -10,21 +10,29 @@ pub mod trackview;
 
 #[cfg(target_os = "android")]
 pub mod media;
+use crate::app::track::TrackInfo;
+use crate::database::{hash_filename, init_db, row_to_weights};
 #[cfg(target_os = "android")]
 use crate::gui::media::{MediaMsg, MEDIA_MSG_TX};
 #[cfg(target_os = "android")]
 use crate::app::track::get_track_image;
+use crate::analysis::generate_track_info;
+use crate::database::save_track_weights;
 
 use dioxus::prelude::*;
 use log::info;
 use once_cell::sync::Lazy;
+use rusqlite::{Rows, params};
+use std::collections::HashMap;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Mutex;
+use std::thread::JoinHandle;
+use std::time::Instant;
 
 use crate::app::audio::AudioPlayer;
 use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
-use crate::app::MusicController;
+use crate::app::{MusicController, load_tracks};
 
 pub use confirm::Confirmation;
 pub use explorer::{AlbumsList, AllTracks, ArtistList, GenreList, SearchView};
@@ -32,7 +40,6 @@ pub use icons::*;
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;
-pub use stream::get_stream_response;
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
 
@@ -178,6 +185,83 @@ pub fn start_controller_thread() {
             log::error!("Music thread panicked: {:?}", e);
         }
     });
+}
+
+pub fn init_tracks() -> JoinHandle<()> {
+    std::thread::spawn(|| {
+        let res = std::panic::catch_unwind(|| {
+            let started = Instant::now();
+            let mut tracks = Vec::new();
+
+            if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                let mut controller = ctrl.clone();
+                let maybe_tracks = load_tracks(&controller.read().settings.directory);
+
+                if let Ok(t) = maybe_tracks {
+                    tracks = t.clone();
+                    let dir = controller.read().settings.directory.clone();
+                    controller.set(MusicController::new(t, dir));
+                    info!("Loaded all tracks in {:?}", started.elapsed());
+                } else {
+                    info!("{:?}", maybe_tracks);
+                }
+            }
+            
+            info!("taken {:?}", started.elapsed());
+
+            let cache = init_db().unwrap();
+            let mut stmt = cache.prepare("SELECT * FROM weights").unwrap();
+            let mut result: Rows = stmt.query(params!()).unwrap();
+            let mut weights: HashMap<String, TrackInfo> = HashMap::new();
+            while let Ok(Some(row)) = result.next() {
+                let hash = row.get(0).unwrap();
+                match row_to_weights(&row) {
+                    Ok(row) => { weights.insert(hash, row); },
+                    Err(err) => error!("Error retrieving data: {err}"),
+                } 
+            }
+                    info!("taken {:?}", started.elapsed());
+
+            let mut len = 0;
+            if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
+                let controller = ctrl.clone();
+                len = controller.read().all_tracks.len();
+            }
+
+            let mut buffer = Vec::new();
+
+            info!("loading info {:?}", started.elapsed());
+
+            for i in 0..len {
+                let track = tracks[i].clone();
+                let file_hash = hash_filename(&track.file);
+
+                if weights.contains_key(&file_hash) {
+                    buffer.push(weights[&file_hash].clone());
+                } else {
+                    let track_info = generate_track_info(&track);
+                    save_track_weights(&cache, &track.file, &track_info).unwrap();
+                    buffer.push(track_info);
+                }
+
+                if i % 100 == 0 {
+                    info!("{i}/{len} analyzed");
+                }
+            }
+
+            match CONTROLLER.lock() {
+                Ok(res) => {
+                    if let Some(ctrl) = *res {
+                        let mut controller = ctrl.clone();
+                        controller.write().track_info = buffer;
+                    }
+                },
+                Err(res) => info!("{res:?}"),
+            }
+            info!("taken {:?}", started.elapsed());
+        });
+        info!("{res:?}");
+    })
 }
 
 /// Enum holding view state

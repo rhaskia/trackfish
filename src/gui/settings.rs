@@ -30,7 +30,7 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
                     img { src: AUDIO_ICON }
-                    "Audio"
+                    "Audio Settings"
                 }
                 button {
                     class: "settingsbutton",
@@ -44,6 +44,12 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
                     img { src: LIBRARY_ICON }
                     "Song library"
                 }
+                button {
+                    class: "settingsbutton",
+                    onclick: move |_| set_menu(SettingsMenu::Ui),
+                    img { src: PALETTE_ICON }
+                    "UI Settings"
+                }
             }
 
             match settings_menu() {
@@ -56,6 +62,9 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
                 SettingsMenu::Audio => rsx! {
                     AudioSettings { controller }
                 },
+                SettingsMenu::Ui => rsx! {
+                    UiSettings { controller }
+                },
             }
         }
     }
@@ -66,6 +75,7 @@ enum SettingsMenu {
     Radio,
     Audio,
     Library,
+    Ui,
 }
 
 impl Display for SettingsMenu {
@@ -74,6 +84,7 @@ impl Display for SettingsMenu {
             SettingsMenu::Radio => f.write_str("Radio Settings"),
             SettingsMenu::Audio => f.write_str("Audio Settings"),
             SettingsMenu::Library => f.write_str("Track Library"),
+            SettingsMenu::Ui => f.write_str("Ui Settings"),
         }
     }
 }
@@ -89,6 +100,23 @@ fn AudioSettings(controller: SyncSignal<MusicController>) -> Element {
                     max: "1",
                     value: "{controller.read().settings.volume}",
                     oninput: move |e: Event<FormData>| controller.write().set_volume(e.parsed::<f32>().unwrap()),
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn UiSettings(controller: SyncSignal<MusicController>) -> Element {
+    rsx! {
+        div { class: "settingsmenu",
+            h2 { class: "settingsbar", "UI" }
+            div { class: "settingbox",
+                span { "Keep explorer navigation to explorer menu?" }
+                input {
+                    r#type: "checkbox",
+                    value: "{controller.read().settings.ui.hide_explorer_buttons}",
+                    oninput: move |value| controller.write().settings.ui.hide_explorer_buttons = value.value() == "true",
                 }
             }
         }

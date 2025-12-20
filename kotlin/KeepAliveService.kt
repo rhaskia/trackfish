@@ -52,7 +52,7 @@ class KeepAliveService : Service() {
 
         setupMediaSession()
         setupNotificationChannel()
-        //createMediaNotification("Unknown Title", "Unknown Artist", 0, 1000, false, null, true)
+        createMediaNotification("Unknown Title", "Unknown Artist", 0, 1000, false, null, true)
         wakeLock = 
         (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TrackFish::MediaWakeLock").apply {
