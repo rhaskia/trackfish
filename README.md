@@ -1,6 +1,6 @@
 # TrackFish
 ![](https://raw.githubusercontent.com/rhaskia/trackfish/refs/heads/main/image.png)
-TrackFish is a music player made for offline usage without having to sacrifice features typically only associated with streaming services - the ability to have similar songs to continue playing after one ends, called autoplay or a radio in many apps. TrackFish also seeks to be a generally comprehensive music player with features such as playlists, autoplaylists, comprehensive queue management. Planned features include scrobbling, tagging, and more. 
+TrackFish is a music player made for offline usage without having to sacrifice features typically only associated with streaming services - the ability to have similar songs to continue playing after one ends, called autoplay or a radio in many apps. TrackFish also seeks to be a generally comprehensive music player with features such as playlists, autoplaylists, and comprehensive queue management. Planned features include recommendations, auto-playlist downloading, and tagging support.
 
 # Compiling
 On desktop, you will need the dioxus-cli, and to install the following packages:
@@ -8,8 +8,7 @@ Linux: WebkitGtk, xdotool
 Windows: WebView2 (packaged with Edge),
 and aubio on all platforms
 
-## Android
-You will need to build the Dioxus CLI from [github](https://github.com/DioxusLabs/dioxus).
+Android is supported, and should compile fine if the Android SDK is set up properly. iOS probably does not compile due to a lack of native bindings. 
 
 # To Do:
  - [x] Audio playing, skipping, etc
