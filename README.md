@@ -61,3 +61,9 @@ You will need to build the Dioxus CLI from [github](https://github.com/DioxusLab
     - [ ] Automatic re-caching onload or on any change?
     - [ ] Sort by audio features
  - [ ] Theming (loading of custom css)
+ - [ ] Tagging
+    - [ ] Tag Editor
+    - [ ] Auto Tagging (MusicBrainz?)
+ - [ ] Music Exploration?
+    - [ ] Auto Downloads (yt-dlp?)
+    - [ ] Last FM-based reccomendations
