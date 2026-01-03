@@ -60,9 +60,11 @@ Android is supported, and should compile fine if the Android SDK is set up prope
     - [ ] Automatic re-caching onload or on any change?
     - [ ] Sort by audio features
  - [ ] Theming (loading of custom css)
- - [ ] Tagging
+ - [ ] Tagging/Collection Management
     - [ ] Tag Editor
     - [ ] Auto Tagging (MusicBrainz?)
+    - [ ] Song Options
+    - [ ] Multi-select song options
  - [ ] Music Exploration?
     - [ ] Auto Downloads (yt-dlp?)
     - [ ] Last FM-based reccomendations
