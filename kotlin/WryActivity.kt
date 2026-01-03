@@ -31,6 +31,9 @@ import android.os.PowerManager
 import android.view.WindowManager
 import android.view.View
 import android.graphics.Color
+import android.net.Uri
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 
 abstract class WryActivity : AppCompatActivity() {
     private lateinit var mWebView: RustWebView
@@ -40,6 +43,23 @@ abstract class WryActivity : AppCompatActivity() {
     fun setWebView(webView: RustWebView) {
         mWebView = webView
         onWebViewCreate(webView)
+    }
+
+    private val folderPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+
+                onFolderPicked(uri.toString())
+            }
+        }
+
+    fun openFolderPicker() {
+        folderPicker.launch(null)
     }
 
     val version: String
@@ -77,6 +97,7 @@ abstract class WryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        serviceInstance = this
         requestPermissions()
 
         if (Build.VERSION.SDK_INT >= 19 && Build.VERSION.SDK_INT < 21) {
@@ -209,11 +230,15 @@ abstract class WryActivity : AppCompatActivity() {
     private external fun onActivityDestroy()
     private external fun memory()
     private external fun focus(focus: Boolean)
+    external fun onFolderPicked(uri: String)
 
     companion object {
         init {
             NativeLoader.ensureLoaded()
         }
+
+        @JvmStatic
+        var serviceInstance: WryActivity? = null
     }
 }
 

@@ -34,6 +34,68 @@ fn send_media_msg(msg: MediaMsg) {
     }
 }
 
+#[no_mangle]
+pub extern "system" fn
+Java_dev_dioxus_main_WryActivity_onFolderPicked(
+    mut env: JNIEnv,
+    _class: JObject,
+    uri: JObject,
+) {
+    let uri: String = env
+        .get_string((&uri).into())
+        .expect("Invalid URI")
+        .into();
+
+    // Store / send into your Rust app
+    info!("Picked folder URI: {uri}");
+}
+
+pub fn open_folder_picker() {
+    let ctx = ndk_context::android_context();
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm().cast()) }.unwrap();
+    let mut env = vm.attach_current_thread().unwrap();
+    let context = unsafe { JObject::from_raw(ctx.context().cast()) };
+
+    let class_loader = env
+        .call_method(&context, "getClassLoader", "()Ljava/lang/ClassLoader;", &[]).unwrap()
+        .l().unwrap();
+
+    let binding = env.new_string("dev.dioxus.main.WryActivity").unwrap();
+
+    let service_class = env
+        .call_method(
+            &class_loader,
+            "loadClass",
+            "(Ljava/lang/String;)Ljava/lang/Class;",
+            &[JValue::Object(&binding)],
+        ).unwrap()
+        .l().unwrap();
+
+    let service_class = JClass::from(service_class);
+
+    let instance_obj = env
+        .call_static_method(
+            service_class,
+            "getServiceInstance",
+            "()Ldev/dioxus/main/WryActivity;",
+            &[],
+        )
+        .unwrap()
+        .l()
+        .unwrap();
+
+    if instance_obj.is_null() {
+        panic!("No WryActivity Instance");
+    }
+
+    env.call_method(
+        instance_obj,
+        "openFolderPicker",
+        "()V",
+        &[],
+    ).unwrap();
+}
+
 // Runs background management through foreground service ran function
 #[no_mangle]
 pub extern "C" fn Java_dev_dioxus_main_KeepAliveService_startRustBackground(

@@ -113,6 +113,21 @@ svg {
       scrollbar-width: none;  /* Firefox */
 }
 
+.initscreen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.initscreen button {
+    border-radius: 8px;
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px;
+    font-weight: 500;
+}
+
 .svg-button {
     width: 24px;
     aspect-ratio: 1;

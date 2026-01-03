@@ -117,11 +117,22 @@ fn init() {
 #[component]
 fn SetUpRoute() -> Element {
     use app::settings::Settings;
-    let mut set_up = use_signal(Settings::exists);
+    let mut set_up = use_signal(|| false);
     #[allow(unused_mut)]
     let mut dir = use_signal(Settings::default_audio_dir);
 
     rsx! {
+        document::Stylesheet { href: MAIN_CSS }
+        document::Stylesheet { href: ALL_TRACKS_CSS }
+        document::Stylesheet { href: AUTOPLAYLISTS_CSS }
+        document::Stylesheet { href: EXPLORER_CSS }
+        document::Stylesheet { href: MENUBAR_CSS }
+        document::Stylesheet { href: PLAYLISTS_CSS }
+        document::Stylesheet { href: SETTINGS_CSS }
+        document::Stylesheet { href: TRACKVIEW_CSS }
+        document::Stylesheet { href: TRACKOPTIONS_CSS }
+        document::Stylesheet { href: QUEUE_CSS }
+
         if set_up() {
             App {}
         } else {
@@ -132,37 +143,49 @@ fn SetUpRoute() -> Element {
                 }
             }
 
-            label { r#for: "directory", "Current directory: " }
-            kbd { "{dir}" }
-            br {}
-            button {
-                onclick: move |_| async move {
-                    #[cfg(not(target_os = "android"))]
-                    {
-                        let file = rfd::FileDialog::new().set_directory("/").pick_folder();
-                        if let Some(file) = file {
-                            dir.set(file.display().to_string());
+            div {
+                class: "initscreen",
+                color: "white",
+                padding: "20px",
+
+                div {
+                    label { r#for: "directory", "Current directory: " }
+                    kbd { "{dir}" }
+                }
+                br {}
+                button {
+                    onclick: move |_| async move {
+                        #[cfg(not(target_os = "android"))]
+                        {
+                            let file = rfd::FileDialog::new().set_directory("/").pick_folder();
+                            if let Some(file) = file {
+                                dir.set(file.display().to_string());
+                            }
                         }
-                    }
-                },
-                "Change Music Directory"
-            }
-            // Other options
-            br {}
-            br {}
-            button {
-                width: "200px",
-                height: "50px",
-                onclick: move |_| {
-                    Settings {
-                        directory: dir(),
-                        volume: 1.0,
-                        ..Default::default()
-                    }
-                        .save();
-                    set_up.set(Settings::exists());
-                },
-                "Confirm"
+                        #[cfg(target_os = "android")]
+                        {
+                            crate::gui::media::open_folder_picker();
+                        }
+                    },
+                    "Change Music Directory"
+                }
+                // Other options
+                br {}
+                br {}
+                div { flex: "1 1 0" }
+                button {
+                    height: "50px",
+                    onclick: move |_| {
+                        Settings {
+                            directory: dir(),
+                            volume: 1.0,
+                            ..Default::default()
+                        }
+                            .save();
+                        set_up.set(Settings::exists());
+                    },
+                    "Confirm"
+                }
             }
         }
     }
@@ -274,17 +297,6 @@ fn App() -> Element {
     });
 
     rsx! {
-        document::Stylesheet { href: MAIN_CSS }
-        document::Stylesheet { href: ALL_TRACKS_CSS }
-        document::Stylesheet { href: AUTOPLAYLISTS_CSS }
-        document::Stylesheet { href: EXPLORER_CSS }
-        document::Stylesheet { href: MENUBAR_CSS }
-        document::Stylesheet { href: PLAYLISTS_CSS }
-        document::Stylesheet { href: SETTINGS_CSS }
-        document::Stylesheet { href: TRACKVIEW_CSS }
-        document::Stylesheet { href: TRACKOPTIONS_CSS }
-        document::Stylesheet { href: QUEUE_CSS }
-
         style {
             r#"
                 @font-face {{
