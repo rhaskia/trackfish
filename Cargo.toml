@@ -8,33 +8,36 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { version="0.7.2", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { path = "../dioxus/packages/dioxus", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8"
-tokio = "1.41.1"
-http = "1.2.0"
+tokio = "1.49"
+http = "1.4"
 http-range = "0.1.5"
-dioxus-logger = "0.6.1"
-anyhow = "1.0.91"
-log = "0.4.22"
+dioxus-logger = "0.7.2"
+anyhow = "1.0"
+log = "0.4"
 ndarray = "0.16"
 ndarray-npy = "0.9"
-tracing = "0.1.41"
+tracing = "0.1"
 tracing-log = "0.2.0"
 rodio = "0.21.1"
-toml = "0.8.19"
+toml = "0.9"
 serde = { version = "1", features = ["derive"]}
 dirs = "6.0.0"
 rusqlite = { version = "0.35", features = ["bundled", "array"] }
 aubio = { version = "0.2.1" }
-rustfft = "6.2.0"
-cache-dir = "0.1.8"
+rustfft = "6.4"
+cache-dir = "0.1"
 once_cell = "1.21.3"
 #metaflac = "0.2.8"
 base64 = "0.22.1"
 lewton = "0.10.2"
-env_filter = "0.1.3"
-image = { version = "0.24", default-features = false, features = ["jpeg", "png"] }
+env_filter = "0.1"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+
+[patch.crates-io]
+wry = { path="../wry" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21.1"
@@ -47,7 +50,7 @@ crossbow-android = "0.2.3"
 # Desktop only dependencies
 [target.'cfg(not(target_os = "android"))'.dependencies]
 rfd =  "=0.12.0"
-minipng = "0.1.1"
+minipng = "1.0.0"
 
 [features]
 default = ["dioxus/desktop"]

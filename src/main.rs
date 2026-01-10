@@ -6,6 +6,8 @@ pub mod app;
 pub mod database;
 pub mod gui;
 
+use std::io::Cursor;
+
 #[cfg(target_os="android")]
 use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
 #[cfg(not(target_os = "android"))]
@@ -33,6 +35,7 @@ static MENUBAR_CSS: Asset = asset!("/assets/menubar.css");
 static QUEUE_CSS: Asset = asset!("/assets/queue.css");
 static PLAYLISTS_CSS: Asset = asset!("/assets/playlists.css");
 static SETTINGS_CSS: Asset = asset!("/assets/settings.css");
+static TAGEDITOR_CSS: Asset = asset!("/assets/tageditor.css");
 static TRACKOPTIONS_CSS: Asset = asset!("/assets/trackoptions.css");
 static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
 
@@ -84,6 +87,8 @@ fn init() {
 #[cfg(not(target_os = "android"))]
 use dioxus::mobile::tao::window::Icon;
 
+use crate::gui::stream::get_stream_response;
+
 #[cfg(not(target_os = "android"))]
 fn load_image() -> Icon {
     let png = &include_bytes!("../assets/icons/icon256.png")[..];
@@ -127,9 +132,7 @@ fn SetUpRoute() -> Element {
         } else {
             // spacer for android status bar area
             if cfg!(target_os = "android") {
-                div {
-                    height: "30pt",
-                }
+                div { height: "30pt" }
             }
 
             label { r#for: "directory", "Current directory: " }
@@ -232,6 +235,8 @@ fn App() -> Element {
     use_asset_handler("trackimage", move |request, responder| {
         let r = Response::builder().status(200).body(&[]).unwrap();
 
+        info!("requested track image {:?}, thread {:?}", request.uri(), std::thread::current().id());
+
         let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
             id
         } else {
@@ -239,38 +244,35 @@ fn App() -> Element {
             return;
         };
 
-        let track = match controller.try_read() {
-            Ok(ctrl) => ctrl.get_track(id).cloned(),
-            Err(_) => {
-                responder.respond(r);
-                return;
-            },
-        };
+        //let track = match controller.try_read() {
+        //     Ok(ctrl) => ctrl.get_track(id).cloned(),
+        //     Err(_) => {
+        //         responder.respond(r);
+        //         return;
+        //     },
+        // };
+        let track = controller.read().get_track(id).cloned();
 
         if track.is_none() {
             responder.respond(r);
             return;
         }
 
-        let file = if let Some(file) = get_track_image(&track.unwrap().file) {
-            file
+        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
+            Cursor::new(file)
         } else {
             responder.respond(r);
             return;
         };
 
-        responder.respond(Response::builder().body(file).unwrap());
-
-        // spawn(async move {
-        //     let result = timeout(Duration::from_secs(9), async {
-        //         get_stream_response(&mut file, &request).await
-        //     }).await;
-
-        //     match result {
-        //         Ok(Ok(res)) => responder.respond(res),
-        //         _ => responder.respond(r),
-        //     }
-        // });
+        spawn(async move {
+            match get_stream_response(&mut file, &request).await {
+                Ok(response) => {
+                    responder.respond(response);
+                }
+                Err(err) => error!("Error: {:?}", err),
+            }
+        });
     });
 
     rsx! {
@@ -281,6 +283,7 @@ fn App() -> Element {
         document::Stylesheet { href: MENUBAR_CSS }
         document::Stylesheet { href: PLAYLISTS_CSS }
         document::Stylesheet { href: SETTINGS_CSS }
+        document::Stylesheet { href: TAGEDITOR_CSS }
         document::Stylesheet { href: TRACKVIEW_CSS }
         document::Stylesheet { href: TRACKOPTIONS_CSS }
         document::Stylesheet { href: QUEUE_CSS }
@@ -302,7 +305,9 @@ fn App() -> Element {
             }
         }
 
-        div { class: "mainview", id: "mainview",
+        div {
+            class: "mainview",
+            id: "mainview",
             tabindex: 0,
             autofocus: true,
             padding_top: if cfg!(target_os = "android") { "30pt" },
@@ -318,6 +323,7 @@ fn App() -> Element {
             Settings { controller }
 
             TrackOptions { controller }
+            TagEditor { controller }
         }
 
         MenuBar { controller }
@@ -327,7 +333,8 @@ fn App() -> Element {
 #[component]
 pub fn MenuBar(controller: SyncSignal<MusicController>) -> Element {
     rsx! {
-        div { class: "buttonrow nav",
+        div {
+            class: "buttonrow nav",
             background_color: if VIEW.read().current != View::Song { "var(--bg)" },
             button {
                 class: "svg-button",

@@ -11,7 +11,6 @@ pub use tempo::extract_tempo;
 pub use zcr::extract_zcr;
 
 use crate::app::track::{Track, TrackInfo};
-use log::info;
 use ndarray::Array1;
 use rodio::{Decoder, Source};
 use std::io::BufReader;

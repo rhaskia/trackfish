@@ -454,6 +454,24 @@ impl MusicController {
     pub fn add_tracks_to_playlist(&mut self, playlist: usize, tracks: Vec<usize>) {
         self.playlists[playlist].tracks.extend(tracks);
     }
+
+    /// Updates track tag in memory and saves it to storage 
+    pub fn update_tag(&mut self, track: usize, tag: Track) {
+        if tag == self.all_tracks[track] {
+            info!("Nothing to update with tag");
+            return;
+        }
+
+        let old_album = self.all_tracks[track].album.clone();
+        let old_artist = self.all_tracks[track].artists.clone();
+
+        if old_album != tag.album {
+            // remove old album/decrease
+            // add new album/increase
+        }
+
+        self.all_tracks[track] = tag;
+    }
 }
 
 // Queue creation

@@ -363,7 +363,10 @@ pub fn load_id3_track(file: String) -> anyhow::Result<Track> {
     let tag = Tag::read_from_path(file.clone())?;
     let source = rodio::Decoder::new(BufReader::new(fs::File::open(file.clone())?))?;
 
-    let title = tag.title().unwrap_or_default().to_string();
+    let mut title = tag.title().unwrap_or_default().to_string();
+    if title.is_empty() {
+        title = file.clone();
+    }
 
     let artists = if let Some(artists) = get_artists(&tag) {
         artists.iter().map(|artist| artist.to_string()).collect()

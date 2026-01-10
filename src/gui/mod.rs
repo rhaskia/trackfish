@@ -5,6 +5,7 @@ pub mod playlists;
 pub mod queuelist;
 pub mod settings;
 pub mod stream;
+pub mod tageditor;
 pub mod trackoptions;
 pub mod trackview;
 
@@ -40,6 +41,7 @@ pub use icons::*;
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;
+pub use tageditor::TagEditor;
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
 
@@ -52,6 +54,9 @@ pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None)
 
 pub const MOBILE: GlobalSignal<bool> = Signal::global(|| cfg!(target_os = "android"));
 
+/// Whether a tag edit is being made or not 
+pub const EDITING_TAG: GlobalSignal<Option<usize>> = Signal::global(|| None);
+
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component
 pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =
@@ -62,6 +67,7 @@ pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =
 /// run from a foreground service initiated runtime
 pub fn start_controller_thread() {
     std::thread::spawn(|| {
+        info!("Created controller thread with thread id {:?}", std::thread::current().id());
         let res = std::panic::catch_unwind(|| {
             let mut track_playing = false;
             let mut audio_player = AudioPlayer::new();
@@ -86,6 +92,7 @@ pub fn start_controller_thread() {
                 // middle man
                 #[cfg(target_os = "android")]
                 while let Ok(msg) = media_rx.try_recv() {
+                    info!("locking controller");
                     if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                         let mut controller = ctrl.clone();
 
@@ -98,6 +105,8 @@ pub fn start_controller_thread() {
                                 controller.write().set_pos(pos as f64 / 1000.0)
                             }
                         }
+
+                        info!("{msg:?}");
                     }
                 }
 
@@ -111,6 +120,7 @@ pub fn start_controller_thread() {
                             MusicMsg::Play => audio_player.play(),
                             MusicMsg::Toggle => audio_player.toggle_playing(),
                             MusicMsg::PlayTrack(file) => {
+                                info!("locking controller");
                                 if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                                     let mut controller = ctrl.clone();
                                     controller.write().song_length = audio_player.play_track(&file);
@@ -123,6 +133,7 @@ pub fn start_controller_thread() {
                             MusicMsg::SetVolume(volume) => audio_player.set_volume(volume),
                             MusicMsg::SetPos(pos) => audio_player.set_pos(pos),
                             MusicMsg::UpdateInfo => {
+                                info!("locking controller");
                                 if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                                     let mut controller = ctrl.clone();
                                     controller.write().progress_secs = audio_player.progress_secs();
@@ -131,6 +142,7 @@ pub fn start_controller_thread() {
                             _ => {}
                         }
 
+                        info!("locking controller");
                         if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                             let controller = ctrl.clone();
                             info!("grabbed controller");
@@ -260,7 +272,8 @@ pub fn init_tracks() -> JoinHandle<()> {
             }
             info!("taken {:?}", started.elapsed());
         });
-        info!("{res:?}");
+
+        info!("init tracks result: {res:?}");
     })
 }
 

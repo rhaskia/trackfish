@@ -1,4 +1,5 @@
 use crate::app::MusicController;
+use crate::gui::EDITING_TAG;
 
 use super::icons::*;
 use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW};
@@ -129,6 +130,9 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                     hr {}
 
                     button {
+                        onclick: move |_| {
+                            EDITING_TAG.set(TRACKOPTION());
+                        },
                         img { src: EDIT_ICON }
                         "Edit tags"
                     }

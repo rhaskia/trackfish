@@ -99,11 +99,8 @@ abstract class WryActivity : AppCompatActivity() {
             } else {
                 startService(intent)
             }
-            Log.i("com.example.Music", "started KeepAliveService")
 
             create(this)
-        } else {
-            Log.i("com.example.Trackfish", "Keep Alive Service already exists")
         }
     }
 

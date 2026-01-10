@@ -17,6 +17,7 @@ fn display_time(total: u64) -> String {
 #[component]
 pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
+    
     let tracks = use_memo(move || (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
     let total_time = use_memo(move || {
         controller
@@ -71,6 +72,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                     let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
                     if new_index != start_index() {
                         start_index.set(new_index);
+                        info!("{start_index:?}..{end_index:?}");
                     }
                 }
             }
@@ -78,9 +80,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     });
 
     rsx! {
-        div {
-            id: "alltracksview",
-            class: "alltracksview view",
+        div { id: "alltracksview", class: "alltracksview view",
             div { class: "searchbar", onclick: move |_| is_searching.set(true),
                 img { src: SEARCH_ICON, loading: "lazy" }
                 div { class: "pseudoinput" }
@@ -107,10 +107,10 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                         },
                         img {
                             class: "trackitemicon",
-                            loading: "lazy",
+                            loading: "onvisible",
                             src: if VIEW.read().current == View::AllTracks { "/trackimage/{i}?origin=alltracks" },
                         }
-                        span { "{controller.read().all_tracks[i].title}" }
+                        span { "{controller.try_read().unwrap().all_tracks[i].title}" }
                         div { flex_grow: 1 }
                         img {
                             class: "trackbutton",
