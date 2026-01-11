@@ -9,19 +9,20 @@ pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
 
     use_effect(move || {
         if let Some(track) = EDITING_TAG() {
-            tag.set(controller.read().all_tracks[track].clone());
+            info!("new track to edit");
+            tag.set(track.1);
         }
     });
 
     rsx!{
         if EDITING_TAG().is_some() {
-            div { class: "editorbg", onclick: move |_| EDITING_TAG.set(None),
+            div { class: "editorbg", // onclick: move |_| EDITING_TAG.set(None),
                 div {
                     onclick: |e| e.stop_propagation(),
                     class: "editorbox",
                     style: "--width: 300px; --height: 300px",
 
-                    img { src: "/trackimage/{EDITING_TAG().unwrap()}" }
+                    img { src: "/trackimage/{EDITING_TAG().unwrap().0}" }
 
                     div { class: "editorline",
                         label { r#for: "title", "Title" }
@@ -30,7 +31,9 @@ pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
                             id: "title",
                             r#type: "text",
                             value: "{tag.read().title}",
-                            onchange: move |e| tag.write().title = e.value(),
+                            oninput: move |e| {
+                                tag.write().title = e.value();
+                            },
                         }
                     }
 
@@ -41,21 +44,34 @@ pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
                             id: "album",
                             r#type: "text",
                             value: "{tag.read().album}",
-                            onchange: move |e| tag.write().album = e.value(),
+                            oninput: move |e| tag.write().album = e.value(),
                         }
                     }
 
                     div { class: "editormultiple",
-                        label { r#for: "artist", "Artists" }
+                        div { class: "editormultipleline",
+                            label { "Artists" }
+                            button {
+                                onclick: move |_| {
+                                    let split = tag
+                                        .read()
+                                        .artists[0]
+                                        .split(&[',', '&'][..])
+                                        .map(|s| s.trim().to_string())
+                                        .collect();
+                                    tag.write().artists = split;
+                                },
+                                "Split by comma"
+                            }
+                        }
                         for i in 0..tag.read().artists.len() {
                             div { class: "editormultipleline",
                                 input {
                                     flex: "1 1 0",
-                                    name: "album",
                                     id: "artist",
                                     r#type: "text",
                                     value: "{tag.read().artists[i]}",
-                                    onchange: move |e| tag.write().artists[i] = e.value(),
+                                    oninput: move |e| tag.write().artists[i] = e.value(),
                                 }
                                 button {
                                     onclick: move |_| {
@@ -72,28 +88,27 @@ pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
                     }
 
                     div { class: "editormultiple",
-                        label { r#for: "artist", "Artists" }
-                        for i in 0..tag.read().artists.len() {
+                        label { "Genres" }
+                        for i in 0..tag.read().genres.len() {
                             div { class: "editormultipleline",
                                 input {
                                     flex: "1 1 0",
-                                    name: "album",
-                                    id: "artist",
+                                    id: "genre",
                                     r#type: "text",
-                                    value: "{tag.read().artists[i]}",
-                                    onchange: move |e| tag.write().artists[i] = e.value(),
+                                    value: "{tag.read().genres[i]}",
+                                    onchange: move |e| tag.write().genres[i] = e.value(),
                                 }
                                 button {
                                     onclick: move |_| {
-                                        tag.write().artists.remove(i);
+                                        tag.write().genres.remove(i);
                                     },
                                     "Remove"
                                 }
                             }
                         }
 
-                        button { onclick: move |_| tag.write().artists.push(String::new()),
-                            "+ Artist"
+                        button { onclick: move |_| tag.write().genres.push(String::new()),
+                            "+ Genre"
                         }
                     }
 
@@ -102,7 +117,10 @@ pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
 
                         button {
                             background: "var(--accent)",
-                            onclick: move |_| controller.write().update_tag(EDITING_TAG().unwrap(), tag()),
+                            onclick: move |_| {
+                                controller.write().update_tag(EDITING_TAG().unwrap().0, tag());
+                                EDITING_TAG.set(None);
+                            },
                             "Confirm"
                         }
                     }

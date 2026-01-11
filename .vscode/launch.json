@@ -47,6 +47,7 @@
             "env": {
                 "RUST_BACKTRACE": "1"
             }
-        }
+        },
+        {"name":"atach","request":"attach","pid":21048, "type": "lldb"}
     ]
 }

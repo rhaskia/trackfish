@@ -26,29 +26,46 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
             div {
                 class: "optionsbg",
                 style: if MOBILE() { "width: 100vw; height: 100vh;" },
-                onclick: move |_| { *TRACKOPTION.write() = None; dragging.set(false); drag_amount.set(0.0) },
+                onclick: move |_| {
+                    *TRACKOPTION.write() = None;
+                    dragging.set(false);
+                    drag_amount.set(0.0)
+                },
                 z_index: if TRACKOPTION.read().is_none() { "-1" },
                 display: if !MOBILE() && TRACKOPTION.read().is_none() { "none" },
-                div { class: "trackoptions optionbox",
+                div {
+                    class: "trackoptions optionbox",
                     class: if MOBILE() { "optionsboxmobile" },
                     style: if MOBILE() { r#"width: 100vw; height: 60vh; left: 0; top: revert; 
                         border: none; border-top: 1px solid #696969; border-radius: 0px; 
                         justify-content: space-between;
-                        display: flex; flex-direction: column;"# 
+                        display: flex; flex-direction: column;"# },
+                    onclick: |e| {
+                        if MOBILE() {
+                            e.stop_propagation()
+                        }
                     },
-                    onclick: |e| if MOBILE() { e.stop_propagation() },
-                    ontouchstart: move |e| { dragging.set(true); drag_start.set(e.data().touches()[0].client_coordinates().y)},
-                    ontouchend: move |_| { 
+                    ontouchstart: move |e| {
+                        dragging.set(true);
+                        drag_start.set(e.data().touches()[0].client_coordinates().y)
+                    },
+                    ontouchend: move |_| {
                         dragging.set(false);
                         if drag_amount() < -200.0 {
                             *TRACKOPTION.write() = None;
                         }
                         drag_amount.set(0.0);
                     },
-                    ontouchmove: move |e| if dragging() { drag_amount.set(drag_start() - e.data().touches()[0].client_coordinates().y); },
+                    ontouchmove: move |e| {
+                        if dragging() {
+                            drag_amount.set(drag_start() - e.data().touches()[0].client_coordinates().y);
+                        }
+                    },
                     bottom: if TRACKOPTION.read().is_none() { "-1000px" } else if dragging() && MOBILE() { "{drag_amount().min(0.0) as i32}px" } else { "0px" },
 
-                    h3 { class: if MOBILE() { "largerheader" }, "{controller.read().all_tracks[track].title}" }
+                    h3 { class: if MOBILE() { "largerheader" },
+                        "{controller.read().all_tracks[track].title}"
+                    }
 
                     button {
                         img { src: INFO_ICON }
@@ -94,7 +111,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                         "Add to current queue"
                     }
 
-                    button { 
+                    button {
                         onclick: move |_| {
                             controller.write().play_next(track);
                             TRACKOPTION.set(None);
@@ -131,7 +148,8 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
 
                     button {
                         onclick: move |_| {
-                            EDITING_TAG.set(TRACKOPTION());
+                            let index = TRACKOPTION().unwrap();
+                            EDITING_TAG.set(Some((index, controller.read().all_tracks[index].clone())));
                         },
                         img { src: EDIT_ICON }
                         "Edit tags"

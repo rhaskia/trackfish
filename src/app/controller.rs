@@ -6,6 +6,7 @@ use super::{
     track::{Mood, Track, TrackInfo},
     utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
+use crate::database::{save_to_cache, init_db};
 use crate::analysis::utils::cosine_similarity;
 use log::{info, warn, error};
 use ndarray::Array1;
@@ -144,7 +145,7 @@ impl MusicController {
             autoplaylists: Vec::new(),
             progress_secs: 0.0,
             song_length: 100.0,
-            playing: true,
+            playing: false,
         };
         send_music_msg(MusicMsg::SetVolume(controller.settings.volume));
 
@@ -157,7 +158,6 @@ impl MusicController {
 
         if let Some(track) = controller.current_track().cloned() {
             send_music_msg(MusicMsg::PlayTrack(track.file.clone()));
-            controller.toggle_playing();
             info!("Started track {track:?} in {:?}", started.elapsed());
         }
 
@@ -463,12 +463,51 @@ impl MusicController {
         }
 
         let old_album = self.all_tracks[track].album.clone();
-        let old_artist = self.all_tracks[track].artists.clone();
+        let old_artists = self.all_tracks[track].artists.clone();
 
         if old_album != tag.album {
-            // remove old album/decrease
-            // add new album/increase
+            if self.albums[&old_album] == 1 {
+                self.albums.remove(&old_album);
+            } else {
+                if let Some(val) = self.albums.get_mut(&old_album) { *val -= 1; };
+            }
+
+            if self.albums.contains_key(&tag.album) {
+                if let Some(val) = self.albums.get_mut(&tag.album) { *val += 1; };
+            } else {
+                self.albums.insert(tag.album.clone(), 1);
+            }
         }
+
+        if old_artists != tag.artists {
+            for artist in old_artists {
+                let stripped = strip_unnessecary(&artist);
+                if self.artists[&stripped].1 == 1 {
+                    self.artists.remove(&stripped);
+                } else {
+                    if let Some(val) = self.artists.get_mut(&stripped) { val.1 -= 1; };
+                }
+            }
+
+            for artist in &tag.artists {
+                let stripped = strip_unnessecary(&artist);
+                if self.artists.contains_key(&stripped) {
+                    if let Some(val) = self.artists.get_mut(&stripped) { val.1 += 1; };
+                } else {
+                    self.artists.insert(stripped, (artist.to_string(), 1));
+                }
+            }
+        }
+
+        let db = init_db();
+        if let Ok(ref database) = db {
+            save_to_cache(&database, &tag);
+        } else {
+            info!("Could not successfuly connect to database to update tag info for track {}", tag.file);
+        }
+        drop(db);
+
+        tag.save_to_disk();
 
         self.all_tracks[track] = tag;
     }

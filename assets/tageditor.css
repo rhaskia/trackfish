@@ -3,9 +3,12 @@
     left: 0;
     top: 0;
     background: rgb(0 0 0 / 48%);
-    width: 400vw;
+    width: 100vw;
     z-index: 50;
-    height: 400vw; 
+    height: 100vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .editorbox {
@@ -14,13 +17,12 @@
     border: 1px solid #696969;
     border-radius: 8px;
     width: var(--width);
-    top: calc(40vh - (var(--height) / 2));
     min-height: var(--height);
     height: fit-content;
-    left: calc(50vw - (var(--width) / 2));
-    position: absolute;
     box-shadow: 0 0 2px rgba(0, 0, 0, .32);
     padding: 10px;
+    max-height: 90vh;
+    overflow-y: scroll;
     transition: bottom 0.2s;
     color: white;
 }

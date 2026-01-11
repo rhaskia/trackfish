@@ -77,6 +77,23 @@ impl Track {
             .position(|e| similar(e, artist))
             .is_some()
     }
+
+    pub fn save_to_disk(&self) -> anyhow::Result<()> {
+        let mut tag = match Tag::read_from_path(&self.file) {
+            Ok(tag) => tag,
+            Err(id3::Error{kind: id3::ErrorKind::NoTag, ..}) => Tag::new(),
+            Err(err) => return Err(err.into()),
+        };
+
+        tag.set_album(self.album.clone());
+        tag.set_title(self.title.clone());
+        tag.set_artist(self.artists.clone().join("\0"));
+        tag.set_genre(self.genres.clone().join("\0"));
+
+        tag.write_to_path(&self.file, id3::Version::Id3v24)?;
+
+        Ok(())
+    }
 }
 
 impl Default for Track {

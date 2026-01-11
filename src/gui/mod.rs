@@ -33,7 +33,7 @@ use std::time::Instant;
 
 use crate::app::audio::AudioPlayer;
 use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
-use crate::app::{MusicController, load_tracks};
+use crate::app::{MusicController, load_tracks, Track};
 
 pub use confirm::Confirmation;
 pub use explorer::{AlbumsList, AllTracks, ArtistList, GenreList, SearchView};
@@ -55,7 +55,7 @@ pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None)
 pub const MOBILE: GlobalSignal<bool> = Signal::global(|| cfg!(target_os = "android"));
 
 /// Whether a tag edit is being made or not 
-pub const EDITING_TAG: GlobalSignal<Option<usize>> = Signal::global(|| None);
+pub const EDITING_TAG: GlobalSignal<Option<(usize, Track)>> = Signal::global(|| None);
 
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component

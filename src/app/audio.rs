@@ -8,6 +8,7 @@ pub struct AudioPlayer {
     sink: Sink,
     _stream_handle: OutputStream,
     current_song_len: f64,
+    played_before: bool,
 }
 
 impl PartialEq for AudioPlayer {
@@ -27,6 +28,7 @@ impl AudioPlayer {
             sink,
             _stream_handle,
             current_song_len: 1.0,
+            played_before: true,
         }
     }
 
@@ -48,12 +50,15 @@ impl AudioPlayer {
             .unwrap_or(Duration::ZERO)
             .as_secs_f64();
 
-        let was_paused = self.sink.is_paused();
+        let was_paused = self.sink.is_paused() || self.played_before;
+        info!("{was_paused}");
+        self.played_before = false;
         self.sink.clear();
         self.sink.append(source);
-        self.sink.play();
 
-        if !was_paused {
+        if was_paused {
+            self.sink.pause();
+        } else {
             self.sink.play();
         }
 
