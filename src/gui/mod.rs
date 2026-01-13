@@ -1,6 +1,7 @@
 pub mod confirm;
 pub mod explorer;
 pub mod icons;
+pub mod library;
 pub mod playlists;
 pub mod queuelist;
 pub mod settings;
@@ -44,6 +45,7 @@ pub use settings::Settings;
 pub use tageditor::TagEditor;
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
+pub use library::LibraryManagement;
 
 /// Current view of the application, eg TrackView, Queue, Settings, etc
 pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
@@ -244,17 +246,21 @@ pub fn init_tracks() -> JoinHandle<()> {
 
             info!("loading info {:?}", started.elapsed());
 
+            let mut ti = TrackInfo::default();
+
             for i in 0..len {
                 let track = tracks[i].clone();
                 let file_hash = hash_filename(&track.file);
 
                 if weights.contains_key(&file_hash) {
-                    buffer.push(weights[&file_hash].clone());
+                    ti = weights[&file_hash].clone();
                 } else {
                     let track_info = generate_track_info(&track);
                     save_track_weights(&cache, &track.file, &track_info).unwrap();
-                    buffer.push(track_info);
+                    ti = track_info;
                 }
+
+                buffer.push(ti);
 
                 if i % 100 == 0 {
                     info!("{i}/{len} analyzed");

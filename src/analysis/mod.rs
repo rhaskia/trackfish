@@ -17,10 +17,15 @@ use std::io::BufReader;
 use std::{fs::File, time::Duration};
 
 pub fn generate_track_info(track: &Track) -> TrackInfo {
-    let (samples, sample_rate) = load_samples(&track.file, Some((10.0, 10.0)));
+    #[cfg(target_os="android")]
+    let duration_offset = (10.0, 10.0);
+    #[cfg(not(target_os="android"))]
+    let duration_offset = (10.0, 10.0);
+
+    let (samples, sample_rate) = load_samples(&track.file, Some(duration_offset));
 
     let mfcc = extract_mfcc(&samples, sample_rate);
-    let chroma = extract_mfcc(&samples, sample_rate);
+    let chroma = extract_chroma(&samples, sample_rate);
     let spectral = extract_spectral(&samples, sample_rate);
     let energy = extract_energy(&samples).mean().unwrap_or_default();
     let bpm = extract_tempo(&samples, sample_rate);

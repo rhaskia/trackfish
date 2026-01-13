@@ -48,6 +48,15 @@
                 "RUST_BACKTRACE": "1"
             }
         },
-        {"name":"atach","request":"attach","pid":21048, "type": "lldb"}
+        {
+            "name":"attach to desktop",
+            "request":"attach",
+            "pid":536, 
+            "program": "${workspaceFolder}/target/dx/trackfish/debug/windows/app/trackfish-b4cde2b0.exe",
+            "type": "lldb",
+            "sourceLanguages": [
+                "rust"
+            ]
+        }
     ]
 }

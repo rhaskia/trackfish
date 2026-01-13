@@ -74,12 +74,12 @@ impl MusicController {
     /// Creates an empty controller with no tracks
     pub fn empty() -> Self {
         Self {
-            all_tracks: vec![],
-            track_info: vec![],
+            all_tracks: Vec::new(),
+            track_info: Vec::new(),
             artists: HashMap::new(),
             genres: HashMap::new(),
             albums: HashMap::new(),
-            listens: vec![],
+            listens: Vec::new(),
             current_started: Instant::now(),
             current_queue: 0,
             queues: vec![Queue::all()],

@@ -15,17 +15,15 @@ pub fn Settings(controller: SyncSignal<MusicController>) -> Element {
     };
 
     rsx! {
-        div {
-            class: "settingsview view",
-            id: "settingsview",
-            button {
-                class: "settingslistbutton",
-                top: if cfg!(target_os = "android") { "calc(10px + 30pt)" },
-                background: "url({MENU_ICON})",
-                onclick: move |_| extended_list.set(!extended_list()),
-            }
+        div { class: "settingsview view", id: "settingsview",
 
             div { class: "settingslist", class: if !extended_list() { "closed" },
+                button {
+                    class: "settingslistbutton",
+                    top: if cfg!(target_os = "android") { "calc(10px + 30pt)" },
+                    background: "url({MENU_ICON})",
+                    onclick: move |_| extended_list.set(!extended_list()),
+                }
                 button {
                     class: "settingsbutton",
                     onclick: move |_| set_menu(SettingsMenu::Audio),
@@ -116,7 +114,9 @@ fn UiSettings(controller: SyncSignal<MusicController>) -> Element {
                 input {
                     r#type: "checkbox",
                     value: "{controller.read().settings.ui.hide_explorer_buttons}",
-                    oninput: move |value| controller.write().settings.ui.hide_explorer_buttons = value.value() == "true",
+                    oninput: move |value| {
+                        controller.write().settings.ui.hide_explorer_buttons = value.value() == "true";
+                    },
                 }
             }
         }

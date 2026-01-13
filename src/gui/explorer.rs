@@ -24,8 +24,7 @@ use super::icons::*;
 pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
     rsx!{
         if controller.read().settings.ui.hide_explorer_buttons {
-            div {
-                class: "explorerswitch",
+            div { class: "explorerswitch",
                 button {
                     onclick: move |_| VIEW.write().current = View::Albums,
                     class: if VIEW.read().current == View::Albums { "explorerselected" },
@@ -151,7 +150,6 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                 if let Ok(scroll_top) = scroll_top {
                     let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
                     if new_index != start_index() {
-                        info!("{new_index}");
                         start_index.set(new_index);
                     }
                 }
@@ -250,7 +248,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
             }
         }
 
-        // Adding all tracks from current view to a playlist 
+        // Adding all tracks from current view to a playlist
         if adding_to_playlist() {
             div {
                 class: "optionsbg",
@@ -271,7 +269,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
             }
         }
 
-        // Adding all tracks from current view to a queue 
+        // Adding all tracks from current view to a queue
         if adding_to_queue() {
             div {
                 class: "optionsbg",
@@ -342,9 +340,7 @@ pub fn ExplorerOptions(
                             View::Artists => controller.write().play_artist_at(name(), track),
                             View::Genres => controller.write().play_genre_at(name(), track),
                             View::Playlists => {
-                                controller
-                                    .write()
-                                    .play_playlist_at(VIEW.read().playlist.unwrap(), track)
+                                controller.write().play_playlist_at(VIEW.read().playlist.unwrap(), track)
                             }
                             _ => unreachable!(),
                         };

@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;
+use ndarray::Array1;
 
 #[component]
 pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
@@ -17,6 +18,10 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
         progress.set(0.0);
         info!("{:?}", controller.read().current_track());
     };
+
+    let track_info = use_memo(move || {
+        controller.read().track_info.get(controller.read().current_track_idx()).cloned().unwrap_or_default()
+    });
 
     // Skip to previous song, or start of current song
     let skipback = move |_: Event<MouseData>| {
@@ -37,10 +42,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
     });
 
     rsx! {
-        div {
-            id: "trackview",
-            class: "trackview view",
-            // display: if VIEW.read().current != View::Song { "none" },
+        div { id: "trackview", class: "trackview view",
 
             // Background image blur
             div {

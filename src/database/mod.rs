@@ -193,8 +193,8 @@ pub fn cached_weight(conn: &Connection, track: &str) -> Result<TrackInfo> {
 /// Turns a row type into a track weight type
 pub fn row_to_weights(row: &Row) -> Result<TrackInfo> {
     let mfcc = blob_to_array(row.get(1)?);
-    let chroma = blob_to_array(row.get(2)?);
-    let spectral = blob_to_array(row.get(3).unwrap());
+    let chroma = blob_to_array(row.get(3)?);
+    let spectral = blob_to_array(row.get(2).unwrap());
     let energy = row.get(4).unwrap_or(0.0);
     let key = row.get(5).unwrap_or(0);
     let bpm = row.get(6).unwrap_or(0.0);

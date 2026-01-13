@@ -321,6 +321,7 @@ fn App() -> Element {
             GenreList { controller }
             PlaylistsView { controller }
             Settings { controller }
+            LibraryManagement { controller }
 
             TrackOptions { controller }
             TagEditor { controller }

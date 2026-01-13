@@ -544,11 +544,11 @@ impl TrackInfo {
                 / count,
             chroma: tracks
                 .iter()
-                .fold(Array1::zeros(13), |a, b| a + b.chroma.clone())
+                .fold(Array1::zeros(12), |a, b| a + b.chroma.clone())
                 / count,
             spectral: tracks
                 .iter()
-                .fold(Array1::zeros(13), |a, b| a + b.spectral.clone())
+                .fold(Array1::zeros(6), |a, b| a + b.spectral.clone())
                 / count,
             energy: tracks.iter().map(|t| t.energy).sum::<f32>() / count,
             key: tracks.iter().map(|t| t.key).sum::<i32>() / count as i32,
@@ -562,8 +562,8 @@ impl Default for TrackInfo {
     fn default() -> Self {
         TrackInfo {
             mfcc: Array1::zeros(13),
-            chroma: Array1::zeros(13),
-            spectral: Array1::zeros(13),
+            chroma: Array1::zeros(12),
+            spectral: Array1::zeros(6),
             energy: 0.0,
             key: 0,
             bpm: 0.0,

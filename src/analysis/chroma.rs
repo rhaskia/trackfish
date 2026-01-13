@@ -4,7 +4,7 @@ use rustfft::{num_complex::Complex, FftPlanner};
 
 const E_WEIGHTS: &[u8; 49328] = include_bytes!("../../chroma.npy");
 
-pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
+pub fn extract_chroma(audio_data: &[f32], sample_rate: u32) -> Array1<f32> {
     let frame_size = 2048;
     let hop_size = 2048;
     let mut chroma_vectors = Vec::new();
@@ -54,12 +54,12 @@ pub fn extract_chroma(audio_data: &[f32]) -> Array1<f32> {
             }
         }
 
-        chroma_vectors.push(chroma.into_shape_with_order((13,)).unwrap());
+        chroma_vectors.push(chroma.into_shape_with_order((12,)).unwrap());
     }
 
-    let mut mean_chroma = Array1::zeros(13);
+    let mut mean_chroma = Array1::zeros(12);
 
-    for i in 0..13 {
+    for i in 0..12 {
         for chroma in &chroma_vectors {
             mean_chroma[i] += chroma[i]
         }

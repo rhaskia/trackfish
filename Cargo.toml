@@ -56,17 +56,5 @@ desktop = ["dioxus/desktop", "aubio/pkg-config"]
 mobile = ["dioxus/mobile", "aubio/bindgen"]
 
 [profile]
-[profile.release]
-strip = false
-debug = true        
-opt-level = 1
-panic = 'unwind'
-split-debuginfo = "packed"
-codegen-units = 1
-lto = false
-
 [profile.dev]
-opt-level = 0
 debug = true
-incremental = true
-codegen-units = 256
