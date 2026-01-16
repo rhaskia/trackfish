@@ -45,6 +45,11 @@ pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
                     class: if VIEW.read().current == View::Playlists { "explorerselected" },
                     "Playlists"
                 }
+                button {
+                    onclick: move |_| VIEW.write().current = View::LibraryManagement,
+                    class: if VIEW.read().current == View::LibraryManagement { "explorerselected" },
+                    "Library Management"
+                }
             }
         }
     }

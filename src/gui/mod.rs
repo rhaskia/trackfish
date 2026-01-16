@@ -35,6 +35,7 @@ use std::time::Instant;
 use crate::app::audio::AudioPlayer;
 use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
 use crate::app::{MusicController, load_tracks, Track};
+use crate::app::search::SearchManager;
 
 pub use confirm::Confirmation;
 pub use explorer::{AlbumsList, AllTracks, ArtistList, GenreList, SearchView};
@@ -58,6 +59,12 @@ pub const MOBILE: GlobalSignal<bool> = Signal::global(|| cfg!(target_os = "andro
 
 /// Whether a tag edit is being made or not 
 pub const EDITING_TAG: GlobalSignal<Option<(usize, Track)>> = Signal::global(|| None);
+
+/// If the library management menu is open
+pub const LIBRARY_MANAGEMENT_OPEN: GlobalSignal<bool> = Signal::global(|| false);
+
+/// A global track searcher
+pub const SEARCHER: GlobalSignal<SearchManager> = Signal::global(|| SearchManager::new());
 
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component
@@ -246,18 +253,17 @@ pub fn init_tracks() -> JoinHandle<()> {
 
             info!("loading info {:?}", started.elapsed());
 
-            let mut ti = TrackInfo::default();
 
             for i in 0..len {
                 let track = tracks[i].clone();
                 let file_hash = hash_filename(&track.file);
+                let mut ti = TrackInfo::default();
 
                 if weights.contains_key(&file_hash) {
                     ti = weights[&file_hash].clone();
                 } else {
                     let track_info = generate_track_info(&track);
                     save_track_weights(&cache, &track.file, &track_info).unwrap();
-                    ti = track_info;
                 }
 
                 buffer.push(ti);
@@ -293,7 +299,7 @@ pub enum View {
     Artists = 4,
     Genres = 5,
     Playlists = 6,
-    Search = 7,
+    LibraryManagement = 7,
     Settings = 8,
 }
 
@@ -323,7 +329,8 @@ impl View {
             4 => Self::Artists,
             5 => Self::Genres,
             6 => Self::Playlists,
-            7 => Self::Settings,
+            7 => Self::LibraryManagement,
+            8 => Self::Settings,
             _ => Self::Song,
         }
     }

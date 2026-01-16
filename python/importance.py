@@ -62,4 +62,3 @@ X_train_reduced = X_train[:, top_k_features]
 X_test_reduced = X_test[:, top_k_features]
 
 # Train and evaluate the model with reduced features
-# ...

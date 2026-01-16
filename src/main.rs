@@ -31,6 +31,7 @@ static MAIN_CSS: Asset = asset!("/assets/style.css");
 static ALL_TRACKS_CSS: Asset = asset!("/assets/alltracks.css");
 static AUTOPLAYLISTS_CSS: Asset = asset!("/assets/autoplaylists.css");
 static EXPLORER_CSS: Asset = asset!("/assets/explorer.css");
+static LIBRARYMANAGEMENT_CSS: Asset = asset!("/assets/librarymanagement.css");
 static MENUBAR_CSS: Asset = asset!("/assets/menubar.css");
 static QUEUE_CSS: Asset = asset!("/assets/queue.css");
 static PLAYLISTS_CSS: Asset = asset!("/assets/playlists.css");
@@ -196,7 +197,7 @@ fn App() -> Element {
         eval(&format!(r#"
             const mainview = document.getElementById("mainview");
             const scrollWidth = mainview.scrollWidth;
-            mainview.scrollLeft = scrollWidth / 8 * {scroll_index}
+            mainview.scrollLeft = scrollWidth / 9 * {scroll_index}
         "#));
     });
 
@@ -205,8 +206,8 @@ fn App() -> Element {
         let mut js = eval(r#"
             const mainview = document.getElementById("mainview");
             mainview.addEventListener("scrollsnapchange", (event) => {
-                console.log(mainview.scrollLeft / mainview.scrollWidth * 8);
-                dioxus.send(mainview.scrollLeft / mainview.scrollWidth * 8);
+                console.log(mainview.scrollLeft / mainview.scrollWidth * 9);
+                dioxus.send(mainview.scrollLeft / mainview.scrollWidth * 9);
             });
         "#);  
 
@@ -244,13 +245,6 @@ fn App() -> Element {
             return;
         };
 
-        //let track = match controller.try_read() {
-        //     Ok(ctrl) => ctrl.get_track(id).cloned(),
-        //     Err(_) => {
-        //         responder.respond(r);
-        //         return;
-        //     },
-        // };
         let track = controller.read().get_track(id).cloned();
 
         if track.is_none() {
@@ -280,6 +274,7 @@ fn App() -> Element {
         document::Stylesheet { href: ALL_TRACKS_CSS }
         document::Stylesheet { href: AUTOPLAYLISTS_CSS }
         document::Stylesheet { href: EXPLORER_CSS }
+        document::Stylesheet { href: LIBRARYMANAGEMENT_CSS }
         document::Stylesheet { href: MENUBAR_CSS }
         document::Stylesheet { href: PLAYLISTS_CSS }
         document::Stylesheet { href: SETTINGS_CSS }
@@ -320,8 +315,8 @@ fn App() -> Element {
             ArtistList { controller }
             GenreList { controller }
             PlaylistsView { controller }
-            Settings { controller }
             LibraryManagement { controller }
+            Settings { controller }
 
             TrackOptions { controller }
             TagEditor { controller }
@@ -372,6 +367,11 @@ pub fn MenuBar(controller: SyncSignal<MusicController>) -> Element {
                     class: "svg-button",
                     background_image: "url({asset!(\"/assets/icons/playlist.svg\")})",
                     onclick: move |_| VIEW.write().open(View::Playlists),
+                }
+                button {
+                    class: "svg-button",
+                    background_image: "url({asset!(\"/assets/icons/edit.svg\")})",
+                    onclick: move |_| VIEW.write().open(View::LibraryManagement),
                 }
             } else {
                 button {

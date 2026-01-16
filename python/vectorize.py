@@ -9,10 +9,8 @@ vectorizer = TfidfVectorizer()
 
 genre_vectors = vectorizer.fit_transform(genre_lists)
 
-# Get the feature names (genres)
 feature_names = vectorizer.get_feature_names_out()
 
-# Print the feature names
 print(feature_names) 
 print(genre_vectors.shape)
 

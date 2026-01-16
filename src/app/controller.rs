@@ -665,6 +665,13 @@ impl MusicController {
         self.playlists[playlist].track_paths.push(file);
         self.save_playlist(playlist);
     }
+
+    /// Find likely duplicate tracks
+    pub fn find_duplicates(&self) -> Vec<Vec<usize>> {
+        let result = Vec::new();
+
+        return result;
+    }
 }
 
 /// Returns the part of two paths that they do not share

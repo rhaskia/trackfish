@@ -1,7 +1,82 @@
 use crate::app::utils::strip_unnessecary;
 use crate::app::MusicController;
-use crate::gui::{icons::*, View, VIEW};
+use crate::gui::{icons::*, View, VIEW, SEARCHER};
 use dioxus::prelude::*;
+use std::sync::Arc;
+
+#[component]
+pub fn TracksSearch(
+    controller: SyncSignal<MusicController>,
+    tracks: Memo<Vec<usize>>,
+    is_searching: Signal<bool>,
+    id_prefix: String,
+) -> Element {
+    let mut search = use_signal(String::new);
+    let mut last_search = use_signal(String::new);
+    let id_prefix = use_signal(|| id_prefix);
+    let mut matches = use_signal(Vec::new);
+
+    use_future(move || async move {
+        // move to after controller is actually filled 
+        SEARCHER.write().fill_track_information(&*controller.read().all_tracks);
+    });
+
+    use_effect(move || {
+        if last_search() != search() {
+            let threshold = 0.25;
+            last_search.set(search());
+            
+            matches.set(SEARCHER.write().search(&search()));
+
+            log::info!("searching {search}");
+        }
+    });
+
+    let row_size = use_memo(move || match VIEW.read().current {
+        View::Albums => 62 * 3,
+        _ => 62,
+    });
+
+    rsx! {
+        div { class: "searchholder", onclick: move |_| is_searching.set(false),
+            div { flex: 1 }
+
+            div { class: "searchpopup",
+                // Search bar
+                div { class: "searchpopupbar",
+                    img { src: SEARCH_ICON }
+                    input {
+                        value: search,
+                        autofocus: true,
+                        onclick: |e| e.stop_propagation(),
+                        oninput: move |e| search.set(e.value()),
+                    }
+                }
+
+                // Track list
+                div { class: "searchtracks",
+                    for track in matches() {
+                        div {
+                            class: "trackitem",
+                            onclick: move |_| {
+                                let scroll_amount = track * row_size();
+                                document::eval(
+                                    &format!(
+                                        "document.getElementById('{id_prefix}').scrollTop = {};",
+                                        scroll_amount,
+                                    ),
+                                );
+                            },
+                            img { src: "/trackimage/{track}", loading: "lazy" }
+                            span { "{controller.read().all_tracks[track].title}" }
+                        }
+                    }
+                }
+            }
+            div { flex: 1 }
+        }
+    }
+}
 
 #[component]
 pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
@@ -145,83 +220,3 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
     }
 }
 
-#[component]
-pub fn TracksSearch(
-    controller: SyncSignal<MusicController>,
-    tracks: Memo<Vec<usize>>,
-    is_searching: Signal<bool>,
-    id_prefix: String,
-) -> Element {
-    let mut search = use_signal(String::new);
-    let mut last_search = use_signal(String::new);
-    let id_prefix = use_signal(|| id_prefix);
-    let mut matches = use_signal(Vec::new);
-
-    use_effect(move || {
-        if last_search() != search() {
-            last_search.set(search());
-            
-            let search = strip_unnessecary(&search.read());
-
-            log::info!("searching {search}");
-
-            matches.set(if search.len() < 2 {
-                Vec::new()
-            } else {
-                tracks
-                    .read()
-                    .iter()
-                    .filter(|t| {
-                        strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
-                    })
-                    .cloned()
-                    .collect::<Vec<usize>>()
-            })
-        }
-    });
-
-    let row_size = use_memo(move || match VIEW.read().current {
-        View::Albums => 62 * 3,
-        _ => 62,
-    });
-
-    rsx! {
-        div { class: "searchholder", onclick: move |_| is_searching.set(false),
-            div { flex: 1 }
-
-            div { class: "searchpopup",
-                // Search bar
-                div { class: "searchpopupbar",
-                    img { src: SEARCH_ICON }
-                    input {
-                        value: search,
-                        autofocus: true,
-                        onclick: |e| e.stop_propagation(),
-                        oninput: move |e| search.set(e.value()),
-                    }
-                }
-
-                // Track list
-                div { class: "searchtracks",
-                    for track in matches() {
-                        div {
-                            class: "trackitem",
-                            onclick: move |_| {
-                                let scroll_amount = track * row_size();
-                                document::eval(
-                                    &format!(
-                                        "document.getElementById('{id_prefix}').scrollTop = {};",
-                                        scroll_amount,
-                                    ),
-                                );
-                            },
-                            img { src: "/trackimage/{track}", loading: "lazy" }
-                            span { "{controller.read().all_tracks[track].title}" }
-                        }
-                    }
-                }
-            }
-            div { flex: 1 }
-        }
-    }
-}

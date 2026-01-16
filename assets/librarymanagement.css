@@ -1,0 +1,27 @@
+.librarymanagementview {
+    display: flex;
+    padding: 10px;
+    flex-direction: row;
+    height: 100%;
+    min-width: calc(100vw - 20px);
+    position: relative;
+    overflow: hidden;
+}
+
+.librarymanagementview .header {
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: calc(100vw - 20px);
+    height: 25px;
+}
+
+.librarymanagementview .header button {
+    background: none;
+    border: 1px solid darkgrey;
+    border-radius: 10px !important;
+    color: white;
+    font-size: 16px;
+    padding: 2px 20px;
+}
