@@ -2,7 +2,7 @@ use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
-    gui::{icons::*, View, VIEW},
+    gui::{icons::*, View, VIEW, SEARCHER},
 };
 use dioxus::prelude::*;
 use super::ExplorerSwitch;
@@ -11,6 +11,7 @@ use super::ExplorerSwitch;
 pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
     let mut artists = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
+    let mut set_searcher_artists = use_signal(|| false);
 
     use_effect(move || {
         let mut artists_unsorted = controller
@@ -23,14 +24,19 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
         artists.set(artists_unsorted);
     });
 
+    use_effect(move || {
+        if artists.read().len() > 0 && !set_searcher_artists() {
+            SEARCHER.write().fill_artist_information(&*artists.read());
+            set_searcher_artists.set(true);
+        }
+    });
+
     let set_artist = move |name| {
         VIEW.write().artist = Some(name);
     };
 
     rsx! {
-        div {
-            id: "artistsview",
-            class: "artists view",
+        div { id: "artistsview", class: "artists view",
 
             ExplorerSwitch { controller }
 
@@ -81,18 +87,12 @@ pub fn ArtistsSearch(
     let mut search = use_signal(String::new);
 
     let matches = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
 
-        if search.is_empty() {
+        if search.len() <= 1 {
             Vec::new()
         } else {
-            artists
-                .read()
-                .iter()
-                .map(|t| t.1 .0.clone())
-                .filter(|t| strip_unnessecary(&t).starts_with(&search))
-                .collect::<Vec<String>>()
+            SEARCHER.write().search_artists(&*search.read())
         }
     });
 
@@ -121,8 +121,10 @@ pub fn ArtistsSearch(
                             class: "thinitem",
                             onclick: move |_| {
                                 // Requires the scroll amount to be one less height than that of the object to actually show it
-                                let scroll_amount = (artists.read().iter().position(|a| a.1.0 == artist).unwrap().max(1) - 1) * row_height;
+                                let index = artists.read().iter().position(|a| a.1.0 == artist).unwrap();
+                                let scroll_amount = index * row_height;
 
+                                info!("scrolling {scroll_amount} for index {index}");
                                 document::eval(
                                     &format!(
                                         "document.getElementById('artistlist').scrollTop = {};",

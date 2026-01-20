@@ -2,7 +2,7 @@ use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 use crate::{
     app::{MusicController, utils::similar},
-    gui::{icons::*, View, VIEW},
+    gui::{icons::*, View, VIEW, SEARCHER},
 };
 use dioxus::document::eval;
 use dioxus::prelude::*;
@@ -12,6 +12,14 @@ use super::ExplorerSwitch;
 pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
     let mut albums = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
+    let mut set_searcher_albums = use_signal(|| false);
+    
+    use_effect(move || {
+        if albums.read().len() > 0 && !set_searcher_albums() {
+            SEARCHER.write().fill_album_information(&*albums.read());
+            set_searcher_albums.set(true);
+        }
+    });
 
     use_effect(move || {
         let mut albums_unsorted = controller
@@ -107,7 +115,10 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
             div {
                 class: "searchbar",
-                onclick: move |e| { is_searching.set(true); e.stop_propagation()},
+                onclick: move |e| {
+                    is_searching.set(true);
+                    e.stop_propagation()
+                },
                 display: if VIEW.read().album.is_some() { "none" },
                 img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
@@ -155,7 +166,13 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
             }
 
             if is_searching() {
-                AlbumsSearch { controller, is_searching, albums, row_height, items_per_row }
+                AlbumsSearch {
+                    controller,
+                    is_searching,
+                    albums,
+                    row_height,
+                    items_per_row,
+                }
             }
         }
     }
@@ -172,21 +189,13 @@ pub fn AlbumsSearch(
     let mut search = use_signal(String::new);
 
     let matches = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
 
-        if search.is_empty() {
+        if search.len() <= 1 {
             log::info!("searching {search}");
             Vec::new()
         } else {
-            controller
-                .read()
-                .albums
-                .iter()
-                .map(|a| a.0)
-                .filter(|t| strip_unnessecary(&t).starts_with(&search))
-                .cloned()
-                .collect::<Vec<String>>()
+            SEARCHER.write().search_albums(&*search.read())
         }
     });
 
@@ -213,7 +222,11 @@ pub fn AlbumsSearch(
                             onclick: {
                                 let album = album.clone();
                                 move |_| {
-                                    let index = albums.read().iter().position(|a| similar(&a.0, &album)).unwrap_or(0);
+                                    let index = albums
+                                        .read()
+                                        .iter()
+                                        .position(|a| similar(&a.0, &album))
+                                        .unwrap_or(0);
                                     let row = index / items_per_row();
                                     let scroll_amount = row * row_height();
                                     document::eval(
@@ -225,7 +238,10 @@ pub fn AlbumsSearch(
                                 }
                             },
 
-                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums", loading: "lazy" }
+                            img {
+                                src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums",
+                                loading: "lazy",
+                            }
                             span { "{album}" }
                         }
                     }

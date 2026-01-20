@@ -2,6 +2,7 @@ use super::TracksSearch;
 use super::{View, VIEW};
 use crate::app::MusicController;
 use crate::gui::icons::*;
+use crate::gui::SEARCHER;
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use log::info;
@@ -17,6 +18,7 @@ fn display_time(total: u64) -> String {
 #[component]
 pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
+    let mut set_searcher_tracks = use_signal(|| false);
     
     let tracks = use_memo(move || (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
     let total_time = use_memo(move || {
@@ -35,6 +37,13 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     let mut start_index = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
+    
+    use_effect(move || {
+        if !set_searcher_tracks() {
+            SEARCHER.write().fill_track_information(&*controller.read().all_tracks);
+            set_searcher_tracks.set(true);
+        }
+    });
 
     use_future(move || async move {
         let mut js = eval(

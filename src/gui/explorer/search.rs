@@ -16,17 +16,12 @@ pub fn TracksSearch(
     let id_prefix = use_signal(|| id_prefix);
     let mut matches = use_signal(Vec::new);
 
-    use_future(move || async move {
-        // move to after controller is actually filled 
-        SEARCHER.write().fill_track_information(&*controller.read().all_tracks);
-    });
 
     use_effect(move || {
         if last_search() != search() {
-            let threshold = 0.25;
             last_search.set(search());
             
-            matches.set(SEARCHER.write().search(&search()));
+            matches.set(SEARCHER.write().search_tracks(&*search()));
 
             log::info!("searching {search}");
         }

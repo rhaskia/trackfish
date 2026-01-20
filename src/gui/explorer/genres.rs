@@ -2,7 +2,7 @@ use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
-    gui::{icons::*, View, VIEW},
+    gui::{icons::*, View, VIEW, SEARCHER},
 };
 use dioxus::prelude::*;
 use super::ExplorerSwitch;
@@ -11,6 +11,14 @@ use super::ExplorerSwitch;
 pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
     let mut genres = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
+    let mut set_searcher_genres = use_signal(|| false);
+
+    use_effect(move || {
+        if genres.read().len() > 0 && !set_searcher_genres() {
+            SEARCHER.write().fill_genre_information(&*genres.read());
+            set_searcher_genres.set(true);
+        }
+    });
 
     use_effect(move || {
         let mut genres_unsorted = controller
@@ -27,7 +35,7 @@ pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
         VIEW.write().genre = Some(name);
     };
 
-    let mut row_height = use_signal(|| 10i32);
+    let mut row_height = use_signal(|| 39i32);
 
     use_future(move || async move {
         tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.25)).await;
@@ -45,9 +53,7 @@ pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
     });
 
     rsx! {
-        div {
-            class: "artists view",
-            id: "genreview",
+        div { class: "artists view", id: "genreview",
 
             ExplorerSwitch { controller }
 
@@ -97,18 +103,12 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
     let mut search = use_signal(String::new);
 
     let matches = use_memo(move || {
-        let search = strip_unnessecary(&search.read());
         log::info!("searching {search}");
 
-        if search.is_empty() {
+        if search.len() <= 1 {
             Vec::new()
         } else {
-            genres
-                .read()
-                .iter()
-                .map(|t| t.0.clone())
-                .filter(|t| strip_unnessecary(&t).starts_with(&search))
-                .collect::<Vec<String>>()
+            SEARCHER.write().search_genres(&*search.read())
         }
     });
 
@@ -134,8 +134,8 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                         div {
                             class: "thinitem",
                             onclick: move |_| {
-                                // Requires the scroll amount to be one less height than that of the object to actually show it
-                                let scroll_amount = (genres.read().iter().position(|a| a.0 == genre).unwrap().max(1) - 1) as i32 * row_height();
+                                let index = genres.read().iter().position(|a| a.0 == genre).unwrap();
+                                let scroll_amount = index as i32 * row_height();
 
                                 document::eval(
                                     &format!(
