@@ -2,7 +2,6 @@ use crate::app::utils::strip_unnessecary;
 use crate::app::MusicController;
 use crate::gui::{icons::*, View, VIEW, SEARCHER};
 use dioxus::prelude::*;
-use std::sync::Arc;
 
 #[component]
 pub fn TracksSearch(

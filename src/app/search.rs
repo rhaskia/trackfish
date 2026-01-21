@@ -1,7 +1,7 @@
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::*;
-use tantivy::{doc, Index, IndexWriter, ReloadPolicy, IndexReader};
+use tantivy::{Index, IndexWriter, ReloadPolicy, IndexReader};
 use super::settings::Settings;
 use crate::app::track::Track;
 use log::info;
@@ -157,7 +157,7 @@ impl SearchManager {
             doc.add_text(album, albums[i].0.clone());
             doc.add_u64(id, i as u64);
 
-            searcher.index_writer.add_document(doc);
+            searcher.index_writer.add_document(doc).unwrap();
         }
 
         searcher.index_writer.commit().unwrap();
@@ -180,7 +180,7 @@ impl SearchManager {
             doc.add_text(genre, genres[i].0.clone());
             doc.add_u64(id, i as u64);
 
-            searcher.index_writer.add_document(doc);
+            searcher.index_writer.add_document(doc).unwrap();
         }
 
         searcher.index_writer.commit().unwrap();

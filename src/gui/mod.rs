@@ -54,6 +54,8 @@ pub const VIEW: GlobalSignal<ViewData> = Signal::global(|| ViewData::new());
 pub const TRACKOPTION: GlobalSignal<Option<usize>> = Signal::global(|| None);
 /// To be set when a song is to be added to the playlist by a user
 pub const ADD_TO_PLAYLIST: GlobalSignal<Option<usize>> = Signal::global(|| None);
+/// Whether a confirmation should be shown for deleting a track
+pub const DELETING_TRACK: GlobalSignal<Option<usize>> = Signal::global(|| None);
 
 pub const MOBILE: GlobalSignal<bool> = Signal::global(|| cfg!(target_os = "android"));
 

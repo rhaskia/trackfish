@@ -2,7 +2,7 @@ use crate::app::MusicController;
 use crate::gui::EDITING_TAG;
 
 use super::icons::*;
-use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW};
+use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW, DELETING_TRACK};
 use dioxus::prelude::*;
 use super::MOBILE;
 
@@ -156,6 +156,9 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                     }
 
                     button {
+                        onclick: move |_| {
+                            DELETING_TRACK.set(track_option());
+                        },
                         img { src: DELETE_ICON }
                         "Delete song from files"
                     }

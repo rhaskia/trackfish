@@ -133,6 +133,18 @@ pub fn get_from_cache(conn: &Connection, filename: &str) -> Result<Option<Track>
     Ok(result)
 }
 
+pub fn remove_track_from_database(conn: &Connection, filename: &str) -> Result<()> {
+    let file_hash = hash_filename(filename);
+
+    let mut stmt = conn.prepare("DELETE FROM tracks WHERE file_hash = ?1")?;
+    stmt.execute(params![file_hash]);
+
+    let mut stmt = conn.prepare("DELETE FROM weights WHERE file_hash = ?1")?;
+    stmt.execute(params![file_hash]);
+
+    Ok(())
+}
+
 /// Turns a array of 32 bit floats into a byte array
 fn to_blob(array: &Array1<f32>) -> Vec<u8> {
     array.iter().map(|f| f.to_le_bytes()).flatten().collect()

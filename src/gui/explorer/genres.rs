@@ -1,5 +1,4 @@
 use super::TracksView;
-use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW, SEARCHER},

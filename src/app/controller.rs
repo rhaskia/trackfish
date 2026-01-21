@@ -455,6 +455,45 @@ impl MusicController {
         self.playlists[playlist].tracks.extend(tracks);
     }
 
+    /// Deletes a track and updates controller information about album/artist/genre amounts 
+    pub fn delete_track(&mut self, track: usize) {
+        std::fs::remove_file(self.all_tracks[track].file.clone()).unwrap();
+        let album = self.all_tracks[track].album.clone();
+        let artists = self.all_tracks[track].artists.clone();
+        let genres = self.all_tracks[track].genres.clone();
+
+        if self.albums[&album] == 1 {
+            self.albums.remove(&album);
+        } else {
+            if let Some(val) = self.albums.get_mut(&album) { *val -= 1; };
+        }
+
+        for artist in artists {
+            let stripped = strip_unnessecary(&artist);
+            if self.artists[&stripped].1 == 1 {
+                self.artists.remove(&stripped);
+            } else {
+                if let Some(val) = self.artists.get_mut(&stripped) { val.1 -= 1; };
+            }
+        }
+
+        for genre in genres {
+            if self.genres[&genre] == 1 {
+                self.genres.remove(&genre);
+            } else {
+                if let Some(val) = self.genres.get_mut(&genre) { *val -= 1; };
+            }
+        }
+
+        let conn = crate::database::init_db().unwrap();
+        crate::database::remove_track_from_database(&conn, &self.all_tracks[track].file).unwrap();
+
+        info!("successfully deleted track {:?}", self.all_tracks[track].title);
+
+        // TODO: some better way of removing tracks during runtime
+        self.all_tracks[track] = Track::default();
+    }   
+
     /// Updates track tag in memory and saves it to storage 
     pub fn update_tag(&mut self, track: usize, tag: Track) {
         if tag == self.all_tracks[track] {
@@ -668,9 +707,30 @@ impl MusicController {
 
     /// Find likely duplicate tracks
     pub fn find_duplicates(&self) -> Vec<Vec<usize>> {
-        let result = Vec::new();
+        let mut results = Vec::new();
+        let mut titles: HashMap<String, usize> = HashMap::new();
 
-        return result;
+        for i in 0..self.all_tracks.len() {
+            *titles.entry(strip_unnessecary(&self.all_tracks[i].title)).or_default() += 1;
+        }
+
+        for (key, value) in titles {
+            if value <= 1 { 
+                continue;
+            }
+
+            let mut similars = Vec::new();
+
+            for i in 0..self.all_tracks.len() {
+                if key == strip_unnessecary(&self.all_tracks[i].title) {
+                    similars.push(i)
+                }
+            }
+            
+            results.push(similars);
+        }
+
+        results
     }
 }
 

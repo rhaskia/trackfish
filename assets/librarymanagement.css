@@ -1,11 +1,11 @@
 .librarymanagementview {
     display: flex;
-    padding: 10px;
     flex-direction: row;
     height: 100%;
-    min-width: calc(100vw - 20px);
+    min-width: 100vw;
     position: relative;
     overflow: hidden;
+    flex-direction: column;
 }
 
 .librarymanagementview .header {
@@ -14,14 +14,33 @@
     flex-direction: row;
     gap: 10px;
     width: calc(100vw - 20px);
-    height: 25px;
+    height: 30px;
+    padding: 10px;
 }
 
-.librarymanagementview .header button {
-    background: none;
-    border: 1px solid darkgrey;
-    border-radius: 10px !important;
+.duplicategroup {
+    border-bottom: 1px solid grey;
+    display: flex;
+}
+
+.duplicates {
+    height: 90vh;
+    overflow-y: scroll;
     color: white;
-    font-size: 16px;
-    padding: 2px 20px;
+}
+
+.duplicatesong {
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+}
+
+.duplicatesongs {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
 }

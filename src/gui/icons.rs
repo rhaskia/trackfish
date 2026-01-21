@@ -6,6 +6,7 @@ pub static ALBUM_ICON: Asset = asset!("/assets/icons/album.svg");
 pub static ARTIST_ICON: Asset = asset!("/assets/icons/artist.svg");
 pub static AUDIO_ICON: Asset = asset!("/assets/icons/audio.svg");
 pub static BACK_ICON: Asset = asset!("/assets/icons/back.svg");
+pub static CLOSE_ICON: Asset = asset!("/assets/icons/close.svg");
 
 pub static DELETE_ICON: Asset = asset!("/assets/icons/delete.svg");
 pub static DOWN_ICON: Asset = asset!("/assets/icons/down.svg");

@@ -176,7 +176,7 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let loading_track_weights = use_signal(|| 0);
     let tracks_count = use_signal(|| 0);
-    let controller = use_signal_sync(|| MusicController::empty());
+    let mut controller = use_signal_sync(|| MusicController::empty());
     *gui::CONTROLLER.lock().unwrap() = Some(controller);
     
     let mut handle = use_signal(|| None);
@@ -320,6 +320,19 @@ fn App() -> Element {
 
             TrackOptions { controller }
             TagEditor { controller }
+
+            if DELETING_TRACK.read().is_some() {
+                Confirmation {
+                    label: "Delete Track {controller.read().all_tracks[DELETING_TRACK().unwrap()].title}?",
+                    confirm: move |_| {
+                        controller.write().delete_track(DELETING_TRACK().unwrap());
+                        DELETING_TRACK.set(None);
+                    },
+                    cancel: |_| {
+                        DELETING_TRACK.set(None);
+                    },
+                }
+            }
         }
 
         MenuBar { controller }
