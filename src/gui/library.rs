@@ -60,7 +60,7 @@ pub fn DuplicateMenu(controller: SyncSignal<MusicController>) -> Element {
                         onclick: move |_| {
                             duplicates.remove(i);
                         },
-                        margin: "5px",
+                        margin: "15px 0px auto 5px;",
                         margin_bottom: "auto",
                         class: "trackbutton",
                         loading: "lazy",
