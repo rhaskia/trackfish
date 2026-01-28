@@ -154,6 +154,7 @@ pub fn remove_track_from_database(conn: &Connection, filename: &str) -> Result<(
 
 pub fn set_tagged(conn: &Connection, filename: &str) -> Result<()> {
     let file_hash = hash_filename(filename);
+    log::info!("setting {file_hash} as tagged");
 
     conn.execute(
         "INSERT OR REPLACE INTO tagged 
@@ -168,9 +169,12 @@ pub fn set_tagged(conn: &Connection, filename: &str) -> Result<()> {
 
 pub fn is_tagged(conn: &Connection, filename: &str) -> Result<bool> {
     let file_hash = hash_filename(filename);
-    let mut stmt = conn.prepare("SELECT 1 FROM tagged WHERE file_hash = ?1")?;
+    let mut stmt = conn.prepare("SELECT * FROM tagged WHERE file_hash = ?1")?;
 
-    stmt.exists(params![file_hash])
+    let mut query = stmt.query(params![file_hash])?;
+    let exists = query.next()?.is_some(); 
+    info!("{file_hash}/{filename} exists: {exists}");
+    Ok(exists)
 }
 
 /// Turns a array of 32 bit floats into a byte array

@@ -122,14 +122,15 @@ pub fn TaggingMenu(controller: SyncSignal<MusicController>) -> Element {
                 *cached_index.write() += 1;
                 continue;
             }
+            info!("{:?} isnt tagged", controller.read().all_tracks[cached_index()].file);
 
             let last_requested = Instant::now();
-            let recordings = get_possible_track_recordings(controller.read().all_tracks[cached_index() + 1].clone()).await;
+            let recordings = get_possible_track_recordings(controller.read().all_tracks[cached_index()].clone()).await;
 
             match recordings {
                 Ok(r) => {
-                    *cached_index.write() += 1;
                     cache.write().push((cached_index(), r));
+                    *cached_index.write() += 1;
                     tokio::time::sleep(Duration::from_secs(3)).await;
                 }
                 Err(err) => {
