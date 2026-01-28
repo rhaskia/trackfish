@@ -8,6 +8,7 @@ pub struct Settings {
     pub directory: String,
     pub radio: RadioSettings,
     pub ui: UiSettings,
+    pub tagging: TaggingSettings,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Clone)]
@@ -31,6 +32,11 @@ pub struct RadioSettings {
     pub zcr_weight: f32,
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
+pub struct TaggingSettings {
+    pub lastfm_key: String,
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Clone, Default)]
 pub enum WeightMode {
     #[default]
@@ -45,7 +51,8 @@ impl Default for Settings {
             volume: 1.0,
             directory: Self::default_audio_dir(),
             radio: RadioSettings::default(),
-            ui: UiSettings::default()
+            ui: UiSettings::default(),
+            tagging: TaggingSettings::default()
         }
     }
 }
@@ -70,6 +77,12 @@ impl Default for RadioSettings {
 impl Default for UiSettings {
     fn default() -> Self {
         UiSettings { hide_explorer_buttons: false }
+    }
+}
+
+impl Default for TaggingSettings {
+    fn default() -> Self {
+        TaggingSettings { lastfm_key: String::new() }
     }
 }
 

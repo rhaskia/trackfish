@@ -319,13 +319,13 @@ fn App() -> Element {
             Settings { controller }
 
             TrackOptions { controller }
-            TagEditor { controller }
+            TagEditorView { controller }
 
             if DELETING_TRACK.read().is_some() {
                 Confirmation {
                     label: "Delete Track {controller.read().all_tracks[DELETING_TRACK().unwrap()].title}?",
                     confirm: move |_| {
-                        controller.write().delete_track(DELETING_TRACK().unwrap());
+                        controller.write().delete_track(&*DB.read(), DELETING_TRACK().unwrap());
                         DELETING_TRACK.set(None);
                     },
                     cancel: |_| {

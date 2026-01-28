@@ -96,6 +96,13 @@ pub fn init_db() -> Result<Connection> {
         [],
     )?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tagged (
+            file_hash TEXT PRIMARY KEY
+        )",
+        [],
+    )?;
+
     Ok(conn)
 }
 
@@ -137,12 +144,33 @@ pub fn remove_track_from_database(conn: &Connection, filename: &str) -> Result<(
     let file_hash = hash_filename(filename);
 
     let mut stmt = conn.prepare("DELETE FROM tracks WHERE file_hash = ?1")?;
-    stmt.execute(params![file_hash]);
+    stmt.execute(params![file_hash])?;
 
     let mut stmt = conn.prepare("DELETE FROM weights WHERE file_hash = ?1")?;
-    stmt.execute(params![file_hash]);
+    stmt.execute(params![file_hash])?;
 
     Ok(())
+}
+
+pub fn set_tagged(conn: &Connection, filename: &str) -> Result<()> {
+    let file_hash = hash_filename(filename);
+
+    conn.execute(
+        "INSERT OR REPLACE INTO tagged 
+        (file_hash) VALUES (?1)",
+        params![
+            file_hash,
+        ],
+    )?;
+
+    Ok(())
+}
+
+pub fn is_tagged(conn: &Connection, filename: &str) -> Result<bool> {
+    let file_hash = hash_filename(filename);
+    let mut stmt = conn.prepare("SELECT 1 FROM tagged WHERE file_hash = ?1")?;
+
+    stmt.exists(params![file_hash])
 }
 
 /// Turns a array of 32 bit floats into a byte array

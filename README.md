@@ -63,6 +63,7 @@ Android is supported, and should compile fine if the Android SDK is set up prope
  - [ ] Tagging/Collection Management
     - [x] Tag Editor
     - [ ] Auto Tagging (MusicBrainz?)
+    - [ ] Albums with missing tracks
     - [x] Song Options
     - [ ] Multi-select song options
  - [ ] Music Exploration?

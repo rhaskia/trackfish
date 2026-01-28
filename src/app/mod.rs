@@ -7,6 +7,7 @@ pub mod search;
 pub mod track;
 pub mod utils;
 pub mod autoplaylist;
+pub mod autotagging;
 
 pub use controller::MusicController;
 pub use track::{load_tracks, Track};

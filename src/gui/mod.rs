@@ -24,7 +24,7 @@ use crate::database::save_track_weights;
 use dioxus::prelude::*;
 use log::info;
 use once_cell::sync::Lazy;
-use rusqlite::{Rows, params};
+use rusqlite::{Connection, Rows, params};
 use std::collections::HashMap;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::RecvTimeoutError;
@@ -43,7 +43,7 @@ pub use icons::*;
 pub use playlists::PlaylistsView;
 pub use queuelist::QueueList;
 pub use settings::Settings;
-pub use tageditor::TagEditor;
+pub use tageditor::{TagEditor, TagEditorView};
 pub use trackoptions::TrackOptions;
 pub use trackview::TrackView;
 pub use library::LibraryManagement;
@@ -67,6 +67,9 @@ pub const LIBRARY_MANAGEMENT_OPEN: GlobalSignal<bool> = Signal::global(|| false)
 
 /// A global track searcher
 pub const SEARCHER: GlobalSignal<SearchManager> = Signal::global(|| SearchManager::new());
+
+/// A global reference to the app database
+pub const DB: GlobalSignal<Connection> = Signal::global(|| crate::database::init_db().unwrap());
 
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component
@@ -254,7 +257,6 @@ pub fn init_tracks() -> JoinHandle<()> {
             let mut buffer = Vec::new();
 
             info!("loading info {:?}", started.elapsed());
-
 
             for i in 0..len {
                 let track = tracks[i].clone();

@@ -6,13 +6,14 @@ use super::{
     track::{Mood, Track, TrackInfo},
     utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
-use crate::database::{save_to_cache, init_db};
+use crate::database::save_to_cache;
 use crate::analysis::utils::cosine_similarity;
 use log::{info, warn, error};
 use ndarray::Array1;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::thread_rng;
+use rusqlite::Connection;
 use rustfft::num_traits::Zero;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -456,7 +457,7 @@ impl MusicController {
     }
 
     /// Deletes a track and updates controller information about album/artist/genre amounts 
-    pub fn delete_track(&mut self, track: usize) {
+    pub fn delete_track(&mut self, conn: &Connection, track: usize) {
         std::fs::remove_file(self.all_tracks[track].file.clone()).unwrap();
         let album = self.all_tracks[track].album.clone();
         let artists = self.all_tracks[track].artists.clone();
@@ -485,7 +486,6 @@ impl MusicController {
             }
         }
 
-        let conn = crate::database::init_db().unwrap();
         crate::database::remove_track_from_database(&conn, &self.all_tracks[track].file).unwrap();
 
         info!("successfully deleted track {:?}", self.all_tracks[track].title);
@@ -495,7 +495,8 @@ impl MusicController {
     }   
 
     /// Updates track tag in memory and saves it to storage 
-    pub fn update_tag(&mut self, track: usize, tag: Track) {
+    pub fn update_tag(&mut self, conn: &Connection, track: usize, tag: Track) {
+        info!("db2");
         if tag == self.all_tracks[track] {
             info!("Nothing to update with tag");
             return;
@@ -503,6 +504,7 @@ impl MusicController {
 
         let old_album = self.all_tracks[track].album.clone();
         let old_artists = self.all_tracks[track].artists.clone();
+        info!("db2");
 
         if old_album != tag.album {
             if self.albums[&old_album] == 1 {
@@ -538,15 +540,9 @@ impl MusicController {
             }
         }
 
-        let db = init_db();
-        if let Ok(ref database) = db {
-            save_to_cache(&database, &tag);
-        } else {
-            info!("Could not successfuly connect to database to update tag info for track {}", tag.file);
-        }
-        drop(db);
+        save_to_cache(&conn, &tag).unwrap();
 
-        tag.save_to_disk();
+        tag.save_to_disk().unwrap();
 
         self.all_tracks[track] = tag;
     }
