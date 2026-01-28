@@ -1,7 +1,8 @@
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use crate::app::MusicController;
 use crate::gui::EDITING_TAG;
 use crate::app::track::Track;
+use log::info;
 
 #[component]
 pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {

@@ -11,6 +11,7 @@ package dev.dioxus.main
 // taken from https://github.com/ionic-team/capacitor/blob/6658bca41e78239347e458175b14ca8bd5c1d6e8/android/capacitor/src/main/java/com/getcapacitor/Logger.java
 
 import android.text.TextUtils
+import com.example.Trackfish.BuildConfig
 import android.util.Log
 
 class Logger {

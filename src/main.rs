@@ -8,16 +8,16 @@ pub mod gui;
 
 use std::io::Cursor;
 
-#[cfg(target_os="android")]
-use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
-#[cfg(not(target_os = "android"))]
-use dioxus::desktop::{use_asset_handler, WindowBuilder};
+// #[cfg(target_os="android")]
+// use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
+// #[cfg(not(target_os = "android"))]
+// use dioxus::desktop::{use_asset_handler, WindowBuilder};
 #[cfg(not(target_os = "android"))]
 use tracing_log::LogTracer;
-use dioxus:: prelude::*;
+use dioxus_native::prelude::*;
 use http::Response;
-use log::info;
-use dioxus::document::eval;
+use log::{error, info};
+// use dioxus::document::eval;
 use app::{
     track::get_track_image,
     MusicController,
@@ -38,6 +38,13 @@ static SETTINGS_CSS: Asset = asset!("/assets/settings.css");
 static TAGEDITOR_CSS: Asset = asset!("/assets/tageditor.css");
 static TRACKOPTIONS_CSS: Asset = asset!("/assets/trackoptions.css");
 static TRACKVIEW_CSS: Asset = asset!("/assets/trackview.css");
+
+#[unsafe(no_mangle)]
+#[cfg(target_os = "android")]
+pub fn android_main(android_app: dioxus_native::AndroidApp) {
+    dioxus_native::set_android_app(android_app);
+    main()
+}
 
 fn main() {
     // Hook panics into the logger to see them on android
@@ -67,6 +74,9 @@ fn init() {
     builder.filter(Some("jni"), LevelFilter::Off);
     builder.filter(Some("symphonia_bundle_mp3"), LevelFilter::Off);
     builder.filter(Some("symphonia_core"), LevelFilter::Off);
+    builder.filter(Some("style"), LevelFilter::Off);
+    builder.filter(Some("naga"), LevelFilter::Off);
+    builder.filter(Some("selectors"), LevelFilter::Off);
     builder.filter(Some("symphonia_core"), LevelFilter::Off);
     builder.filter(Some("symphonia_metadata"), LevelFilter::Off);
 
@@ -81,13 +91,11 @@ fn init() {
 
     info!("Starting up trackfish");
 
-    launch(SetUpRoute);
+    dioxus_native::launch(SetUpRoute as fn() -> Element);
 }
 
 #[cfg(not(target_os = "android"))]
-use dioxus::mobile::tao::window::Icon;
-
-use crate::gui::stream::get_stream_response;
+use dioxus_native::mobile::tao::window::Icon;
 
 #[cfg(not(target_os = "android"))]
 fn load_image() -> Icon {
@@ -115,7 +123,8 @@ fn init() {
         .with_title("TrackFish")
         .with_always_on_top(false)
         .with_window_icon(Some(load_image()));
-    let config = dioxus::desktop::Config::new().with_window(window);
+    let config = dioxus_native::Config::new().with_window(window);
+
     LaunchBuilder::new().with_cfg(config).launch(SetUpRoute);
 }
 
@@ -191,89 +200,89 @@ fn App() -> Element {
         handle.set(Some(res));
     });
 
-    use_effect(move || {
-        let scroll_index = VIEW.read().current.clone() as usize; 
-        eval(&format!(r#"
-            const mainview = document.getElementById("mainview");
-            const scrollWidth = mainview.scrollWidth;
-            mainview.scrollLeft = scrollWidth / 8 * {scroll_index}
-        "#));
-    });
+    // use_effect(move || {
+    //     let scroll_index = VIEW.read().current.clone() as usize; 
+    //     eval(&format!(r#"
+    //         const mainview = document.getElementById("mainview");
+    //         const scrollWidth = mainview.scrollWidth;
+    //         mainview.scrollLeft = scrollWidth / 8 * {scroll_index}
+    //     "#));
+    // });
 
-    // Attach on scroll snap change to main view
-    use_future(move || async move {
-        let mut js = eval(r#"
-            const mainview = document.getElementById("mainview");
-            mainview.addEventListener("scrollsnapchange", (event) => {
-                console.log(mainview.scrollLeft / mainview.scrollWidth * 8);
-                dioxus.send(mainview.scrollLeft / mainview.scrollWidth * 8);
-            });
-        "#);  
+    // // Attach on scroll snap change to main view
+    // use_future(move || async move {
+    //     let mut js = eval(r#"
+    //         const mainview = document.getElementById("mainview");
+    //         mainview.addEventListener("scrollsnapchange", (event) => {
+    //             console.log(mainview.scrollLeft / mainview.scrollWidth * 8);
+    //             dioxus.send(mainview.scrollLeft / mainview.scrollWidth * 8);
+    //         });
+    //     "#);  
 
-        while let Ok(res) = js.recv::<f64>().await {
-            info!("Scrolled to view {}", res.round());
-            VIEW.write().current = View::from_usize(res.round() as usize);
-        }
-    });
+    //     while let Ok(res) = js.recv::<f64>().await {
+    //         info!("Scrolled to view {}", res.round());
+    //         VIEW.write().current = View::from_usize(res.round() as usize);
+    //     }
+    // });
 
     // Watch for app focus (mobile)
-    #[cfg(target_os="android")]
-    use_wry_event_handler(|event, window| {
-        use dioxus::mobile::tao::event::{Event as WryEvent, WindowEvent};
+    // #[cfg(target_os="android")]
+    // use_wry_event_handler(|event, window| {
+    //     use tao::event::{Event as WryEvent, WindowEvent};
 
-        use crate::app::controller::{MusicMsg, send_music_msg};
+    //     use crate::app::controller::{MusicMsg, send_music_msg};
 
-        match event {
-            WryEvent::WindowEvent{ event: window_event, window_id: _, .. } => match window_event {
-                WindowEvent::Focused(f) => send_music_msg(MusicMsg::UpdateInfo),
-                _ => {}
-            },
-            _ => {},
-        }
-    });
+    //     match event {
+    //         WryEvent::WindowEvent{ event: window_event, window_id: _, .. } => match window_event {
+    //             WindowEvent::Focused(f) => send_music_msg(MusicMsg::UpdateInfo),
+    //             _ => {}
+    //         },
+    //         _ => {},
+    //     }
+    // });
 
-    use_asset_handler("trackimage", move |request, responder| {
-        let r = Response::builder().status(200).body(&[]).unwrap();
+    // use_asset_handler("trackimage", move |request, responder| {
+    //     let r = Response::builder().status(200).body(&[]).unwrap();
 
-        info!("requested track image {:?}, thread {:?}", request.uri(), std::thread::current().id());
+    //     info!("requested track image {:?}, thread {:?}", request.uri(), std::thread::current().id());
 
-        let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
-            id
-        } else {
-            responder.respond(r);
-            return;
-        };
+    //     let id = if let Ok(id) = request.uri().path().replace("/trackimage/", "").parse() {
+    //         id
+    //     } else {
+    //         responder.respond(r);
+    //         return;
+    //     };
 
-        //let track = match controller.try_read() {
-        //     Ok(ctrl) => ctrl.get_track(id).cloned(),
-        //     Err(_) => {
-        //         responder.respond(r);
-        //         return;
-        //     },
-        // };
-        let track = controller.read().get_track(id).cloned();
+    //     //let track = match controller.try_read() {
+    //     //     Ok(ctrl) => ctrl.get_track(id).cloned(),
+    //     //     Err(_) => {
+    //     //         responder.respond(r);
+    //     //         return;
+    //     //     },
+    //     // };
+    //     let track = controller.read().get_track(id).cloned();
 
-        if track.is_none() {
-            responder.respond(r);
-            return;
-        }
+    //     if track.is_none() {
+    //         responder.respond(r);
+    //         return;
+    //     }
 
-        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
-            Cursor::new(file)
-        } else {
-            responder.respond(r);
-            return;
-        };
+    //     let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
+    //         Cursor::new(file)
+    //     } else {
+    //         responder.respond(r);
+    //         return;
+    //     };
 
-        spawn(async move {
-            match get_stream_response(&mut file, &request).await {
-                Ok(response) => {
-                    responder.respond(response);
-                }
-                Err(err) => error!("Error: {:?}", err),
-            }
-        });
-    });
+    //     spawn(async move {
+    //         match get_stream_response(&mut file, &request).await {
+    //             Ok(response) => {
+    //                 responder.respond(response);
+    //             }
+    //             Err(err) => error!("Error: {:?}", err),
+    //         }
+    //     });
+    // });
 
     rsx! {
         document::Stylesheet { href: MAIN_CSS }

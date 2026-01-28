@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 
 // Reused Icons
 pub static ADD_ICON: Asset = asset!("/assets/icons/add.svg");

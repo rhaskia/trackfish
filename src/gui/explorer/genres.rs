@@ -4,7 +4,7 @@ use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW},
 };
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use super::ExplorerSwitch;
 
 #[component]
@@ -29,25 +29,23 @@ pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
 
     let mut row_height = use_signal(|| 10i32);
 
-    use_future(move || async move {
-        tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.25)).await;
+    // use_future(move || async move {
+    //     tokio::time::sleep(tokio::time::Duration::from_secs_f32(0.25)).await;
 
-        let mut js = dioxus::document::eval(r#"
-            dioxus.send(document.getElementById('genrelist).firstChild.clientHeight);
-        "#);
+    //     let mut js = dioxus::document::eval(r#"
+    //         dioxus.send(document.getElementById('genrelist).firstChild.clientHeight);
+    //     "#);
 
-        let rh_maybe = js.recv().await;
-        info!("genre rh {rh_maybe:?}");
-        if let Ok(rh) = rh_maybe {
-            row_height.set(rh);
-            info!("genre row_height found as {rh}");
-        }
-    });
+    //     let rh_maybe = js.recv().await;
+    //     info!("genre rh {rh_maybe:?}");
+    //     if let Ok(rh) = rh_maybe {
+    //         row_height.set(rh);
+    //         info!("genre row_height found as {rh}");
+    //     }
+    // });
 
     rsx! {
-        div {
-            class: "artists view",
-            id: "genreview",
+        div { class: "artists view", id: "genreview",
 
             ExplorerSwitch { controller }
 
@@ -135,8 +133,12 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
                             class: "thinitem",
                             onclick: move |_| {
                                 // Requires the scroll amount to be one less height than that of the object to actually show it
-                                let scroll_amount = (genres.read().iter().position(|a| a.0 == genre).unwrap().max(1) - 1) as i32 * row_height();
-
+                                let scroll_amount = (genres
+                                    .read()
+                                    .iter()
+                                    .position(|a| a.0 == genre)
+                                    .unwrap()
+                                    .max(1) - 1) as i32 * row_height();
                                 document::eval(
                                     &format!(
                                         "document.getElementById('genrelist').scrollTop = {};",

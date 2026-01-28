@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 
 #[component]
 pub fn Confirmation(

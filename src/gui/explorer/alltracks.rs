@@ -2,8 +2,8 @@ use super::TracksSearch;
 use super::{View, VIEW};
 use crate::app::MusicController;
 use crate::gui::icons::*;
-use dioxus::document::eval;
-use dioxus::prelude::*;
+// use dioxus::document::eval;
+use dioxus_native::prelude::*;
 use log::info;
 
 fn display_time(total: u64) -> String {
@@ -36,48 +36,48 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
 
-    use_future(move || async move {
-        let mut js = eval(
-            r#"
-            new ResizeObserver(() => {
-                let container = document.getElementById("alltrackslist");
-                dioxus.send(container.offsetHeight);
-            }).observe(document.getElementById("alltrackslist"));
-        "#,
-        );
+    // use_future(move || async move {
+    //     let mut js = eval(
+    //         r#"
+    //         new ResizeObserver(() => {
+    //             let container = document.getElementById("alltrackslist");
+    //             dioxus.send(container.offsetHeight);
+    //         }).observe(document.getElementById("alltrackslist"));
+    //     "#,
+    //     );
 
-        loop {
-            let height = js.recv::<usize>().await;
-            if let Ok(height) = height {
-                window_size.set(height);
-                info!("window height {height}");
-            }
-        }
-    });
+    //     loop {
+    //         let height = js.recv::<usize>().await;
+    //         if let Ok(height) = height {
+    //             window_size.set(height);
+    //             info!("window height {height}");
+    //         }
+    //     }
+    // });
 
-    use_effect(move || {
-        let mut js = eval(
-            r#"
-            let container = document.getElementById('alltrackslist');
-            container.addEventListener('scroll', function(event) {
-                dioxus.send(container.scrollTop);
-            });
-        "#,
-        );
+    // use_effect(move || {
+    //     let mut js = eval(
+    //         r#"
+    //         let container = document.getElementById('alltrackslist');
+    //         container.addEventListener('scroll', function(event) {
+    //             dioxus.send(container.scrollTop);
+    //         });
+    //     "#,
+    //     );
 
-        spawn(async move {
-            loop {
-                let scroll_top = js.recv::<usize>().await;
-                if let Ok(scroll_top) = scroll_top {
-                    let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
-                    if new_index != start_index() {
-                        start_index.set(new_index);
-                        info!("{start_index:?}..{end_index:?}");
-                    }
-                }
-            }
-        });
-    });
+    //     spawn(async move {
+    //         loop {
+    //             let scroll_top = js.recv::<usize>().await;
+    //             if let Ok(scroll_top) = scroll_top {
+    //                 let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
+    //                 if new_index != start_index() {
+    //                     start_index.set(new_index);
+    //                     info!("{start_index:?}..{end_index:?}");
+    //                 }
+    //             }
+    //         }
+    //     });
+    // });
 
     rsx! {
         div { id: "alltracksview", class: "alltracksview view",

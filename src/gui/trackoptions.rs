@@ -3,7 +3,7 @@ use crate::gui::EDITING_TAG;
 
 use super::icons::*;
 use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW};
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use super::MOBILE;
 
 #[component]

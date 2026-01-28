@@ -5,7 +5,7 @@ pub mod library;
 pub mod playlists;
 pub mod queuelist;
 pub mod settings;
-pub mod stream;
+// pub mod stream;
 pub mod tageditor;
 pub mod trackoptions;
 pub mod trackview;
@@ -21,7 +21,7 @@ use crate::app::track::get_track_image;
 use crate::analysis::generate_track_info;
 use crate::database::save_track_weights;
 
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use log::info;
 use once_cell::sync::Lazy;
 use rusqlite::{Rows, params};
@@ -231,7 +231,7 @@ pub fn init_tracks() -> JoinHandle<()> {
                 let hash = row.get(0).unwrap();
                 match row_to_weights(&row) {
                     Ok(row) => { weights.insert(hash, row); },
-                    Err(err) => error!("Error retrieving data: {err}"),
+                    Err(err) => log::error!("Error retrieving data: {err}"),
                 } 
             }
                     info!("taken {:?}", started.elapsed());

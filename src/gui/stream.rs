@@ -4,7 +4,7 @@ use std::io::SeekFrom;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 #[cfg(not(feature = "mobile"))]
-use dioxus::desktop::AssetRequest;
+use dioxus_native::desktop::AssetRequest;
 #[cfg(feature = "mobile")]
 use dioxus::mobile::AssetRequest;
 

@@ -13,8 +13,8 @@ pub use search::{SearchView, TracksSearch};
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::utils::similar;
 use crate::app::MusicController;
-use dioxus::document::eval;
-use dioxus::prelude::*;
+// use dioxus::document::eval;
+use dioxus_native::prelude::*;
 use log::info;
 use rand::Rng;
 
@@ -107,55 +107,55 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
 
     // Watches the list height
-    use_future(move || async move {
-        let mut js = eval(&format!(
-            r#"
-            new ResizeObserver(() => {{
-                let container = document.getElementById("tracksview-{0}");
-                dioxus.send(container.offsetHeight);
-            }}).observe(document.getElementById("tracksview-{0}"));
-        "#,
-            name()
-        ));
+    // use_future(move || async move {
+    //     let mut js = eval(&format!(
+    //         r#"
+    //         new ResizeObserver(() => {{
+    //             let container = document.getElementById("tracksview-{0}");
+    //             dioxus.send(container.offsetHeight);
+    //         }}).observe(document.getElementById("tracksview-{0}"));
+    //     "#,
+    //         name()
+    //     ));
 
-        loop {
-            let height = js.recv::<usize>().await;
-            if let Ok(height) = height {
-                if height == 0 {
-                    continue;
-                } // Stops app freezing on opening a different view
-                window_size.set(height);
-                rows_in_view.set((height / ROW_HEIGHT) + BUFFER_ROWS);
-                info!("Window Height {height}");
-                info!("ROWS: {}", window_size() / ROW_HEIGHT);
-            }
-        }
-    });
+    //     loop {
+    //         let height = js.recv::<usize>().await;
+    //         if let Ok(height) = height {
+    //             if height == 0 {
+    //                 continue;
+    //             } // Stops app freezing on opening a different view
+    //             window_size.set(height);
+    //             rows_in_view.set((height / ROW_HEIGHT) + BUFFER_ROWS);
+    //             info!("Window Height {height}");
+    //             info!("ROWS: {}", window_size() / ROW_HEIGHT);
+    //         }
+    //     }
+    // });
 
-    // Watches the current scroll amount in the list
-    use_effect(move || {
-        let mut js = eval(&format!(
-            r#"
-            let container = document.getElementById('tracksview-{0}');
-            container.addEventListener('scroll', function(event) {{
-                dioxus.send(container.scrollTop);
-            }});
-            "#,
-            name()
-        ));
+    // // Watches the current scroll amount in the list
+    // use_effect(move || {
+    //     let mut js = eval(&format!(
+    //         r#"
+    //         let container = document.getElementById('tracksview-{0}');
+    //         container.addEventListener('scroll', function(event) {{
+    //             dioxus.send(container.scrollTop);
+    //         }});
+    //         "#,
+    //         name()
+    //     ));
 
-        spawn(async move {
-            loop {
-                let scroll_top = js.recv::<usize>().await;
-                if let Ok(scroll_top) = scroll_top {
-                    let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
-                    if new_index != start_index() {
-                        start_index.set(new_index);
-                    }
-                }
-            }
-        });
-    });
+    //     spawn(async move {
+    //         loop {
+    //             let scroll_top = js.recv::<usize>().await;
+    //             if let Ok(scroll_top) = scroll_top {
+    //                 let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
+    //                 if new_index != start_index() {
+    //                     start_index.set(new_index);
+    //                 }
+    //             }
+    //         }
+    //     });
+    // });
 
     rsx! {
         // View header

@@ -4,7 +4,7 @@ use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW},
 };
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use super::ExplorerSwitch;
 
 #[component]
@@ -28,9 +28,7 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
     };
 
     rsx! {
-        div {
-            id: "artistsview",
-            class: "artists view",
+        div { id: "artistsview", class: "artists view",
 
             ExplorerSwitch { controller }
 
@@ -121,8 +119,12 @@ pub fn ArtistsSearch(
                             class: "thinitem",
                             onclick: move |_| {
                                 // Requires the scroll amount to be one less height than that of the object to actually show it
-                                let scroll_amount = (artists.read().iter().position(|a| a.1.0 == artist).unwrap().max(1) - 1) * row_height;
-
+                                let scroll_amount = (artists
+                                    .read()
+                                    .iter()
+                                    .position(|a| a.1.0 == artist)
+                                    .unwrap()
+                                    .max(1) - 1) * row_height;
                                 document::eval(
                                     &format!(
                                         "document.getElementById('artistlist').scrollTop = {};",

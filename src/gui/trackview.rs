@@ -1,7 +1,7 @@
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::MusicController;
 use crate::gui::icons::*;
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use log::info;
 use std::time::Duration;
 use tokio::time;

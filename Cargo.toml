@@ -8,7 +8,13 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { git="https://github.com/rhaskia/dioxus/", branch = "refcellalreadyborrowed-fix", features = ["mobile", "hooks", "html", "signals"] }
+dioxus-native = { git="https://github.com/DioxusLabs/blitz/", default-features = false, features = ["svg",
+  "system-fonts",
+  "net",
+  "clipboard",
+  "prelude",
+  "skia",
+  "hot-reload"] }
 id3 = "1.15.0"
 rand = "0.8"
 tokio = "1.49"
@@ -43,6 +49,7 @@ tracing-android = "0.2.0"
 android_logger = "0.15"
 crossbow = "0.2.3"
 crossbow-android = "0.2.3"
+android-activity = { version = "0.6.0", features = ["native-activity"] }
 
 # Desktop only dependencies
 [target.'cfg(not(target_os = "android"))'.dependencies]
@@ -50,10 +57,10 @@ rfd =  "=0.12.0"
 minipng = "1.0.0"
 
 [features]
-default = ["dioxus/desktop"]
-web = ["dioxus/web"]
-desktop = ["dioxus/desktop", "aubio/pkg-config"]
-mobile = ["dioxus/mobile", "aubio/bindgen"]
+# default = ["dioxus/desktop"]
+# web = ["dioxus/web"]
+desktop = ["aubio/pkg-config"]
+mobile = [ "aubio/bindgen"]
 
 [profile]
 [profile.dev]

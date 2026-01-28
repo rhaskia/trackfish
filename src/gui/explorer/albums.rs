@@ -4,8 +4,8 @@ use crate::{
     app::{MusicController, utils::similar},
     gui::{icons::*, View, VIEW},
 };
-use dioxus::document::eval;
-use dioxus::prelude::*;
+// use dioxus::document::eval;
+use dioxus_native::prelude::*;
 use super::ExplorerSwitch;
 
 #[component]
@@ -42,57 +42,57 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
     });
 
     // List width and height watcher
-    use_effect(move || {
-        let mut js = eval(
-            r#"
-            new ResizeObserver(() => {
-                let container = document.getElementById("albumlist");
-                console.log([container.offsetHeight, container.offsetWidth]);
-                dioxus.send([container.offsetHeight, container.offsetWidth]);
-            }).observe(document.getElementById("albumlist"));
-        "#,
-        );
+    // use_effect(move || {
+    //     let mut js = eval(
+    //         r#"
+    //         new ResizeObserver(() => {
+    //             let container = document.getElementById("albumlist");
+    //             console.log([container.offsetHeight, container.offsetWidth]);
+    //             dioxus.send([container.offsetHeight, container.offsetWidth]);
+    //         }).observe(document.getElementById("albumlist"));
+    //     "#,
+    //     );
 
-        spawn(async move {
-            loop {
-                let size = js.recv::<(usize, usize)>().await;
+    //     spawn(async move {
+    //         loop {
+    //             let size = js.recv::<(usize, usize)>().await;
 
-                if let Ok((height, width)) = size {
-                    if height == 0 || width == 0 {
-                        continue;
-                    }
-                    window_size.set(height);
-                    items_per_row.set((width / 150).max(3));
-                    let item_width = (width - 10) / items_per_row() - 5;
-                    row_height.set(item_width + 48);
-                }
-            }
-        });
-    });
+    //             if let Ok((height, width)) = size {
+    //                 if height == 0 || width == 0 {
+    //                     continue;
+    //                 }
+    //                 window_size.set(height);
+    //                 items_per_row.set((width / 150).max(3));
+    //                 let item_width = (width - 10) / items_per_row() - 5;
+    //                 row_height.set(item_width + 48);
+    //             }
+    //         }
+    //     });
+    // });
 
-    // Watches for scroll inside list
-    use_effect(move || {
-        let mut js = eval(
-            r#"
-            let container = document.getElementById('albumlist');
-            container.addEventListener('scroll', function(event) {
-                dioxus.send(container.scrollTop);
-            });
-        "#,
-        );
+    // // Watches for scroll inside list
+    // use_effect(move || {
+    //     let mut js = eval(
+    //         r#"
+    //         let container = document.getElementById('albumlist');
+    //         container.addEventListener('scroll', function(event) {
+    //             dioxus.send(container.scrollTop);
+    //         });
+    //     "#,
+    //     );
 
-        spawn(async move {
-            loop {
-                let scroll_top = js.recv::<usize>().await;
-                if let Ok(scroll_top) = scroll_top {
-                    let new_index = (scroll_top as f32 / row_height() as f32).floor() as usize;
-                    if new_index != start_index() {
-                        start_index.set((new_index.max(1) - 1) * items_per_row());
-                    }
-                }
-            }
-        });
-    });
+    //     spawn(async move {
+    //         loop {
+    //             let scroll_top = js.recv::<usize>().await;
+    //             if let Ok(scroll_top) = scroll_top {
+    //                 let new_index = (scroll_top as f32 / row_height() as f32).floor() as usize;
+    //                 if new_index != start_index() {
+    //                     start_index.set((new_index.max(1) - 1) * items_per_row());
+    //                 }
+    //             }
+    //         }
+    //     });
+    // });
 
     rsx! {
         div {
@@ -107,7 +107,10 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
             div {
                 class: "searchbar",
-                onclick: move |e| { is_searching.set(true); e.stop_propagation()},
+                onclick: move |e| {
+                    is_searching.set(true);
+                    e.stop_propagation()
+                },
                 display: if VIEW.read().album.is_some() { "none" },
                 img { src: SEARCH_ICON }
                 div { class: "pseudoinput" }
@@ -155,7 +158,13 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
             }
 
             if is_searching() {
-                AlbumsSearch { controller, is_searching, albums, row_height, items_per_row }
+                AlbumsSearch {
+                    controller,
+                    is_searching,
+                    albums,
+                    row_height,
+                    items_per_row,
+                }
             }
         }
     }
@@ -213,7 +222,11 @@ pub fn AlbumsSearch(
                             onclick: {
                                 let album = album.clone();
                                 move |_| {
-                                    let index = albums.read().iter().position(|a| similar(&a.0, &album)).unwrap_or(0);
+                                    let index = albums
+                                        .read()
+                                        .iter()
+                                        .position(|a| similar(&a.0, &album))
+                                        .unwrap_or(0);
                                     let row = index / items_per_row();
                                     let scroll_amount = row * row_height();
                                     document::eval(
@@ -225,7 +238,10 @@ pub fn AlbumsSearch(
                                 }
                             },
 
-                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums", loading: "lazy" }
+                            img {
+                                src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums",
+                                loading: "lazy",
+                            }
                             span { "{album}" }
                         }
                     }

@@ -5,7 +5,7 @@ use super::{Confirmation, View, ADD_TO_PLAYLIST, VIEW};
 use crate::app::playlist::Playlist;
 use crate::app::autoplaylist::AutoPlaylist;
 use crate::app::MusicController;
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use autoplaylist::{AutoPlaylistView, AutoPlaylistOptions, AutoPlaylistRename};
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
@@ -27,9 +27,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
     let renaming_autoplaylist = use_signal(|| None);
 
     rsx! {
-        div {
-            class: "playlistsview view",
-            id: "playlistsview",
+        div { class: "playlistsview view", id: "playlistsview",
 
             ExplorerSwitch { controller }
 
@@ -38,9 +36,13 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
                 open: true,
 
-                summary { 
-                    "Playlists" 
-                    button { class: "svg-button", onclick: move |_| *CREATING_PLAYLIST.write() = true, background_image: "url({ADD_ICON})" }
+                summary {
+                    "Playlists"
+                    button {
+                        class: "svg-button",
+                        onclick: move |_| *CREATING_PLAYLIST.write() = true,
+                        background_image: "url({ADD_ICON})",
+                    }
                 }
                 hr {}
 
@@ -97,14 +99,18 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 TracksView { controller, viewtype: View::Playlists }
             }
 
-            details { 
+            details {
                 padding: "10px",
                 hidden: VIEW.read().playlist.is_some() || VIEW.read().autoplaylist.is_some(),
                 open: "true",
 
-                summary { 
+                summary {
                     "Autoplaylists"
-                    button { class: "svg-button", onclick: move |_| *CREATING_AUTOPLAYLIST.write() = true, background_image: "url({ADD_ICON})" }
+                    button {
+                        class: "svg-button",
+                        onclick: move |_| *CREATING_AUTOPLAYLIST.write() = true,
+                        background_image: "url({ADD_ICON})",
+                    }
                 }
                 hr {}
 

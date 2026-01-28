@@ -1,6 +1,6 @@
 use super::icons::*;
 use crate::app::MusicController;
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use log::info;
 use std::fmt::{Display, Formatter};
 

@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus_native::prelude::*;
 use crate::app::MusicController;
 use crate::app::autoplaylist::Condition;
 use crate::app::autoplaylist::{StrIdentifier, NumIdentifier, Identifier, StrOperator};
@@ -20,26 +20,30 @@ pub fn AutoPlaylistView(controller: SyncSignal<MusicController>) -> Element {
                 src: BACK_ICON,
             }
 
-            h3 {
-                "{controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].name}"
-            }
+            h3 { "{controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].name}" }
 
             img { onclick: move |_| explorer_settings.set(true), src: VERT_ICON }
         }
 
-        div {
-            class: "tracksview",
+        div { class: "tracksview",
 
             ConditionView { controller, path: base_path }
-            div {
-                class: "autoplaylist-menu",
-                button { 
-                    onclick: move |_| tracks.set(controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions.qualify_tracks(&controller.read().all_tracks)),
+            div { class: "autoplaylist-menu",
+                button {
+                    onclick: move |_| {
+                        tracks
+                            .set(
+                                controller
+                                    .read()
+                                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                                    .conditions
+                                    .qualify_tracks(&controller.read().all_tracks),
+                            )
+                    },
                     "Refresh"
                 }
 
-                button { 
-                    onclick: move |_| controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].save(),
+                button { onclick: move |_| controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].save(),
                     "Save"
                 }
             }
@@ -49,7 +53,13 @@ pub fn AutoPlaylistView(controller: SyncSignal<MusicController>) -> Element {
                     class: "trackitem",
                     onclick: move |_| {
                         VIEW.write().open(View::Song);
-                        controller.write().play_autoplaylist_at(tracks(), VIEW.read().autoplaylist.unwrap(), tracks.read()[i]);
+                        controller
+                            .write()
+                            .play_autoplaylist_at(
+                                tracks(),
+                                VIEW.read().autoplaylist.unwrap(),
+                                tracks.read()[i],
+                            );
                     },
 
                     img {
@@ -72,7 +82,6 @@ pub fn AutoPlaylistView(controller: SyncSignal<MusicController>) -> Element {
                         src: VERT_ICON,
                     }
                 }
-
             }
         }
     }
@@ -82,34 +91,53 @@ pub fn AutoPlaylistView(controller: SyncSignal<MusicController>) -> Element {
 pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) -> Element {
     let path = use_signal(|| path);
     rsx!{
-        match &controller.read().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()] {
-            Condition::All(conditions) => rsx!{
-                div {
-                    class: "condition condition-all",
-                    div {
-                        class: "condition-group-toggle",
-                        button {
-                            class: "current-conditon-toggle toggle-left",
-                            "All"
-                        }
+        match &controller
+            .read()
+            .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+            .conditions[path()]
+        {
+            Condition::All(conditions) => rsx! {
+                div { class: "condition condition-all",
+                    div { class: "condition-group-toggle",
+                        button { class: "current-conditon-toggle toggle-left", "All" }
 
                         button {
                             class: "toggle-right",
-                            onclick: move |_| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()].toggle_group(),
+                            onclick: move |_| {
+                                controller
+                                    .write()
+                                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                                    .conditions[path()]
+                                    .toggle_group()
+                            },
                             "Any"
                         }
 
                         AddCondition { controller, path: path() }
 
                         if !path.read().is_empty() {
-                            RemoveCondition { controller, path: { let mut path = path(); path.pop(); path }, i: path().pop().unwrap() }
+                            RemoveCondition {
+                                controller,
+                                path: {
+                                    let mut path = path();
+                                    path.pop();
+                                    path
+                                },
+                                i: path().pop().unwrap(),
+                            }
                         }
                     }
 
                     for i in 0..conditions.len() {
-                        div {
-                            class: "condition-slot",
-                            ConditionView { controller, path: { let mut p = path(); p.push(i); p } }
+                        div { class: "condition-slot",
+                            ConditionView {
+                                controller,
+                                path: {
+                                    let mut p = path();
+                                    p.push(i);
+                                    p
+                                },
+                            }
                             if !conditions[i].is_all_or_any() {
                                 RemoveCondition { controller, path: path(), i }
                             }
@@ -118,33 +146,48 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
 
                 }
             },
-            Condition::Any(conditions) => rsx!{
-                div {
-                    class: "condition condition-any",
-                    div {
-                        class: "condition-group-toggle",
+            Condition::Any(conditions) => rsx! {
+                div { class: "condition condition-any",
+                    div { class: "condition-group-toggle",
                         button {
                             class: "toggle-left",
-                            onclick: move |_| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()].toggle_group(),
+                            onclick: move |_| {
+                                controller
+                                    .write()
+                                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                                    .conditions[path()]
+                                    .toggle_group()
+                            },
                             "All"
                         }
 
-                        button {
-                            class: "current-conditon-toggle toggle-right",
-                            "Any"
-                        }
+                        button { class: "current-conditon-toggle toggle-right", "Any" }
 
                         AddCondition { controller, path: path() }
 
                         if !path.read().is_empty() {
-                            RemoveCondition { controller, path: { let mut path = path(); path.pop(); path }, i: path().pop().unwrap() }
+                            RemoveCondition {
+                                controller,
+                                path: {
+                                    let mut path = path();
+                                    path.pop();
+                                    path
+                                },
+                                i: path().pop().unwrap(),
+                            }
                         }
                     }
 
                     for i in 0..conditions.len() {
-                        div {
-                            class: "condition-slot",
-                            ConditionView { controller, path: { let mut p = path(); p.push(i); p } }
+                        div { class: "condition-slot",
+                            ConditionView {
+                                controller,
+                                path: {
+                                    let mut p = path();
+                                    p.push(i);
+                                    p
+                                },
+                            }
                             if !conditions[i].is_all_or_any() {
                                 RemoveCondition { controller, path: path(), i }
                             }
@@ -153,11 +196,17 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
 
                 }
             },
-            Condition::StrCondition(ident, op, value) => rsx!{
+            Condition::StrCondition(ident, op, value) => rsx! {
                 IdentSelect { controller, ident: Identifier::Str(*ident), path: path() }
 
                 select {
-                    onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()].set_op(e.value()),
+                    onchange: move |e| {
+                        controller
+                            .write()
+                            .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                            .conditions[path()]
+                            .set_op(e.value())
+                    },
                     value: "{op}",
                     option { "Is" }
                     option { "Has" }
@@ -166,13 +215,24 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                     option { "Missing" }
                 }
 
-                ValueInput { controller, ident: *ident, value, path: path() }
+                ValueInput {
+                    controller,
+                    ident: *ident,
+                    value,
+                    path: path(),
+                }
             },
-            Condition::NumCondition(ident, op, value) => rsx!{
+            Condition::NumCondition(ident, op, value) => rsx! {
                 IdentSelect { controller, ident: Identifier::Num(*ident), path: path() }
 
                 select {
-                    onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()].set_op(e.value()),
+                    onchange: move |e| {
+                        controller
+                            .write()
+                            .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                            .conditions[path()]
+                            .set_op(e.value())
+                    },
                     value: "{op}",
                     option { "Greater" }
                     option { "Lesser" }
@@ -181,13 +241,24 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                     option { "Missing" }
                 }
 
-                NumInput { controller, ident: *ident, value, path: path() }
+                NumInput {
+                    controller,
+                    ident: *ident,
+                    value,
+                    path: path(),
+                }
             },
-            Condition::TimeCondition(ident, op, _) => rsx!{
+            Condition::TimeCondition(ident, op, _) => rsx! {
                 IdentSelect { controller, ident: Identifier::Time(*ident), path: path() }
 
                 select {
-                    onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path()].set_op(e.value()),
+                    onchange: move |e| {
+                        controller
+                            .write()
+                            .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                            .conditions[path()]
+                            .set_op(e.value())
+                    },
                     value: "{op}",
                     option { "Greater" }
                     option { "Lesser" }
@@ -196,10 +267,8 @@ pub fn ConditionView(controller: SyncSignal<MusicController>, path: Vec<usize>) 
                     option { "Missing" }
                 }
 
-                input {
-                    r#type: "number",
-                }
-                
+                input { r#type: "number" }
+
                 select {
                     option { "Seconds" }
                     option { "Minutes" }
@@ -226,9 +295,11 @@ pub fn AddCondition(controller: SyncSignal<MusicController>, path: Vec<usize>) -
             img { src: ADD_ICON }
             "Group"
         }
-        button { 
+        button {
             class: "condition-add",
-            onclick: move |_| add_condition(Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, String::new())),
+            onclick: move |_| add_condition(
+                Condition::StrCondition(StrIdentifier::Title, StrOperator::Is, String::new()),
+            ),
             img { src: ADD_ICON }
             "Rule"
         }
@@ -240,7 +311,13 @@ pub fn RemoveCondition(controller: SyncSignal<MusicController>, path: Vec<usize>
     rsx!{
         button {
             class: "svg-button",
-            onclick: move |_| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].remove(i),
+            onclick: move |_| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .remove(i)
+            },
             style: "background: url({crate::gui::icons::DELETE_ICON})",
             width: "24px",
             height: "24px",
@@ -254,8 +331,14 @@ pub fn RemoveCondition(controller: SyncSignal<MusicController>, path: Vec<usize>
 #[component]
 pub fn StrSelect(controller: SyncSignal<MusicController>, ident: StrIdentifier, path: Vec<usize>) -> Element {
     rsx!{
-        select { 
-            onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_ident(e.value()),
+        select {
+            onchange: move |e| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .set_ident(e.value())
+            },
             value: "{ident}",
             option { "Title" }
             option { "Artist" }
@@ -268,8 +351,14 @@ pub fn StrSelect(controller: SyncSignal<MusicController>, ident: StrIdentifier, 
 #[component]
 pub fn NumSelect(controller: SyncSignal<MusicController>, ident: NumIdentifier, path: Vec<usize>) -> Element {
     rsx!{
-        select { 
-            onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_ident(e.value()),
+        select {
+            onchange: move |e| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .set_ident(e.value())
+            },
             value: "{ident}",
             option { "Year" }
             option { "Length" }
@@ -281,8 +370,14 @@ pub fn NumSelect(controller: SyncSignal<MusicController>, ident: NumIdentifier, 
 #[component]
 pub fn IdentSelect(controller: SyncSignal<MusicController>, ident: Identifier, path: Vec<usize>) -> Element {
     rsx!{
-        select { 
-            onchange: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_ident(e.value()),
+        select {
+            onchange: move |e| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .set_ident(e.value())
+            },
             value: "{ident}",
             option { "Title" }
             option { "Artist" }
@@ -299,8 +394,14 @@ pub fn IdentSelect(controller: SyncSignal<MusicController>, ident: Identifier, p
 pub fn ValueInput(controller: SyncSignal<MusicController>, ident: StrIdentifier, value: String, path: Vec<usize>) -> Element {
     rsx!{
         input {
-            oninput: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_value(e.value()),
-            value: "{value}"
+            oninput: move |e| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .set_value(e.value())
+            },
+            value: "{value}",
         }
     }
 }
@@ -310,8 +411,14 @@ pub fn NumInput(controller: SyncSignal<MusicController>, ident: NumIdentifier, v
     rsx!{
         input {
             r#type: "number",
-            oninput: move |e| controller.write().autoplaylists[VIEW.read().autoplaylist.unwrap()].conditions[path.clone()].set_value(e.value()),
-            value: "{value}"
+            oninput: move |e| {
+                controller
+                    .write()
+                    .autoplaylists[VIEW.read().autoplaylist.unwrap()]
+                    .conditions[path.clone()]
+                    .set_value(e.value())
+            },
+            value: "{value}",
         }
     }
 }
@@ -324,7 +431,9 @@ pub fn AutoPlaylistOptions(
     renaming_autoplaylist: Signal<Option<usize>>,
 ) -> Element {
     rsx! {
-        div { class: "optionsbg", onclick: move |_| autoplaylist_options.set(None),
+        div {
+            class: "optionsbg",
+            onclick: move |_| autoplaylist_options.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 50px;",
                 h3 { "{controller.read().autoplaylists[autoplaylist_options().unwrap()].name}" }
                 button { onclick: move |_| renaming_autoplaylist.set(autoplaylist_options()),
@@ -348,7 +457,9 @@ pub fn AutoPlaylistRename(
 ) -> Element {
     let mut new_name = use_signal(String::new);
     rsx! {
-        div { class: "optionsbg", onclick: move |_| renaming_autoplaylist.set(None),
+        div {
+            class: "optionsbg",
+            onclick: move |_| renaming_autoplaylist.set(None),
             div { class: "playlistadder",
                 input {
                     r#type: "text",
@@ -358,7 +469,9 @@ pub fn AutoPlaylistRename(
 
                 button {
                     onclick: move |_| {
-                        controller.write().rename_autoplaylist(renaming_autoplaylist().unwrap(), new_name());
+                        controller
+                            .write()
+                            .rename_autoplaylist(renaming_autoplaylist().unwrap(), new_name());
                     },
                     "Rename"
                 }

@@ -1,8 +1,8 @@
 use super::icons::*;
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::MusicController;
-use dioxus::document::eval;
-use dioxus::prelude::*;
+// use dioxus::document::eval;
+use dioxus_native::prelude::*;
 use std::time::Duration;
 
 #[component]
@@ -20,91 +20,91 @@ pub fn QueueList(controller: SyncSignal<MusicController>) -> Element {
         selected_queue.set(controller.read().current_queue);
     });
 
-    use_future(move || async move {
-        // Listens to js for mouse movement over whole document
-        let mut js = eval(
-            r#"
-            document.addEventListener('mousemove', function(event) {
-                dioxus.send(event.clientY);
-            });
-        "#,
-        );
+    // use_future(move || async move {
+    //     // Listens to js for mouse movement over whole document
+    //     let mut js = eval(
+    //         r#"
+    //         document.addEventListener('mousemove', function(event) {
+    //             dioxus.send(event.clientY);
+    //         });
+    //     "#,
+    //     );
 
-        // Calculates if the mouse if hovering over a specific track in queue
-        // Could use something better than crude calculations
-        loop {
-            let position = js.recv::<i32>().await;
-            if let Ok(pos) = position {
-                mouse_y.set(pos as f32);
-                hovering_over
-                    .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
-            }
-        }
-    });
+    //     // Calculates if the mouse if hovering over a specific track in queue
+    //     // Could use something better than crude calculations
+    //     loop {
+    //         let position = js.recv::<i32>().await;
+    //         if let Ok(pos) = position {
+    //             mouse_y.set(pos as f32);
+    //             hovering_over
+    //                 .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
+    //         }
+    //     }
+    // });
 
     // Watches for resize or mouse move over the queuelist
     // This makes sure that we have the current queue height whenever a calculation is needed to be made
-    use_future(move || async move {
-        let mut js = eval(
-            r#"
-            document.addEventListener('mousemove', function(event) {
-                let container = document.getElementById('queuelist');
-                dioxus.send(container.offsetHeight);
-            });
-            addEventListener('resize', function(event) {
-                let container = document.getElementById('queuelist');
-                dioxus.send(container.offsetHeight);
-            });
-        "#,
-        );
+    // use_future(move || async move {
+    //     let mut js = eval(
+    //         r#"
+    //         document.addEventListener('mousemove', function(event) {
+    //             let container = document.getElementById('queuelist');
+    //             dioxus.send(container.offsetHeight);
+    //         });
+    //         addEventListener('resize', function(event) {
+    //             let container = document.getElementById('queuelist');
+    //             dioxus.send(container.offsetHeight);
+    //         });
+    //     "#,
+    //     );
 
-        loop {
-            let height = js.recv::<i32>().await;
-            if let Ok(height) = height {
-                queue_height.set(height as f32);
-            }
-        }
-    });
+    //     loop {
+    //         let height = js.recv::<i32>().await;
+    //         if let Ok(height) = height {
+    //             queue_height.set(height as f32);
+    //         }
+    //     }
+    // });
 
-    // Scroll up or down if mouse is hovering close to edge of queue top or bottom
-    use_future(move || async move {
-        loop {
-            if mouse_y() < 100.0 && current_dragging.read().is_some() {
-                eval("document.getElementById('queuelist').scrollBy(0, -10)");
-            }
-            if mouse_y() > queue_height() && current_dragging.read().is_some() {
-                eval("document.getElementById('queuelist').scrollBy(0, 10)");
-            }
-            tokio::time::sleep(Duration::from_millis(25)).await;
-        }
-    });
+    // // Scroll up or down if mouse is hovering close to edge of queue top or bottom
+    // use_future(move || async move {
+    //     loop {
+    //         if mouse_y() < 100.0 && current_dragging.read().is_some() {
+    //             eval("document.getElementById('queuelist').scrollBy(0, -10)");
+    //         }
+    //         if mouse_y() > queue_height() && current_dragging.read().is_some() {
+    //             eval("document.getElementById('queuelist').scrollBy(0, 10)");
+    //         }
+    //         tokio::time::sleep(Duration::from_millis(25)).await;
+    //     }
+    // });
 
     // Sends the amount scrolled from top of queue on user or device scroll
-    use_future(move || async move {
-        let mut js = eval(
-            r#"
-            let container = document.getElementById('queuelist');
-            container.addEventListener('scroll', function(event) {
-                console.log("scroll");
-                dioxus.send(event.target.scrollTop);
-            });
-            addEventListener("scroll", (event) => {
-                dioxus.send(container.scrollTop);
-            });
-        "#,
-        );
+    // use_future(move || async move {
+    //     let mut js = eval(
+    //         r#"
+    //         let container = document.getElementById('queuelist');
+    //         container.addEventListener('scroll', function(event) {
+    //             console.log("scroll");
+    //             dioxus.send(event.target.scrollTop);
+    //         });
+    //         addEventListener("scroll", (event) => {
+    //             dioxus.send(container.scrollTop);
+    //         });
+    //     "#,
+    //     );
 
-        // Calculates if hovering over a item in queue
-        // Needs to be moved into function or joined with other future
-        loop {
-            let scroll = js.recv::<i32>().await;
-            if let Ok(scroll) = scroll {
-                scroll_y.set(scroll as f32);
-                hovering_over
-                    .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
-            }
-        }
-    });
+    //     // Calculates if hovering over a item in queue
+    //     // Needs to be moved into function or joined with other future
+    //     loop {
+    //         let scroll = js.recv::<i32>().await;
+    //         if let Ok(scroll) = scroll {
+    //             scroll_y.set(scroll as f32);
+    //             hovering_over
+    //                 .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
+    //         }
+    //     }
+    // });
 
     // Callback for moving item into other place in queue
     let move_queue_item = move |_: Event<MouseData>| {
