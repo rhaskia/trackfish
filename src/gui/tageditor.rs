@@ -1,10 +1,11 @@
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use crate::app::MusicController;
 use crate::gui::EDITING_TAG;
 use crate::app::track::Track;
 
 #[component]
-pub fn TagEditor(controller: SyncSignal<MusicController>) -> Element {
+pub fn TagEditor(controller: SyncStore<MusicController>) -> Element {
     let mut tag = use_signal(Track::default);
 
     use_effect(move || {

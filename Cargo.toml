@@ -8,7 +8,7 @@ name = "trackfish"
 edition = "2021"
 
 [dependencies]
-dioxus = { git="https://github.com/rhaskia/dioxus/", branch = "refcellalreadyborrowed-fix", features = ["mobile", "hooks", "html", "signals"] }
+dioxus = { git="https://github.com/DioxusLabs/dioxus", features = ["mobile", "hooks", "html", "signals"] }
 id3 = "1.15.0"
 rand = "0.8"
 tokio = "1.49"
@@ -41,8 +41,6 @@ jni = "0.21.1"
 ndk-context = "0.1.1"
 tracing-android = "0.2.0"
 android_logger = "0.15"
-crossbow = "0.2.3"
-crossbow-android = "0.2.3"
 
 # Desktop only dependencies
 [target.'cfg(not(target_os = "android"))'.dependencies]

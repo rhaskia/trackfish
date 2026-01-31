@@ -1,10 +1,12 @@
+use crate::app::controller::MusicControllerStoreExt;
 use crate::app::utils::strip_unnessecary;
 use crate::app::MusicController;
-use crate::gui::{icons::*, View, VIEW};
+use crate::gui::{icons::*, View, VIEW, get_album_artwork};
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 
 #[component]
-pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
+pub fn SearchView(controller: SyncStore<MusicController>) -> Element {
     let mut search = use_signal(String::new);
     let clean_search = use_memo(move || strip_unnessecary(&search.read()));
 
@@ -12,9 +14,9 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
         if clean_search().len() < 2 {
             Vec::new()
         } else {
-            (0..controller.read().all_tracks.len())
+            (0..controller.all_tracks().read().len())
                 .filter(|t| {
-                    strip_unnessecary(&controller.read().all_tracks[*t].title)
+                    strip_unnessecary(&controller.all_tracks().read().get(*t).unwrap().title)
                         .starts_with(&clean_search())
                 })
                 .collect::<Vec<usize>>()
@@ -26,10 +28,9 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
             Vec::new()
         } else {
             controller
-                .read()
-                .artists
+                .artists()()
                 .iter()
-                .map(|t| t.1 .0.clone())
+                .map(|t| t.1.0.clone())
                 .filter(|t| strip_unnessecary(&t).starts_with(&clean_search()))
                 .collect::<Vec<String>>()
         }
@@ -40,8 +41,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
             Vec::new()
         } else {
             controller
-                .read()
-                .albums
+                .albums()()
                 .iter()
                 .map(|a| a.0)
                 .filter(|t| strip_unnessecary(&t).starts_with(&clean_search()))
@@ -55,8 +55,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
             Vec::new()
         } else {
             controller
-                .read()
-                .genres
+                .genres()()
                 .iter()
                 .map(|t| t.0.clone())
                 .filter(|t| strip_unnessecary(&t).starts_with(&clean_search()))
@@ -91,7 +90,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
                             src: "/trackimage/{tracks.read()[i]}",
                         }
 
-                        span { "{controller.read().all_tracks[tracks.read()[i]].title}" }
+                        span { "{controller.all_tracks().get(tracks.read()[i]).unwrap().read().title}" }
                     }
                 }
 
@@ -107,7 +106,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
 
                         img {
                             class: "trackitemicon",
-                            src: "/trackimage/{controller.read().get_album_artwork(albums.read()[i].clone())}",
+                            src: "/trackimage/{get_album_artwork(controller, albums.read()[i].clone())}",
                         }
 
                         span { "{albums.read()[i]}" }
@@ -147,7 +146,7 @@ pub fn SearchView(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn TracksSearch(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     tracks: Memo<Vec<usize>>,
     is_searching: Signal<bool>,
     id_prefix: String,
@@ -172,7 +171,7 @@ pub fn TracksSearch(
                     .read()
                     .iter()
                     .filter(|t| {
-                        strip_unnessecary(&controller.read().all_tracks[**t].title).starts_with(&search)
+                        strip_unnessecary(&controller.all_tracks().get(**t).unwrap().read().title).starts_with(&search)
                     })
                     .cloned()
                     .collect::<Vec<usize>>()
@@ -216,7 +215,7 @@ pub fn TracksSearch(
                                 );
                             },
                             img { src: "/trackimage/{track}", loading: "lazy" }
-                            span { "{controller.read().all_tracks[track].title}" }
+                            span { "{controller.all_tracks().get(track).unwrap().read().title}" }
                         }
                     }
                 }

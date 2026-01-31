@@ -2,14 +2,15 @@ use super::TracksView;
 use crate::app::utils::strip_unnessecary;
 use crate::{
     app::{MusicController, utils::similar},
-    gui::{icons::*, View, VIEW},
+    gui::{icons::*, View, VIEW, get_album_artwork},
 };
 use dioxus::document::eval;
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
 #[component]
-pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
+pub fn AlbumsList(controller: SyncStore<MusicController>) -> Element {
     let mut albums = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
@@ -130,11 +131,12 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
                         div {
                             class: "albumitem",
                             id: "album-{albums.read()[i].0}",
+                            key: "album-{i}-{albums.read()[i].0}",
                             onclick: move |_| set_album(albums.read()[i].0.clone()),
 
                             img {
-                                loading: "onvisible",
-                                src: if VIEW.read().current == View::Albums { "/trackimage/{controller.read().get_album_artwork(albums.read()[i].0.clone())}" },
+                                loading: "lazy",
+                                src: if VIEW.read().current == View::Albums { "/trackimage/{get_album_artwork(controller, albums.read()[i].0.clone())}" },
                             }
 
                             div { class: "albuminfo",
@@ -163,7 +165,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn AlbumsSearch(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     is_searching: Signal<bool>,
     albums: Signal<Vec<(String, usize)>>,
     row_height: Signal<usize>,
@@ -225,7 +227,7 @@ pub fn AlbumsSearch(
                                 }
                             },
 
-                            img { src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums", loading: "lazy" }
+                            img { src: "/trackimage/{get_album_artwork(controller, album.clone())}?origin=albums", loading: "lazy" }
                             span { "{album}" }
                         }
                     }

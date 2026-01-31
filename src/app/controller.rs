@@ -20,6 +20,7 @@ use std::time::Instant;
 use std::sync::mpsc::Sender;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use dioxus::prelude::*;
 
 pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<Sender<MusicMsg>>>> =
     Lazy::new(|| Mutex::new(None));
@@ -48,7 +49,7 @@ pub fn send_music_msg(msg: MusicMsg) {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Store)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
     pub track_info: Vec<TrackInfo>,
@@ -501,13 +502,13 @@ impl MusicController {
 
         let db = init_db();
         if let Ok(ref database) = db {
-            save_to_cache(&database, &tag);
+            save_to_cache(&database, &tag).unwrap();
         } else {
             info!("Could not successfuly connect to database to update tag info for track {}", tag.file);
         }
         drop(db);
 
-        tag.save_to_disk();
+        tag.save_to_disk().unwrap();
 
         self.all_tracks[track] = tag;
     }
@@ -725,19 +726,6 @@ impl MusicController {
 
 // Small functions
 impl MusicController {
-    /// Returns a track id of the first track in an album for a given album name
-    /// The cover loading code works from track IDs so this works
-    pub fn get_album_artwork(&self, album: String) -> usize {
-        for (i, track) in self.all_tracks.iter().enumerate() {
-            if strip_unnessecary(&track.album) == strip_unnessecary(&album) {
-                return i;
-            }
-        }
-
-        // As far as I know no one has millions of songs so this works
-        return usize::MAX;
-    }
-
     /// Returns the index of an album in the controller's inner list
     pub fn get_album_index(&self, album: &str) -> usize {
         self.albums.iter().position(|a| similar(album, a.0)).unwrap_or(0)

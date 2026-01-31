@@ -13,6 +13,7 @@ pub mod trackview;
 #[cfg(target_os = "android")]
 pub mod media;
 use crate::app::track::TrackInfo;
+use crate::app::utils::strip_unnessecary;
 use crate::database::{hash_filename, init_db, row_to_weights};
 #[cfg(target_os = "android")]
 use crate::gui::media::{MediaMsg, MEDIA_MSG_TX};
@@ -22,6 +23,7 @@ use crate::analysis::generate_track_info;
 use crate::database::save_track_weights;
 
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use log::info;
 use once_cell::sync::Lazy;
 use rusqlite::{Rows, params};
@@ -33,7 +35,7 @@ use std::thread::JoinHandle;
 use std::time::Instant;
 
 use crate::app::audio::AudioPlayer;
-use crate::app::controller::{MusicMsg, MUSIC_PLAYER_ACTIONS};
+use crate::app::controller::{MUSIC_PLAYER_ACTIONS, MusicControllerStoreExt, MusicMsg};
 use crate::app::{MusicController, load_tracks, Track};
 
 pub use confirm::Confirmation;
@@ -61,8 +63,21 @@ pub const EDITING_TAG: GlobalSignal<Option<(usize, Track)>> = Signal::global(|| 
 
 /// Global reference to the dioxus SyncSignal holding the main MusicController
 /// This allows the controller to be used in threads, and from outside a component
-pub static CONTROLLER: Lazy<Mutex<Option<SyncSignal<MusicController>>>> =
+pub static CONTROLLER: Lazy<Mutex<Option<SyncStore<MusicController>>>> =
     Lazy::new(|| Mutex::new(None));
+
+/// Returns a track id of the first track in an album for a given album name
+/// The cover loading code works from track IDs so this works
+pub fn get_album_artwork(controller: SyncStore<MusicController>, album: String) -> usize {
+    for (i, track) in controller.all_tracks().iter().enumerate() {
+        if strip_unnessecary(&track.read().album) == strip_unnessecary(&album) {
+            return i;
+        }
+    }
+
+    // As far as I know no one has millions of songs so this works
+    return usize::MAX;
+}
 
 /// Starts a thread running all background tasks for the MusicController
 /// To avoid issues on Android where the app freezes in the background, this allows the app to
@@ -163,14 +178,14 @@ pub fn start_controller_thread() {
                                 info!("Updating media notification");
                                 // Avoid accessing the controller twice in a statement, as the app
                                 // seems to freak out about it 
-                                let progress = (controller.read().progress_secs * 1000.0) as i64;
+                                let progress = (controller.progress_secs()() * 1000.0) as i64;
 
                                 let result = crate::gui::media::update_media_notification(
                                     &track.title,
                                     &track.artists[0],
                                     (track.len * 1000.0) as i64,
                                     progress,
-                                    controller.read().playing(),
+                                    controller.playing()(),
                                     image,
                                 );
                                 info!("Media notification result: {result:?}");
@@ -209,11 +224,11 @@ pub fn init_tracks() -> JoinHandle<()> {
 
             if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                 let mut controller = ctrl.clone();
-                let maybe_tracks = load_tracks(&controller.read().settings.directory);
+                let maybe_tracks = load_tracks(&controller.settings().read().directory);
 
                 if let Ok(t) = maybe_tracks {
                     tracks = t.clone();
-                    let dir = controller.read().settings.directory.clone();
+                    let dir = controller.settings().read().directory.clone();
                     controller.set(MusicController::new(t, dir));
                     info!("Loaded all tracks in {:?}", started.elapsed());
                 } else {
@@ -239,28 +254,27 @@ pub fn init_tracks() -> JoinHandle<()> {
             let mut len = 0;
             if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                 let controller = ctrl.clone();
-                len = controller.read().all_tracks.len();
+                len = controller.all_tracks().read().len();
             }
 
             let mut buffer = Vec::new();
 
             info!("loading info {:?}", started.elapsed());
 
-            let mut ti = TrackInfo::default();
 
             for i in 0..len {
                 let track = tracks[i].clone();
                 let file_hash = hash_filename(&track.file);
 
-                if weights.contains_key(&file_hash) {
-                    ti = weights[&file_hash].clone();
+                let track_info = if weights.contains_key(&file_hash) {
+                    weights[&file_hash].clone()
                 } else {
                     let track_info = generate_track_info(&track);
                     save_track_weights(&cache, &track.file, &track_info).unwrap();
-                    ti = track_info;
-                }
+                    track_info
+                };
 
-                buffer.push(ti);
+                buffer.push(track_info);
 
                 if i % 100 == 0 {
                     info!("{i}/{len} analyzed");

@@ -1,22 +1,22 @@
 use super::TracksView;
+use crate::app::controller::MusicControllerStoreExt;
 use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW},
 };
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
 #[component]
-pub fn GenreList(controller: SyncSignal<MusicController>) -> Element {
+pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
     let mut genres = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
 
     use_effect(move || {
         let mut genres_unsorted = controller
-            .read()
-            .genres
-            .clone()
+            .genres()()
             .into_iter()
             .collect::<Vec<(String, usize)>>();
         genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));

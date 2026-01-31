@@ -1,42 +1,52 @@
 use super::{View, TRACKOPTION, VIEW};
-use crate::app::MusicController;
+use crate::app::{MusicController, Track};
+use crate::app::controller::MusicControllerStoreExt;
 use crate::gui::icons::*;
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use log::info;
 use std::time::Duration;
 use tokio::time;
-use ndarray::Array1;
 
 #[component]
-pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
-    let mut progress = use_signal(|| controller.read().progress_secs);
+pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
+    let mut progress = use_signal(|| controller.progress_secs()());
     let mut progress_held = use_signal(|| false);
+    let empty_track = use_signal(Track::default);
+
+    let current_track_idx = move || {
+        let current_queue = controller.current_queue()();
+        controller.queues().get(current_queue).unwrap().read().current()
+    };
+
+    let current_track = move || {
+        match controller.all_tracks().get(current_track_idx()) {
+            Some(track) => track(),
+            None => empty_track(),
+        }
+    };
 
     // Skip to next song
     let skip = move |_: Event<MouseData>| {
         controller.write().skip();
         progress.set(0.0);
-        info!("{:?}", controller.read().current_track());
+        info!("{:?}", current_track());
     };
-
-    let track_info = use_memo(move || {
-        controller.read().track_info.get(controller.read().current_track_idx()).cloned().unwrap_or_default()
-    });
 
     // Skip to previous song, or start of current song
     let skipback = move |_: Event<MouseData>| {
         controller.write().skipback();
         progress.set(0.0);
-        info!("{:?}", controller.read().current_track());
+        info!("{:?}", current_track());
     };
 
     // Updates song progress to UI from controller without breaking input slider functionality
     use_future(move || async move {
         loop {
             time::sleep(Duration::from_secs_f64(0.25)).await;
-            if !progress_held() && controller.read().playing() {
-                controller.write().progress_secs += 0.25;
-                *progress.write() = controller.read().progress_secs;
+            if !progress_held() && controller.playing()() {
+                *controller.progress_secs().write() += 0.25;
+                *progress.write() = *controller.progress_secs().read();
             }
         }
     });
@@ -47,29 +57,23 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
             // Background image blur
             div {
                 class: "trackblur",
-                background_image: "url(/trackimage/{controller.read().current_track_idx()}?origin=trackview)",
+                background_image: "url(/trackimage/{current_track_idx()}?origin=trackview)",
             }
 
             // Main track image
             div { class: "imageview",
                 img {
-                    src: "/trackimage/{controller.read().current_track_idx()}?origin=trackview",
+                    src: "/trackimage/{current_track_idx()}?origin=trackview",
                     loading: "onvisible",
                 }
             }
 
             div { class: "trackcontrols",
-                h3 { "{controller.read().current_track_title().unwrap_or_default()}" }
+                h3 { "{current_track().title}" }
 
                 // Song artist list
                 span { class: "artistspecifier",
-                    for (idx , artist) in controller
-                        .read()
-                        .current_track_artist()
-                        .cloned()
-                        .unwrap_or_default()
-                        .into_iter()
-                        .enumerate()
+                    for (idx , artist) in current_track().artists.into_iter().enumerate()
                     {
                         // Start each artist with comma after first
                         if idx > 0 {
@@ -92,25 +96,23 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                     // Open album view on click
                     onclick: move |_| {
                         VIEW.write().album = Some(
-                            controller.read().current_track_album().unwrap_or_default().to_string(),
+                            current_track().album.to_string(),
                         );
                         VIEW.write().open(View::Albums);
                     },
-                    "{controller.read().current_track_album().unwrap_or_default()}"
+                    "{current_track().album}"
                 }
 
                 // Song genre list
                 span { class: "genresspecifier",
-                    if let Some(genres) = controller.read().current_track_genres() {
-                        for genre in genres.iter().cloned() {
-                            span {
-                                // Open genre view on click
-                                onclick: move |_| {
-                                    VIEW.write().open(View::Genres);
-                                    VIEW.write().genre = Some(genre.clone());
-                                },
-                                "{genre}"
-                            }
+                    for genre in current_track().genres.iter().cloned() {
+                        span {
+                            // Open genre view on click
+                            onclick: move |_| {
+                                VIEW.write().open(View::Genres);
+                                VIEW.write().genre = Some(genre.clone());
+                            },
+                            "{genre}"
                         }
                     }
                 }
@@ -120,14 +122,14 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                     span { class: "songprogress", "{format_seconds(progress())}" }
                     input {
                         r#type: "range",
-                        style: "--dist: {progress() / controller.read().song_length * 100.0}%;",
+                        style: "--dist: {progress() / controller.song_length()() * 100.0}%;",
                         value: "{progress}",
                         step: 0.25,
-                        max: controller.read().song_length,
+                        max: controller.song_length()(),
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
                             controller.write().set_pos(value);
-                            info!("{:?}", controller.read().progress_secs);
+                            info!("{:?}", controller.progress_secs().read());
                             progress.set(value)
                         },
                         oninput: move |e| {
@@ -138,7 +140,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                         onmousedown: move |_| progress_held.set(true),
                         onmouseup: move |_| progress_held.set(false),
                     }
-                    span { class: "songlength", "{format_seconds(controller.read().song_length)}" }
+                    span { class: "songlength", "{format_seconds(controller.song_length()())}" }
                 }
 
                 // Track controls
@@ -146,7 +148,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
                     button {
                         class: "svg-button",
                         background_image: "url({VERT_ICON})",
-                        onclick: move |_| *TRACKOPTION.write() = Some(controller.read().current_track_idx()),
+                        onclick: move |_| *TRACKOPTION.write() = Some(current_track_idx()),
                     }
 
                     button {
@@ -157,7 +159,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
 
                     button {
                         class: "svg-button",
-                        background_image: if controller.read().playing() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
+                        background_image: if controller.playing()() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
                         onclick: move |_| controller.write().toggle_playing(),
                     }
 
@@ -169,7 +171,7 @@ pub fn TrackView(controller: SyncSignal<MusicController>) -> Element {
 
                     button {
                         class: "svg-button",
-                        background_image: if controller.read().shuffle { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
+                        background_image: if controller.shuffle()() { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
                         onclick: move |_| controller.write().toggle_shuffle(),
                     }
                 }
