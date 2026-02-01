@@ -55,7 +55,7 @@ pub struct MusicController {
     pub track_info: Vec<TrackInfo>,
     pub artists: HashMap<String, (String, usize)>,
     pub genres: HashMap<String, usize>,
-    pub albums: HashMap<String, usize>,
+    pub albums: HashMap<String, (usize, usize)>, // count, first track (for image purposes)
     pub listens: Vec<Listen>,
     pub shuffle: bool,
     pub playlists: Vec<Playlist>,
@@ -108,18 +108,18 @@ impl MusicController {
         let (mut albums, mut artists, mut genres) =
             (HashMap::new(), HashMap::new(), HashMap::new());
 
-        for track in &all_tracks {
-            for genre in track.genres.clone() {
+        for i in 0..all_tracks.len() {
+            for genre in all_tracks[i].genres.clone() {
                 *genres.entry(genre.clone()).or_insert(0) += 1;
             }
 
-            for artist in track.artists.clone() {
+            for artist in all_tracks[i].artists.clone() {
                 // some artists names seem to change captalization grr
                 let stripped = strip_unnessecary(&artist);
                 artists.entry(stripped).or_insert((artist, 0)).1 += 1;
             }
 
-            *albums.entry(track.album.clone()).or_insert(0) += 1;
+            albums.entry(all_tracks[i].album.clone()).or_insert((0, i)).0 += 1;
         }
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -467,16 +467,16 @@ impl MusicController {
         let old_artists = self.all_tracks[track].artists.clone();
 
         if old_album != tag.album {
-            if self.albums[&old_album] == 1 {
+            if self.albums[&old_album].0 == 1 {
                 self.albums.remove(&old_album);
             } else {
-                if let Some(val) = self.albums.get_mut(&old_album) { *val -= 1; };
+                if let Some(val) = self.albums.get_mut(&old_album) { val.0 -= 1; };
             }
 
             if self.albums.contains_key(&tag.album) {
-                if let Some(val) = self.albums.get_mut(&tag.album) { *val += 1; };
+                if let Some(val) = self.albums.get_mut(&tag.album) { val.0 += 1; };
             } else {
-                self.albums.insert(tag.album.clone(), 1);
+                self.albums.insert(tag.album.clone(), (1, track));
             }
         }
 

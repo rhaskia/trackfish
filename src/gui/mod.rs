@@ -69,14 +69,7 @@ pub static CONTROLLER: Lazy<Mutex<Option<SyncStore<MusicController>>>> =
 /// Returns a track id of the first track in an album for a given album name
 /// The cover loading code works from track IDs so this works
 pub fn get_album_artwork(controller: SyncStore<MusicController>, album: String) -> usize {
-    for (i, track) in controller.all_tracks().iter().enumerate() {
-        if strip_unnessecary(&track.read().album) == strip_unnessecary(&album) {
-            return i;
-        }
-    }
-
-    // As far as I know no one has millions of songs so this works
-    return usize::MAX;
+    controller.albums().get(album).unwrap().read().1
 }
 
 /// Starts a thread running all background tasks for the MusicController

@@ -20,8 +20,8 @@ pub fn AlbumsList(controller: SyncStore<MusicController>) -> Element {
             .albums
             .clone()
             .into_iter()
-            .collect::<Vec<(String, usize)>>();
-        albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+            .collect::<Vec<(String, (usize, usize))>>();
+        albums_unsorted.sort_by(|(_, a), (_, b)| b.0.cmp(&a.0));
         albums.set(albums_unsorted);
     });
 
@@ -145,7 +145,7 @@ pub fn AlbumsList(controller: SyncStore<MusicController>) -> Element {
                                 } else {
                                     span { "{albums.read()[i].0}" }
                                 }
-                                small { "{albums.read()[i].1} songs" }
+                                small { "{albums.read()[i].1.0} songs" }
                             }
                         }
                     }
@@ -167,7 +167,7 @@ pub fn AlbumsList(controller: SyncStore<MusicController>) -> Element {
 pub fn AlbumsSearch(
     controller: SyncStore<MusicController>,
     is_searching: Signal<bool>,
-    albums: Signal<Vec<(String, usize)>>,
+    albums: Signal<Vec<(String, (usize, usize))>>,
     row_height: Signal<usize>,
     items_per_row: Signal<usize>
 ) -> Element {
