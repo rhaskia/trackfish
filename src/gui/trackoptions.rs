@@ -4,10 +4,12 @@ use crate::gui::EDITING_TAG;
 use super::icons::*;
 use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW, DELETING_TRACK};
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use super::MOBILE;
+use crate::app::controller::MusicControllerStoreExt;
 
 #[component]
-pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
+pub fn TrackOptions(controller: SyncStore<MusicController>) -> Element {
     let mut drag_amount = use_signal(|| 0.0_f64);
     let mut dragging = use_signal(|| false);
     let mut drag_start = use_signal(|| 0.0);
@@ -64,7 +66,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                     bottom: if TRACKOPTION.read().is_none() { "-1000px" } else if dragging() && MOBILE() { "{drag_amount().min(0.0) as i32}px" } else { "0px" },
 
                     h3 { class: if MOBILE() { "largerheader" },
-                        "{controller.read().all_tracks[track].title}"
+                        "{controller.all_tracks().get(track).unwrap().read().title}"
                     }
 
                     button {
@@ -124,7 +126,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
 
                     button {
                         onclick: move |_| {
-                            let artist = controller.read().all_tracks[track].artists[0].clone();
+                            let artist = controller.all_tracks().get(track).unwrap().read().artists[0].clone();
                             VIEW.write().open(View::Artists);
                             VIEW.write().artist = Some(artist.clone());
                             TRACKOPTION.set(None);
@@ -135,7 +137,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
 
                     button {
                         onclick: move |_| {
-                            let album = controller.read().all_tracks[track].album.clone();
+                            let album = controller.all_tracks().get(track).unwrap().read().album.clone();
                             VIEW.write().open(View::Albums);
                             VIEW.write().album = Some(album.clone());
                             TRACKOPTION.set(None);
@@ -149,7 +151,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
                     button {
                         onclick: move |_| {
                             let index = TRACKOPTION().unwrap();
-                            EDITING_TAG.set(Some((index, controller.read().all_tracks[index].clone())));
+                            EDITING_TAG.set(Some((index, controller.all_tracks().get(index).unwrap()())));
                         },
                         img { src: EDIT_ICON }
                         "Edit tags"
@@ -171,7 +173,7 @@ pub fn TrackOptions(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TrackOptionsQueueView(controller: SyncSignal<MusicController>, track: usize) -> Element {
+pub fn TrackOptionsQueueView(controller: SyncStore<MusicController>, track: usize) -> Element {
     rsx! {
         button {
             img { src: INFO_ICON }
@@ -181,21 +183,21 @@ pub fn TrackOptionsQueueView(controller: SyncSignal<MusicController>, track: usi
 }
 
 #[component]
-pub fn TrackOptionsTrackView(controller: SyncSignal<MusicController>, track: usize) -> Element {
+pub fn TrackOptionsTrackView(controller: SyncStore<MusicController>, track: usize) -> Element {
     rsx! {
         span {}
     }
 }
 
 #[component]
-pub fn TrackOptionsExplorerView(controller: SyncSignal<MusicController>, track: usize) -> Element {
+pub fn TrackOptionsExplorerView(controller: SyncStore<MusicController>, track: usize) -> Element {
     rsx! {
         span {}
     }
 }
 
 #[component]
-pub fn TrackOptionsPlaylistsView(controller: SyncSignal<MusicController>, track: usize) -> Element {
+pub fn TrackOptionsPlaylistsView(controller: SyncStore<MusicController>, track: usize) -> Element {
     rsx! {
         button {
             onclick: move |_| {

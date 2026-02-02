@@ -1,22 +1,24 @@
 use super::TracksView;
+use crate::app::controller::MusicControllerStoreExt;
+use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW, SEARCHER},
 };
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
 #[component]
-pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
+pub fn ArtistList(controller: SyncStore<MusicController>) -> Element {
     let mut artists = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
     let mut set_searcher_artists = use_signal(|| false);
 
     use_effect(move || {
+        info!("updated artist list");
         let mut artists_unsorted = controller
-            .read()
-            .artists
-            .clone()
+            .artists()()
             .into_iter()
             .collect::<Vec<(String, (String, usize))>>();
         artists_unsorted.sort_by(|(_, (_, a)), (_, (_, b))| b.cmp(a));
@@ -57,7 +59,7 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
                 for i in 0..artists.read().len() {
                     div {
                         class: "thinitem",
-                        id: "artist-{artists.read()[i].1.0}",
+                        id: "artist-{i}",
                         onclick: move |_| set_artist(artists.read()[i].clone().1.0),
                         "{artists.read()[i].1.0}"
                         br {}
@@ -79,7 +81,7 @@ pub fn ArtistList(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn ArtistsSearch(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     is_searching: Signal<bool>,
     artists: Signal<Vec<(String, (String, usize))>>,
 ) -> Element {
@@ -119,11 +121,8 @@ pub fn ArtistsSearch(
                         div {
                             class: "thinitem",
                             onclick: move |_| {
-                                // Requires the scroll amount to be one less height than that of the object to actually show it
-                                let index = artists.read().iter().position(|a| a.1.0 == artist).unwrap();
-                                let scroll_amount = index * row_height;
+                                let scroll_amount = artists.read().iter().position(|a| a.1.0 == artist).unwrap() * row_height;
 
-                                info!("scrolling {scroll_amount} for index {index}");
                                 document::eval(
                                     &format!(
                                         "document.getElementById('artistlist').scrollTop = {};",

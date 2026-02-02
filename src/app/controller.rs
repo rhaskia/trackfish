@@ -21,6 +21,7 @@ use std::time::Instant;
 use std::sync::mpsc::Sender;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use dioxus::prelude::*;
 
 pub static MUSIC_PLAYER_ACTIONS: Lazy<Mutex<Option<Sender<MusicMsg>>>> =
     Lazy::new(|| Mutex::new(None));
@@ -49,13 +50,13 @@ pub fn send_music_msg(msg: MusicMsg) {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Store)]
 pub struct MusicController {
     pub all_tracks: Vec<Track>,
     pub track_info: Vec<TrackInfo>,
     pub artists: HashMap<String, (String, usize)>,
     pub genres: HashMap<String, usize>,
-    pub albums: HashMap<String, usize>,
+    pub albums: HashMap<String, (usize, usize)>, // count, first track (for image purposes)
     pub listens: Vec<Listen>,
     pub shuffle: bool,
     pub playlists: Vec<Playlist>,
@@ -108,18 +109,18 @@ impl MusicController {
         let (mut albums, mut artists, mut genres) =
             (HashMap::new(), HashMap::new(), HashMap::new());
 
-        for track in &all_tracks {
-            for genre in track.genres.clone() {
+        for i in 0..all_tracks.len() {
+            for genre in all_tracks[i].genres.clone() {
                 *genres.entry(genre.clone()).or_insert(0) += 1;
             }
 
-            for artist in track.artists.clone() {
+            for artist in all_tracks[i].artists.clone() {
                 // some artists names seem to change captalization grr
                 let stripped = strip_unnessecary(&artist);
                 artists.entry(stripped).or_insert((artist, 0)).1 += 1;
             }
 
-            *albums.entry(track.album.clone()).or_insert(0) += 1;
+            albums.entry(all_tracks[i].album.clone()).or_insert((0, i)).0 += 1;
         }
         info!("Calculated weights in {:?}", started.elapsed());
 
@@ -463,10 +464,10 @@ impl MusicController {
         let artists = self.all_tracks[track].artists.clone();
         let genres = self.all_tracks[track].genres.clone();
 
-        if self.albums[&album] == 1 {
+        if self.albums[&album].0 == 1 {
             self.albums.remove(&album);
         } else {
-            if let Some(val) = self.albums.get_mut(&album) { *val -= 1; };
+            if let Some(val) = self.albums.get_mut(&album) { val.0 -= 1; };
         }
 
         for artist in artists {
@@ -507,16 +508,16 @@ impl MusicController {
         info!("db2");
 
         if old_album != tag.album {
-            if self.albums[&old_album] == 1 {
+            if self.albums[&old_album].0 == 1 {
                 self.albums.remove(&old_album);
             } else {
-                if let Some(val) = self.albums.get_mut(&old_album) { *val -= 1; };
+                if let Some(val) = self.albums.get_mut(&old_album) { val.0 -= 1; };
             }
 
             if self.albums.contains_key(&tag.album) {
-                if let Some(val) = self.albums.get_mut(&tag.album) { *val += 1; };
+                if let Some(val) = self.albums.get_mut(&tag.album) { val.0 += 1; };
             } else {
-                self.albums.insert(tag.album.clone(), 1);
+                self.albums.insert(tag.album.clone(), (1, track));
             }
         }
 
@@ -788,19 +789,6 @@ impl MusicController {
 
 // Small functions
 impl MusicController {
-    /// Returns a track id of the first track in an album for a given album name
-    /// The cover loading code works from track IDs so this works
-    pub fn get_album_artwork(&self, album: String) -> usize {
-        for (i, track) in self.all_tracks.iter().enumerate() {
-            if strip_unnessecary(&track.album) == strip_unnessecary(&album) {
-                return i;
-            }
-        }
-
-        // As far as I know no one has millions of songs so this works
-        return usize::MAX;
-    }
-
     /// Returns the index of an album in the controller's inner list
     pub fn get_album_index(&self, album: &str) -> usize {
         self.albums.iter().position(|a| similar(album, a.0)).unwrap_or(0)

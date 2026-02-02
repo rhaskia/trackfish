@@ -4,13 +4,17 @@ pub mod artists;
 pub mod genres;
 pub mod search;
 
+use std::usize;
+
 pub use albums::AlbumsList;
 pub use alltracks::AllTracks;
 pub use artists::ArtistList;
+use dioxus::stores::SyncStore;
 pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
 use super::{View, TRACKOPTION, VIEW};
+use crate::app::controller::MusicControllerStoreExt;
 use crate::app::utils::similar;
 use crate::app::MusicController;
 use dioxus::document::eval;
@@ -21,9 +25,9 @@ use rand::Rng;
 use super::icons::*;
 
 #[component]
-pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
+pub fn ExplorerSwitch(controller: SyncStore<MusicController>) -> Element {
     rsx!{
-        if controller.read().settings.ui.hide_explorer_buttons {
+        if controller.settings().read().ui.hide_explorer_buttons {
             div { class: "explorerswitch",
                 button {
                     onclick: move |_| VIEW.write().current = View::Albums,
@@ -56,7 +60,7 @@ pub fn ExplorerSwitch(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> Element {
+pub fn TracksView(controller: SyncStore<MusicController>, viewtype: View) -> Element {
     let viewtype = use_signal(|| viewtype);
     let mut explorer_settings = use_signal(|| false);
     let mut adding_to_playlist = use_signal(|| false);
@@ -71,7 +75,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
         View::Albums => VIEW.read().album.clone().unwrap(),
         View::Artists => VIEW.read().artist.clone().unwrap(),
         View::Genres => VIEW.read().genre.clone().unwrap(),
-        View::Playlists => controller.read().playlists[VIEW.read().playlist.unwrap()]
+        View::Playlists => controller.playlists().get(VIEW.read().playlist.unwrap()).unwrap().read()
             .name
             .clone(),
         _ => unreachable!(),
@@ -80,23 +84,23 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
     // Tracks to show dependant on viewtype
     let tracks = use_memo(move || {
         if let View::Playlists = viewtype() {
-            return controller.read().playlists[VIEW.read().playlist.unwrap()]
+            return controller.playlists().get(VIEW.read().playlist.unwrap()).unwrap().read()
                 .tracks
                 .clone();
         }
 
-        let mut tracks = controller.read().get_tracks_where(|t| match viewtype() {
-            View::Albums => similar(&t.album, &name.read()),
-            View::Artists => t.has_artist(&name.read()),
-            View::Genres => t.has_genre(&name.read()),
+        let mut tracks: Vec<usize> = controller.all_tracks().iter().enumerate().filter(|(_, t)| match viewtype() {
+            View::Albums => similar(&t.read().album, &name.read()),
+            View::Artists => t.read().has_artist(&name.read()),
+            View::Genres => t.read().has_genre(&name.read()),
             _ => unreachable!(),
-        });
+        }).map(|(idx, _)| idx).collect();
 
         if viewtype() == View::Albums {
             tracks.sort_by(|a, b| {
-                controller.read().all_tracks[*a]
+                controller.all_tracks().get(*a).unwrap().read()
                     .trackno
-                    .cmp(&controller.read().all_tracks[*b].trackno)
+                    .cmp(&controller.all_tracks().get(*b).unwrap().read().trackno)
             });
         }
 
@@ -224,7 +228,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                         loading: "onvisible",
                     }
 
-                    span { "{controller.read().get_track(tracks.read()[i]).unwrap().title}" }
+                    span { "{controller.all_tracks().get(tracks.read()[i]).unwrap().read().title}" }
 
                     div { flex_grow: 1 }
 
@@ -261,13 +265,13 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                 div { class: "playlistadder",
                     h3 { "Add {name()} to a playlist" }
 
-                    for i in 0..controller.read().playlists.len() {
+                    for i in 0..controller.playlists().read().len() {
                         button {
                             onclick: move |_| {
                                 controller.write().add_tracks_to_playlist(i, tracks());
                                 adding_to_playlist.set(false);
                             },
-                            "{controller.read().playlists[i].name}"
+                            "{controller.playlists().get(i).unwrap().read().name}"
                         }
                     }
                 }
@@ -282,13 +286,13 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
                 div { class: "playlistadder",
                     h3 { "Add {name()} to a queue" }
 
-                    for i in 0..controller.read().queues.len() {
+                    for i in 0..controller.queues().read().len() {
                         button {
                             onclick: move |_| {
                                 controller.write().add_tracks_to_queue(i, tracks());
                                 adding_to_queue.set(false);
                             },
-                            "{controller.read().queues[i].queue_type}"
+                            "{controller.queues().get(i).unwrap().read().queue_type}"
                         }
                     }
                 }
@@ -299,7 +303,7 @@ pub fn TracksView(controller: SyncSignal<MusicController>, viewtype: View) -> El
 
 #[component]
 pub fn ExplorerOptions(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     explorer_settings: Signal<bool>,
     adding_to_playlist: Signal<bool>,
     adding_to_queue: Signal<bool>,
@@ -351,7 +355,7 @@ pub fn ExplorerOptions(
                         };
                         VIEW.write().open(View::Song);
                         controller.write().toggle_shuffle();
-                        if !controller.read().shuffle {
+                        if !controller.shuffle()() {
                             controller.write().toggle_shuffle();
                         }
                     },

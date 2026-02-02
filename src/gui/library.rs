@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus::{prelude::*, stores::SyncStore};
 use crate::app::{MusicController, autotagging::{get_possible_track_recordings, get_lastfm_genres, Recording}};
 use super::DELETING_TRACK;
 use super::icons::*;
@@ -13,11 +13,10 @@ pub enum LibraryMenu {
     Duplicates,
     Autotagging
 }
-
-#[component]
-pub fn LibraryManagement(controller: SyncSignal<MusicController>) -> Element {
-    let mut menu = use_signal(|| LibraryMenu::Duplicates);
     
+#[component]
+pub fn LibraryManagement(controller: SyncStore<MusicController>) -> Element {
+    let mut menu = use_signal(|| LibraryMenu::Duplicates);
     rsx!{
         ExplorerSwitch { controller }
 
@@ -48,7 +47,7 @@ pub fn LibraryManagement(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn DuplicateMenu(controller: SyncSignal<MusicController>) -> Element {
+pub fn DuplicateMenu(controller: SyncStore<MusicController>) -> Element {
     let mut duplicates: Signal<Vec<Vec<usize>>> = use_signal(|| Vec::new());
 
     rsx!{
@@ -98,7 +97,7 @@ pub fn DuplicateMenu(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TaggingMenu(controller: SyncSignal<MusicController>) -> Element {
+pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
     // tagging all untagged tracks or just those missing metadata
     let tagging_all = use_signal(|| true);
     let mut tags: Signal<Vec<Recording>> = use_signal(|| Vec::new());

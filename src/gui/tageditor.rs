@@ -1,11 +1,12 @@
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use crate::app::MusicController;
 use crate::gui::EDITING_TAG;
 use crate::app::track::Track;
 use crate::gui::DB;
 
 #[component]
-pub fn TagEditorView(controller: SyncSignal<MusicController>) -> Element {
+pub fn TagEditorView(controller: SyncStore<MusicController>) -> Element {
     let mut tag = use_signal(Track::default);
 
     use_effect(move || {
@@ -17,7 +18,7 @@ pub fn TagEditorView(controller: SyncSignal<MusicController>) -> Element {
 
     rsx!{
         if EDITING_TAG().is_some() {
-            div { class: "editorbg", // onclick: move |_| EDITING_TAG.set(None),
+            div { class: "editorbg", 
                 div {
                     onclick: |e| e.stop_propagation(),
                     class: "editorbox",
@@ -48,7 +49,7 @@ pub fn TagEditorView(controller: SyncSignal<MusicController>) -> Element {
 }
 
 #[component]
-pub fn TagEditor(mut controller: SyncSignal<MusicController>, mut tag: Signal<Track>, index: usize) -> Element {
+pub fn TagEditor(mut controller: SyncStore<MusicController>, mut tag: Signal<Track>, index: usize) -> Element {
     rsx!{
         img { src: "/trackimage/{index}" }
 

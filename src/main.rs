@@ -14,7 +14,7 @@ use dioxus::mobile::{use_wry_event_handler, use_asset_handler};
 use dioxus::desktop::{use_asset_handler, WindowBuilder};
 #[cfg(not(target_os = "android"))]
 use tracing_log::LogTracer;
-use dioxus:: prelude::*;
+use dioxus::{ prelude::*, stores::{SyncStore, use_store_sync}};
 use http::Response;
 use log::info;
 use dioxus::document::eval;
@@ -25,6 +25,11 @@ use app::{
 
 use gui::*;
 pub use gui::icons;
+
+#[cfg(not(target_os = "android"))]
+use dioxus::mobile::tao::window::Icon;
+
+use crate::{app::controller::MusicControllerStoreExt, gui::stream::get_stream_response};
 
 // CSS
 static MAIN_CSS: Asset = asset!("/assets/style.css");
@@ -84,11 +89,6 @@ fn init() {
 
     launch(SetUpRoute);
 }
-
-#[cfg(not(target_os = "android"))]
-use dioxus::mobile::tao::window::Icon;
-
-use crate::gui::stream::get_stream_response;
 
 #[cfg(not(target_os = "android"))]
 fn load_image() -> Icon {
@@ -176,7 +176,7 @@ fn SetUpRoute() -> Element {
 fn App() -> Element {
     let loading_track_weights = use_signal(|| 0);
     let tracks_count = use_signal(|| 0);
-    let mut controller = use_signal_sync(|| MusicController::empty());
+    let mut controller = use_store_sync(|| MusicController::empty());
     *gui::CONTROLLER.lock().unwrap() = Some(controller);
     
     let mut handle = use_signal(|| None);
@@ -245,14 +245,14 @@ fn App() -> Element {
             return;
         };
 
-        let track = controller.read().get_track(id).cloned();
+        let track = controller.all_tracks().get(id);
 
         if track.is_none() {
             responder.respond(r);
             return;
         }
 
-        let mut file = if let Some(file) = get_track_image(&track.unwrap().file) {
+        let mut file = if let Some(file) = get_track_image(&track.unwrap().read().file) {
             Cursor::new(file)
         } else {
             responder.respond(r);
@@ -340,7 +340,7 @@ fn App() -> Element {
 }
 
 #[component]
-pub fn MenuBar(controller: SyncSignal<MusicController>) -> Element {
+pub fn MenuBar(controller: SyncStore<MusicController>) -> Element {
     rsx! {
         div {
             class: "buttonrow nav",
@@ -360,7 +360,7 @@ pub fn MenuBar(controller: SyncSignal<MusicController>) -> Element {
                 background_image: "url({asset!(\"/assets/icons/folder.svg\")})",
                 onclick: move |_| VIEW.write().open(View::AllTracks),
             }
-            if !controller.read().settings.ui.hide_explorer_buttons {
+            if !controller.settings().read().ui.hide_explorer_buttons {
                 button {
                     class: "svg-button",
                     background_image: "url({asset!(\"/assets/icons/album.svg\")})",

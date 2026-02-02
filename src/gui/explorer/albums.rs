@@ -1,15 +1,16 @@
 use super::TracksView;
 use crate::{
     app::{MusicController, utils::similar},
-    gui::{icons::*, View, VIEW, SEARCHER},
+    gui::{icons::*, View, VIEW, SEARCHER, get_album_artwork},
 };
 use dioxus::document::eval;
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
 #[component]
-pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
-    let mut albums = use_signal(|| Vec::new());
+pub fn AlbumsList(controller: SyncStore<MusicController>) -> Element {
+    let mut albums: Signal<Vec<(String, (usize, usize))>> = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
     let mut set_searcher_albums = use_signal(|| false);
     
@@ -26,8 +27,8 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
             .albums
             .clone()
             .into_iter()
-            .collect::<Vec<(String, usize)>>();
-        albums_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+            .collect::<Vec<(String, (usize, usize))>>();
+        albums_unsorted.sort_by(|(_, a), (_, b)| b.0.cmp(&a.0));
         albums.set(albums_unsorted);
     });
 
@@ -140,11 +141,12 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
                         div {
                             class: "albumitem",
                             id: "album-{albums.read()[i].0}",
+                            key: "album-{i}-{albums.read()[i].0}",
                             onclick: move |_| set_album(albums.read()[i].0.clone()),
 
                             img {
-                                loading: "onvisible",
-                                src: if VIEW.read().current == View::Albums { "/trackimage/{controller.read().get_album_artwork(albums.read()[i].0.clone())}" },
+                                loading: "lazy",
+                                src: if VIEW.read().current == View::Albums { "/trackimage/{get_album_artwork(controller, albums.read()[i].0.clone())}" },
                             }
 
                             div { class: "albuminfo",
@@ -153,7 +155,7 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
                                 } else {
                                     span { "{albums.read()[i].0}" }
                                 }
-                                small { "{albums.read()[i].1} songs" }
+                                small { "{albums.read()[i].1.0} songs" }
                             }
                         }
                     }
@@ -179,9 +181,9 @@ pub fn AlbumsList(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn AlbumsSearch(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     is_searching: Signal<bool>,
-    albums: Signal<Vec<(String, usize)>>,
+    albums: Signal<Vec<(String, (usize, usize))>>,
     row_height: Signal<usize>,
     items_per_row: Signal<usize>
 ) -> Element {
@@ -238,7 +240,7 @@ pub fn AlbumsSearch(
                             },
 
                             img {
-                                src: "/trackimage/{controller.read().get_album_artwork(album.clone())}?origin=albums",
+                                src: "/trackimage/{get_album_artwork(controller, album.clone())}?origin=albums",
                                 loading: "lazy",
                             }
                             span { "{album}" }

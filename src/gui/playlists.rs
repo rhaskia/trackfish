@@ -2,11 +2,13 @@ pub mod autoplaylist;
 
 use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, VIEW};
+use crate::app::controller::MusicControllerStoreExt;
 use crate::app::playlist::Playlist;
 use crate::app::autoplaylist::AutoPlaylist;
 use crate::app::MusicController;
 use dioxus::prelude::*;
 use autoplaylist::{AutoPlaylistView, AutoPlaylistOptions, AutoPlaylistRename};
+use dioxus::stores::SyncStore;
 
 const CREATING_PLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 const CREATING_AUTOPLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
@@ -15,7 +17,7 @@ use super::icons::*;
 use super::explorer::ExplorerSwitch;
 
 #[component]
-pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
+pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
     let mut playlist_name = use_signal(String::new);
     let mut playlist_options = use_signal(|| None);
     let mut deleting_playlist = use_signal(|| None);
@@ -45,12 +47,12 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 hr {}
 
                 // Playlist list
-                for i in 0..controller.read().playlists.len() {
+                for i in 0..controller.playlists().read().len() {
                     div {
                         class: "playlistitem",
                         onclick: move |_| VIEW.write().playlist = Some(i),
                         img { src: PLAYLIST_PLAY_ICON }
-                        "{controller.read().playlists[i].name}"
+                        "{controller.playlists().get(i).unwrap().read().name}"
                         div { flex: "1 1 0" }
                         img {
                             onclick: move |e| {
@@ -81,8 +83,8 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
                         button {
                             onclick: move |_| {
-                                let dir = controller.write().settings.directory.clone();
-                                controller.write().playlists.push(Playlist::new(playlist_name(), dir));
+                                let dir = controller.settings().read().directory.clone();
+                                controller.playlists().write().push(Playlist::new(playlist_name(), dir));
                                 *CREATING_PLAYLIST.write() = false;
                                 playlist_name.set(String::new());
                             },
@@ -108,12 +110,12 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
                 }
                 hr {}
 
-                for i in 0..controller.read().autoplaylists.len() {
+                for i in 0..controller.autoplaylists().read().len() {
                     div {
                         class: "playlistitem",
                         onclick: move |_| VIEW.write().autoplaylist = Some(i),
                         img { src: PLAYLIST_PLAY_ICON }
-                        "{controller.read().autoplaylists[i].name}"
+                        "{controller.autoplaylists().get(i).unwrap().read().name}"
                         div { flex: "1 1 0" }
                         img {
                             onclick: move |e| {
@@ -181,7 +183,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
         if deleting_playlist.read().is_some() {
             Confirmation {
-                label: "Delete playlist {controller.read().playlists[deleting_playlist().unwrap()].name}?",
+                label: "Delete playlist {controller.playlists().get(deleting_playlist().unwrap()).unwrap().read().name}?",
                 confirm: move |_| controller.write().delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
             }
@@ -202,7 +204,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
         if deleting_autoplaylist.read().is_some() {
             Confirmation {
-                label: "Delete autoplaylist {controller.read().autoplaylists[deleting_autoplaylist().unwrap()].name}?",
+                label: "Delete autoplaylist {controller.autoplaylists().get(deleting_autoplaylist().unwrap()).unwrap().read().name}?",
                 confirm: move |_| controller.write().delete_autoplaylist(deleting_autoplaylist().unwrap()),
                 cancel: move |_| deleting_autoplaylist.set(None),
             }
@@ -212,7 +214,7 @@ pub fn PlaylistsView(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn PlaylistRename(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     renaming_playlist: Signal<Option<usize>>,
 ) -> Element {
     let mut new_name = use_signal(String::new);
@@ -238,29 +240,29 @@ pub fn PlaylistRename(
 }
 
 #[component]
-pub fn PlaylistAdder(controller: SyncSignal<MusicController>) -> Element {
+pub fn PlaylistAdder(controller: SyncStore<MusicController>) -> Element {
     rsx! {
         div {
             class: "playlistadderbg",
             onclick: move |_| *ADD_TO_PLAYLIST.write() = None,
             div { class: "playlistadder",
                 h3 {
-                    "Add {controller.read().all_tracks[ADD_TO_PLAYLIST().unwrap()].title} to a playlist"
+                    "Add {controller.all_tracks().get(ADD_TO_PLAYLIST().unwrap()).unwrap().read().title} to a playlist"
                 }
 
-                for i in 0..controller.read().playlists.len() {
+                for i in 0..controller.playlists().read().len() {
                     // Add to certain playlist
                     button {
                         onclick: move |_| {
                             controller.write().add_to_playlist(i, ADD_TO_PLAYLIST().unwrap());
                             *ADD_TO_PLAYLIST.write() = None;
                         },
-                        "{controller.read().playlists[i].name}"
+                        "{controller.playlists().get(i).unwrap().read().name}"
                     }
                 }
 
                 // Only show extra separator if there are playlist buttons
-                if !controller.read().playlists.is_empty() {
+                if !controller.playlists().read().is_empty() {
                     hr {}
                 }
 
@@ -280,7 +282,7 @@ pub fn PlaylistAdder(controller: SyncSignal<MusicController>) -> Element {
 
 #[component]
 pub fn PlaylistOptions(
-    controller: SyncSignal<MusicController>,
+    controller: SyncStore<MusicController>,
     playlist_options: Signal<Option<usize>>,
     deleting_playlist: Signal<Option<usize>>,
     renaming_playlist: Signal<Option<usize>>,
@@ -288,7 +290,7 @@ pub fn PlaylistOptions(
     rsx! {
         div { class: "optionsbg", onclick: move |_| playlist_options.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 50px;",
-                h3 { "{controller.read().playlists[playlist_options().unwrap()].name}" }
+                h3 { "{controller.playlists().get(playlist_options().unwrap()).unwrap().read().name}" }
                 button { onclick: move |_| renaming_playlist.set(playlist_options()),
                     img { src: EDIT_ICON }
                     "Rename playlist"

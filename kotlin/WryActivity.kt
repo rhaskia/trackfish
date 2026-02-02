@@ -187,8 +187,8 @@ abstract class WryActivity : AppCompatActivity() {
         if (permissionsToRequest.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 this,
-                permissionsToRequest.toTypedArray(), // Convert list to array
-                1001 // Pass the request code
+                permissionsToRequest.toTypedArray(), 
+                1001
             )
         }
     }

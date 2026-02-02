@@ -1,10 +1,12 @@
 use super::TracksSearch;
 use super::{View, VIEW};
 use crate::app::MusicController;
+use crate::app::controller::MusicControllerStoreExt;
 use crate::gui::icons::*;
 use crate::gui::SEARCHER;
 use dioxus::document::eval;
 use dioxus::prelude::*;
+use dioxus::stores::SyncStore;
 use log::info;
 
 fn display_time(total: u64) -> String {
@@ -16,11 +18,11 @@ fn display_time(total: u64) -> String {
 }
 
 #[component]
-pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
+pub fn AllTracks(controller: SyncStore<MusicController>) -> Element {
     let mut is_searching = use_signal(|| false);
     let mut set_searcher_tracks = use_signal(|| false);
     
-    let tracks = use_memo(move || (0..controller.read().all_tracks.len()).collect::<Vec<usize>>());
+    let tracks = use_memo(move || (0..controller.all_tracks().read().len()).collect::<Vec<usize>>());
     let total_time = use_memo(move || {
         controller
             .read()
@@ -95,7 +97,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                 div { class: "pseudoinput" }
             }
             div { color: "white", padding: "10px",
-                "{controller.read().all_tracks.len()} songs / "
+                "{controller.all_tracks().read().len()} songs / "
                 "{display_time(total_time())} total duration"
             }
             div {
@@ -119,7 +121,7 @@ pub fn AllTracks(controller: SyncSignal<MusicController>) -> Element {
                             loading: "onvisible",
                             src: if VIEW.read().current == View::AllTracks { "/trackimage/{i}?origin=alltracks" },
                         }
-                        span { "{controller.try_read().unwrap().all_tracks[i].title}" }
+                        span { "{controller.all_tracks().get(i).unwrap().read().title}" }
                         div { flex_grow: 1 }
                         img {
                             class: "trackbutton",

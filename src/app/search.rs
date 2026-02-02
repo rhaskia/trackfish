@@ -143,7 +143,7 @@ impl SearchManager {
         searcher.reader = Some(reader);
     } 
 
-    pub fn fill_album_information(&mut self, albums: &Vec<(String, usize)>) {
+    pub fn fill_album_information(&mut self, albums: &Vec<(String, (usize, usize))>) {
         let searcher = &mut self.albums;
         let album = searcher.schema.get_field("album").unwrap();
         let id = searcher.schema.get_field("id").unwrap();
