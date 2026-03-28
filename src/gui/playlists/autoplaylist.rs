@@ -7,7 +7,7 @@ use crate::gui::icons::*;
 use crate::gui::VIEW;
 use crate::gui::View;
 use crate::gui::TRACKOPTION;
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 
 #[component]
 pub fn AutoPlaylistView(controller: SyncStore<MusicController>) -> Element {
@@ -51,7 +51,7 @@ pub fn AutoPlaylistView(controller: SyncStore<MusicController>) -> Element {
                     class: "trackitem",
                     onclick: move |_| {
                         VIEW.write().open(View::Song);
-                        controller.write().play_autoplaylist_at(tracks(), VIEW.read().autoplaylist.unwrap(), tracks.read()[i]);
+                        controller.play_autoplaylist_at(tracks(), VIEW.read().autoplaylist.unwrap(), tracks.read()[i]);
                     },
 
                     img {
@@ -360,7 +360,7 @@ pub fn AutoPlaylistRename(
 
                 button {
                     onclick: move |_| {
-                        controller.write().rename_autoplaylist(renaming_autoplaylist().unwrap(), new_name());
+                        controller.rename_autoplaylist(renaming_autoplaylist().unwrap(), new_name());
                     },
                     "Rename"
                 }

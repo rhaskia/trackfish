@@ -6,7 +6,7 @@ use super::{View, ADD_TO_PLAYLIST, TRACKOPTION, VIEW, DELETING_TRACK};
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use super::MOBILE;
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 
 #[component]
 pub fn TrackOptions(controller: SyncStore<MusicController>) -> Element {
@@ -93,7 +93,7 @@ pub fn TrackOptions(controller: SyncStore<MusicController>) -> Element {
                     hr {}
 
                     // Various track options
-                    button { onclick: move |_| controller.write().start_radio(track),
+                    button { onclick: move |_| controller.start_radio(track),
                         img { src: RADIO_ICON }
                         "Start radio"
                     }
@@ -108,14 +108,14 @@ pub fn TrackOptions(controller: SyncStore<MusicController>) -> Element {
                         "Add to a queue"
                     }
 
-                    button { onclick: move |_| controller.write().mut_current_queue().cached_order.push(track),
+                    button { onclick: move |_| controller.current_queue().write().cached_order.push(track),
                         img { src: PLAYLIST_PLAY_ICON }
                         "Add to current queue"
                     }
 
                     button {
                         onclick: move |_| {
-                            controller.write().play_next(track);
+                            controller.play_next(track);
                             TRACKOPTION.set(None);
                         },
                         img { src: SKIP_ICON }
@@ -201,8 +201,8 @@ pub fn TrackOptionsPlaylistsView(controller: SyncStore<MusicController>, track: 
     rsx! {
         button {
             onclick: move |_| {
-                controller.write().playlists[VIEW.read().playlist.unwrap()].remove(track);
-                controller.write().save_playlist(VIEW.read().playlist.unwrap());
+                controller.playlists().get(VIEW.read().playlist.unwrap()).unwrap().write().remove(track);
+                controller.save_playlist(VIEW.read().playlist.unwrap());
             },
 
             img { src: REMOVE_ICON }

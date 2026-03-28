@@ -2,7 +2,7 @@ pub mod autoplaylist;
 
 use super::explorer::TracksView;
 use super::{Confirmation, View, ADD_TO_PLAYLIST, VIEW};
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::app::playlist::Playlist;
 use crate::app::autoplaylist::AutoPlaylist;
 use crate::app::MusicController;
@@ -15,6 +15,7 @@ const CREATING_AUTOPLAYLIST: GlobalSignal<bool> = Signal::global(|| false);
 
 use super::icons::*;
 use super::explorer::ExplorerSwitch;
+
 
 #[component]
 pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
@@ -184,7 +185,7 @@ pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
         if deleting_playlist.read().is_some() {
             Confirmation {
                 label: "Delete playlist {controller.playlists().get(deleting_playlist().unwrap()).unwrap().read().name}?",
-                confirm: move |_| controller.write().delete_playlist(deleting_playlist().unwrap()),
+                confirm: move |_| controller.delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
             }
         }
@@ -205,7 +206,7 @@ pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
         if deleting_autoplaylist.read().is_some() {
             Confirmation {
                 label: "Delete autoplaylist {controller.autoplaylists().get(deleting_autoplaylist().unwrap()).unwrap().read().name}?",
-                confirm: move |_| controller.write().delete_autoplaylist(deleting_autoplaylist().unwrap()),
+                confirm: move |_| controller.delete_autoplaylist(deleting_autoplaylist().unwrap()),
                 cancel: move |_| deleting_autoplaylist.set(None),
             }
         }
@@ -229,8 +230,8 @@ pub fn PlaylistRename(
 
                 button {
                     onclick: move |_| {
-                        controller.write().playlists[renaming_playlist().unwrap()].name = new_name();
-                        controller.write().save_playlist(renaming_playlist().unwrap());
+                        controller.playlists().get(renaming_playlist().unwrap()).unwrap().write().name = new_name();
+                        controller.save_playlist(renaming_playlist().unwrap());
                     },
                     "Rename"
                 }
@@ -254,7 +255,7 @@ pub fn PlaylistAdder(controller: SyncStore<MusicController>) -> Element {
                     // Add to certain playlist
                     button {
                         onclick: move |_| {
-                            controller.write().add_to_playlist(i, ADD_TO_PLAYLIST().unwrap());
+                            controller.add_to_playlist(i, ADD_TO_PLAYLIST().unwrap());
                             *ADD_TO_PLAYLIST.write() = None;
                         },
                         "{controller.playlists().get(i).unwrap().read().name}"

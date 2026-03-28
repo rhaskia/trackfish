@@ -1,5 +1,5 @@
 use dioxus::{prelude::*, stores::SyncStore};
-use crate::app::{MusicController, autotagging::{get_possible_track_recordings, get_lastfm_genres, Recording}};
+use crate::app::{MusicController, autotagging::{Recording, get_lastfm_genres, get_possible_track_recordings}, controller::{MusicControllerStoreExt, MusicControllerStoreImplExt}};
 use super::DELETING_TRACK;
 use super::icons::*;
 use super::explorer::ExplorerSwitch;
@@ -53,7 +53,7 @@ pub fn DuplicateMenu(controller: SyncStore<MusicController>) -> Element {
     rsx!{
         button {
             class: "basicbutton",
-            onclick: move |_| duplicates.set(controller.read().find_duplicates()),
+            onclick: move |_| duplicates.set(controller.find_duplicates()),
             margin: "0 10px",
             "Load duplicates"
         }
@@ -96,10 +96,17 @@ pub fn DuplicateMenu(controller: SyncStore<MusicController>) -> Element {
     }
 }
 
+enum TaggingType {
+    All,
+    NoAlbum,
+    BadGenres,
+    BadGenresNoAlbum
+}
+
 #[component]
 pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
     // tagging all untagged tracks or just those missing metadata
-    let tagging_all = use_signal(|| true);
+    let tagging_all = use_signal(|| TaggingType::All);
     let mut tags: Signal<Vec<Recording>> = use_signal(|| Vec::new());
     let mut index = use_signal(|| 0);
     let mut tag_index = use_signal(|| 0);
@@ -117,14 +124,14 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
         println!("getting tag");
 
         loop {
-            if is_tagged(&*DB.read(), &controller.read().all_tracks[cached_index()].file).unwrap() {
+            if is_tagged(&*DB.read(), &controller.all_tracks().get(cached_index()).unwrap().read().file).unwrap() {
                 *cached_index.write() += 1;
                 continue;
             }
-            info!("{:?} isnt tagged", controller.read().all_tracks[cached_index()].file);
+            info!("{:?} isnt tagged", controller.all_tracks().get(cached_index()).unwrap().read().file);
 
             let last_requested = Instant::now();
-            let recordings = get_possible_track_recordings(controller.read().all_tracks[cached_index()].clone()).await;
+            let recordings = get_possible_track_recordings(controller.all_tracks().get(cached_index()).unwrap()()).await;
 
             match recordings {
                 Ok(r) => {
@@ -142,7 +149,7 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                 tags.set(next.1);
                 index.set(next.0);
                 started.set(true);
-                tag.set(controller.read().all_tracks[index()].clone());
+                tag.set(controller.all_tracks().get(index()).unwrap()());
             }
 
             if last_requested.elapsed() < Duration::from_millis(1100) {
@@ -152,6 +159,7 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
     });
 
     let next = move |_: Event<MouseData>| async move {
+        info!("next started");
         set_tagged(&*DB.read(), &tag.read().file).unwrap();
         tag_index.set(0);
         let next = cache.write().pop().unwrap();
@@ -159,6 +167,7 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
         tags.set(next.1);
         let new_tag = controller.read().all_tracks[index()].clone();
         tag.set(new_tag);
+        info!("next done");
     };
 
     rsx!{
@@ -174,6 +183,16 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                         "{tag_index + 1}/{tags.read().len()}"
                         div { class: "tag newtag",
                             div { class: "editorline",
+                                label { r#for: "title", "Title" }
+                                input {
+                                    disabled: true,
+                                    name: "title",
+                                    id: "title",
+                                    r#type: "text",
+                                    value: "{tags.read()[tag_index()].title()}",
+                                }
+                            }
+                            div { class: "editorline",
                                 label { r#for: "album", "Album" }
                                 input {
                                     disabled: true,
@@ -183,9 +202,26 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                                     value: "{tags.read()[tag_index()].album()}",
                                 }
                             }
-                            span { "{tags.read()[tag_index()].title()}" }
-                            span { "{tags.read()[tag_index()].artists():?}" }
-                            span { "{tags.read()[tag_index()].genres():?}" }
+                            div { class: "editorline",
+                                label { r#for: "artists", "Artists" }
+                                input {
+                                    disabled: true,
+                                    name: "artists",
+                                    id: "artists",
+                                    r#type: "text",
+                                    value: "{tags.read()[tag_index()].artists():?}",
+                                }
+                            }
+                            div { class: "editorline",
+                                label { r#for: "genres", "Genres" }
+                                input {
+                                    disabled: true,
+                                    name: "genres",
+                                    id: "genres",
+                                    r#type: "text",
+                                    value: "{tags.read()[tag_index()].genres():?}",
+                                }
+                            }
                         }
 
                         button {
@@ -195,7 +231,7 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                         }
 
                         button {
-                            disabled: tag_index() == 0,
+                            disabled: tag_index() < 1,
                             onclick: move |_| *tag_index.write() -= 1,
                             "Previous"
                         }
@@ -219,11 +255,11 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
 
                         button {
                             onclick: move |_| async move {
-                                let api_key = &controller.read().settings.tagging.lastfm_key;
+                                let api_key = controller.settings().read().tagging.lastfm_key.clone();
                                 let binding = tags.read();
                                 let track = binding[tag_index()].title();
                                 let artist = binding[tag_index()].artists()[0].clone();
-                                lastfm_genres.set(get_lastfm_genres(track, &artist, api_key).await.unwrap())
+                                lastfm_genres.set(get_lastfm_genres(track, &artist, &api_key).await.unwrap())
                             },
                             "Request lastfm genres"
                         }
@@ -240,9 +276,10 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                     class: "accentbutton",
                     onclick: move |e| async move {
                         let db = &*DB.read();
-                        let mut binding = controller.write();
-                        binding.update_tag(db, index(), tag());
+                        controller.update_tag(db, index(), tag());
+                        info!("updated tag");
                         next(e).await;
+                        info!("finished tag");
                     },
                     "Confirm"
                 }

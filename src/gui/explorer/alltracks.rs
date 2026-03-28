@@ -1,7 +1,7 @@
 use super::TracksSearch;
 use super::{View, VIEW};
 use crate::app::MusicController;
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::gui::icons::*;
 use crate::gui::SEARCHER;
 use dioxus::document::eval;
@@ -41,8 +41,9 @@ pub fn AllTracks(controller: SyncStore<MusicController>) -> Element {
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
     
     use_effect(move || {
-        if !set_searcher_tracks() {
-            SEARCHER.write().fill_track_information(&*controller.read().all_tracks);
+        if !set_searcher_tracks() && controller.all_tracks().read().len() != 0 {
+            // TODO reset every all_tracks change/remove doc when updating tag?
+            SEARCHER.write().fill_track_information(&*controller.all_tracks().read());
             set_searcher_tracks.set(true);
         }
     });
@@ -113,7 +114,7 @@ pub fn AllTracks(controller: SyncStore<MusicController>) -> Element {
                         id: "alltracks-trackitem-{i}",
                         style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                         onclick: move |_| {
-                            controller.write().add_all_queue(i);
+                            controller.add_all_queue(i);
                             VIEW.write().current = View::Song;
                         },
                         img {

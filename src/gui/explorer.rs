@@ -14,7 +14,7 @@ pub use genres::GenreList;
 pub use search::{SearchView, TracksSearch};
 
 use super::{View, TRACKOPTION, VIEW};
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::app::utils::similar;
 use crate::app::MusicController;
 use dioxus::document::eval;
@@ -209,12 +209,11 @@ pub fn TracksView(controller: SyncStore<MusicController>, viewtype: View) -> Ele
                     style: "top: {i * ROW_HEIGHT}px; position: absolute;",
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => controller.write().play_album_at(name(), tracks.read()[i]),
-                            View::Artists => controller.write().play_artist_at(name(), tracks.read()[i]),
-                            View::Genres => controller.write().play_genre_at(name(), tracks.read()[i]),
+                            View::Albums => controller.play_album_at(name(), tracks.read()[i]),
+                            View::Artists => controller.play_artist_at(name(), tracks.read()[i]),
+                            View::Genres => controller.play_genre_at(name(), tracks.read()[i]),
                             View::Playlists => {
                                 controller
-                                    .write()
                                     .play_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[i])
                             }
                             _ => unreachable!(),
@@ -268,7 +267,7 @@ pub fn TracksView(controller: SyncStore<MusicController>, viewtype: View) -> Ele
                     for i in 0..controller.playlists().read().len() {
                         button {
                             onclick: move |_| {
-                                controller.write().add_tracks_to_playlist(i, tracks());
+                                controller.add_tracks_to_playlist(i, tracks());
                                 adding_to_playlist.set(false);
                             },
                             "{controller.playlists().get(i).unwrap().read().name}"
@@ -289,7 +288,7 @@ pub fn TracksView(controller: SyncStore<MusicController>, viewtype: View) -> Ele
                     for i in 0..controller.queues().read().len() {
                         button {
                             onclick: move |_| {
-                                controller.write().add_tracks_to_queue(i, tracks());
+                                controller.add_tracks_to_queue(i, tracks());
                                 adding_to_queue.set(false);
                             },
                             "{controller.queues().get(i).unwrap().read().queue_type}"
@@ -322,12 +321,11 @@ pub fn ExplorerOptions(
                 button {
                     onclick: move |_| {
                         match viewtype() {
-                            View::Albums => controller.write().play_album_at(name(), tracks.read()[0]),
-                            View::Artists => controller.write().play_artist_at(name(), tracks.read()[0]),
-                            View::Genres => controller.write().play_genre_at(name(), tracks.read()[0]),
+                            View::Albums => controller.play_album_at(name(), tracks.read()[0]),
+                            View::Artists => controller.play_artist_at(name(), tracks.read()[0]),
+                            View::Genres => controller.play_genre_at(name(), tracks.read()[0]),
                             View::Playlists => {
                                 controller
-                                    .write()
                                     .play_playlist_at(VIEW.read().playlist.unwrap(), tracks.read()[0])
                             }
                             _ => unreachable!(),
@@ -345,18 +343,18 @@ pub fn ExplorerOptions(
                         let random_index = rand::thread_rng().gen_range(0..tracks.read().len());
                         let track = tracks.read()[random_index];
                         match viewtype() {
-                            View::Albums => controller.write().play_album_at(name(), track),
-                            View::Artists => controller.write().play_artist_at(name(), track),
-                            View::Genres => controller.write().play_genre_at(name(), track),
+                            View::Albums => controller.play_album_at(name(), track),
+                            View::Artists => controller.play_artist_at(name(), track),
+                            View::Genres => controller.play_genre_at(name(), track),
                             View::Playlists => {
-                                controller.write().play_playlist_at(VIEW.read().playlist.unwrap(), track)
+                                controller.play_playlist_at(VIEW.read().playlist.unwrap(), track)
                             }
                             _ => unreachable!(),
                         };
                         VIEW.write().open(View::Song);
-                        controller.write().toggle_shuffle();
+                        controller.toggle_shuffle();
                         if !controller.shuffle()() {
-                            controller.write().toggle_shuffle();
+                            controller.toggle_shuffle();
                         }
                     },
                     img { src: SHUFFLE_ICON }

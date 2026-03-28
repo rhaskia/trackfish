@@ -35,7 +35,7 @@ use std::thread::JoinHandle;
 use std::time::Instant;
 
 use crate::app::audio::AudioPlayer;
-use crate::app::controller::{MUSIC_PLAYER_ACTIONS, MusicControllerStoreExt, MusicMsg};
+use crate::app::controller::{MUSIC_PLAYER_ACTIONS, MusicControllerStoreExt, MusicControllerStoreImplExt, MusicMsg};
 use crate::app::{MusicController, load_tracks, Track};
 use crate::app::search::SearchManager;
 
@@ -172,7 +172,7 @@ pub fn start_controller_thread() {
                             info!("set progress secs");
                             //controller.write().playing = audio_player.playing();
 
-                            let track = controller.read().current_track().cloned();
+                            let track = controller.current_track().map(|t| t());
                             info!("{track:?}");
 
                             // Set media notification to update user and keep FGS alive
@@ -208,7 +208,7 @@ pub fn start_controller_thread() {
                 if audio_player.track_ended() && track_playing {
                     if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                         let mut controller = ctrl.clone();
-                        controller.write().skip();
+                        controller.skip();
                         track_playing = false;
                     }
                 }

@@ -1,6 +1,6 @@
 use super::{View, TRACKOPTION, VIEW};
 use crate::app::{MusicController, Track};
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::gui::icons::*;
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
@@ -15,7 +15,7 @@ pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
     let empty_track = use_signal(Track::default);
 
     let current_track_idx = move || {
-        let current_queue = controller.current_queue()();
+        let current_queue = controller.current_queue_index()();
         controller.queues().get(current_queue).unwrap().read().current()
     };
 
@@ -28,14 +28,14 @@ pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
 
     // Skip to next song
     let skip = move |_: Event<MouseData>| {
-        controller.write().skip();
+        controller.skip();
         progress.set(0.0);
         info!("{:?}", current_track());
     };
 
     // Skip to previous song, or start of current song
     let skipback = move |_: Event<MouseData>| {
-        controller.write().skipback();
+        controller.skipback();
         progress.set(0.0);
         info!("{:?}", current_track());
     };
@@ -128,7 +128,7 @@ pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
                         max: controller.song_length()(),
                         onchange: move |e| {
                             let value = e.value().parse().unwrap();
-                            controller.write().set_pos(value);
+                            controller.set_pos(value);
                             info!("{:?}", controller.progress_secs().read());
                             progress.set(value)
                         },
@@ -160,7 +160,7 @@ pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
                     button {
                         class: "svg-button",
                         background_image: if controller.playing()() { "url({PAUSE_ICON})" } else { "url({PLAY_ICON})" },
-                        onclick: move |_| controller.write().toggle_playing(),
+                        onclick: move |_| controller.toggle_playing(),
                     }
 
                     button {
@@ -172,7 +172,7 @@ pub fn TrackView(controller: SyncStore<MusicController>) -> Element {
                     button {
                         class: "svg-button",
                         background_image: if controller.shuffle()() { "url({SHUFFLE_ON_ICON})" } else { "url({SHUFFLE_ICON})" },
-                        onclick: move |_| controller.write().toggle_shuffle(),
+                        onclick: move |_| controller.toggle_shuffle(),
                     }
                 }
             }

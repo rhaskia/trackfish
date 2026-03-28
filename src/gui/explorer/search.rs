@@ -1,4 +1,4 @@
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::app::utils::strip_unnessecary;
 use crate::app::MusicController;
 use crate::gui::{icons::*, View, VIEW, SEARCHER, get_album_artwork};
@@ -22,6 +22,7 @@ pub fn TracksSearch(
             last_search.set(search());
             
             matches.set(SEARCHER.write().search_tracks(&*search()));
+            info!("{matches:?}");
 
             log::info!("searching {search}");
         }
@@ -149,7 +150,7 @@ pub fn SearchView(controller: SyncStore<MusicController>) -> Element {
                     div {
                         class: "trackitem",
                         onclick: move |_| {
-                            controller.write().add_all_queue(tracks.read()[i]);
+                            controller.add_all_queue(tracks.read()[i]);
                             VIEW.write().current = View::Song;
                         },
 

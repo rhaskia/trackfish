@@ -5,7 +5,7 @@ use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use std::time::Duration;
-use crate::app::controller::MusicControllerStoreExt;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 
 #[component]
 pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
@@ -19,7 +19,7 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
     let mut queue_editing = use_signal(|| None);
 
     use_effect(move || {
-        selected_queue.set(controller.current_queue()());
+        selected_queue.set(controller.current_queue_index()());
     });
 
     use_future(move || async move {
@@ -117,7 +117,7 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
     };
 
     let current_queue = move || {
-        controller.queues().get(controller.current_queue()()).unwrap()
+        controller.queues().get(controller.current_queue_index()()).unwrap()
     };
 
     rsx! {
@@ -191,11 +191,11 @@ pub fn QueueOptions(
         div { class: "optionsbg", onclick: move |_| queue_editing.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 100px;",
                 h3 { "{controller.queues().get(queue_editing().unwrap()).unwrap().read().queue_type}" }
-                button { onclick: move |_| controller.write().remove_queue(queue_editing.unwrap()),
+                button { onclick: move |_| controller.remove_queue(queue_editing.unwrap()),
                     img { src: REMOVE_ICON }
                     "Remove queue"
                 }
-                button { onclick: move |_| controller.write().queue_to_playlist(queue_editing.unwrap()),
+                button { onclick: move |_| controller.queue_to_playlist(queue_editing.unwrap()),
                     img { src: EXPORT_ICON }
                     "Save as playlist"
                 }
@@ -226,7 +226,7 @@ pub fn TrackItem(
 
     let is_current = use_memo(move || {
         controller.queues().get(selected_queue()).unwrap().read().current_track == idx
-            && controller.current_queue()() == selected_queue()
+            && controller.current_queue_index()() == selected_queue()
     });
 
     rsx! {
@@ -239,7 +239,7 @@ pub fn TrackItem(
                 if current_dragging.read().is_some() {
                     return;
                 }
-                controller.write().set_queue_and_track(selected_queue(), idx);
+                controller.set_queue_and_track(selected_queue(), idx);
                 VIEW.write().current = View::Song;
             },
 

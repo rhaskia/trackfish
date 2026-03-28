@@ -259,3 +259,78 @@ pub struct Tag {
     pub count: i64,
     pub name: String,
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastGetInfo {
+    pub track: LastTrack,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastTrack {
+    pub name: String,
+    pub url: String,
+    pub duration: String,
+    pub streamable: Streamable,
+    pub listeners: String,
+    pub playcount: String,
+    pub artist: LastArtist,
+    pub album: LastAlbum,
+    pub toptags: LastToptags,
+    pub wiki: Wiki,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Streamable {
+    #[serde(rename = "#text")]
+    pub text: String,
+    pub fulltrack: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastArtist {
+    pub name: String,
+    pub mbid: String,
+    pub url: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastAlbum {
+    pub artist: String,
+    pub title: String,
+    pub url: String,
+    pub image: Vec<Image>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Image {
+    #[serde(rename = "#text")]
+    pub text: String,
+    pub size: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastToptags {
+    pub tag: Vec<LastTag>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LastTag {
+    pub name: String,
+    pub url: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Wiki {
+    pub published: String,
+    pub summary: String,
+    pub content: String,
+}

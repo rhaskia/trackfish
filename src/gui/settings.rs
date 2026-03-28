@@ -1,5 +1,5 @@
 use super::icons::*;
-use crate::app::MusicController;
+use crate::app::{MusicController, controller::MusicControllerStoreImplExt};
 use crate::app::controller::MusicControllerStoreExt;
 use dioxus::{prelude::*, stores::SyncStore};
 use log::info;
@@ -98,7 +98,7 @@ fn AudioSettings(controller: SyncStore<MusicController>) -> Element {
                     label: "Volume",
                     max: "1",
                     value: "{controller.settings().read().volume}",
-                    oninput: move |e: Event<FormData>| controller.write().set_volume(e.parsed::<f32>().unwrap()),
+                    oninput: move |e: Event<FormData>| controller.set_volume(e.parsed::<f32>().unwrap()),
                 }
             }
         }
@@ -116,7 +116,7 @@ fn UiSettings(controller: SyncStore<MusicController>) -> Element {
                     r#type: "checkbox",
                     value: "{controller.settings().read().ui.hide_explorer_buttons}",
                     oninput: move |value| {
-                        controller.write().settings.ui.hide_explorer_buttons = value.value() == "true";
+                        controller.settings().write().ui.hide_explorer_buttons = value.value() == "true";
                     },
                 }
             }
@@ -134,7 +134,7 @@ fn RadioSettings(controller: SyncStore<MusicController>) -> Element {
             SettingsInput {
                 label: "Radio Temperature",
                 max: "2.0",
-                oninput: move |e: Event<FormData>| controller.write().set_temp(e.parsed::<f32>().unwrap()),
+                oninput: move |e: Event<FormData>| controller.set_temp(e.parsed::<f32>().unwrap()),
                 value: "{controller.settings().read().radio.temp}",
             }
 
@@ -153,7 +153,7 @@ fn RadioSettings(controller: SyncStore<MusicController>) -> Element {
                 label: "Same artist penalty",
                 max: "1.0",
                 oninput: move |e: Event<FormData>| {
-                    controller.write().settings.radio.artist_penalty = e.parsed::<f32>().unwrap();
+                    controller.settings().write().radio.artist_penalty = e.parsed::<f32>().unwrap();
                 },
                 value: "{controller.settings().read().radio.artist_penalty}",
             }
@@ -263,7 +263,7 @@ fn LibrarySettings(controller: SyncStore<MusicController>) -> Element {
                 input {
                     r#type: "text",
                     value: "{controller.settings().read().directory}",
-                    onchange: move |e| controller.write().set_directory(e.value()),
+                    onchange: move |e| controller.set_directory(e.value()),
                 }
             }
         }

@@ -107,7 +107,7 @@ impl SearchManager {
             doc.add_text(artist, tracks[i].artists.join(", "));
             doc.add_u64(id, i as u64);
 
-            searcher.index_writer.add_document(doc);
+            searcher.index_writer.add_document(doc).unwrap();
         }
 
         searcher.index_writer.commit().unwrap();
@@ -130,7 +130,7 @@ impl SearchManager {
             doc.add_text(artist, artists[i].1.0.clone());
             doc.add_u64(id, i as u64);
 
-            searcher.index_writer.add_document(doc);
+            searcher.index_writer.add_document(doc).unwrap();
         }
 
         searcher.index_writer.commit().unwrap();

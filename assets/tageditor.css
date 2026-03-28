@@ -75,3 +75,11 @@
     align-items: center;
     justify-content: center;
 }
+
+.editorline input {
+    flex: 3 3 0;
+}
+
+.editorline label {
+    flex: 1 1 0;
+}

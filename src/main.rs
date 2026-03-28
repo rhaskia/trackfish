@@ -29,7 +29,7 @@ pub use gui::icons;
 #[cfg(not(target_os = "android"))]
 use dioxus::mobile::tao::window::Icon;
 
-use crate::{app::controller::MusicControllerStoreExt, gui::stream::get_stream_response};
+use crate::{app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt}, gui::stream::get_stream_response};
 
 // CSS
 static MAIN_CSS: Asset = asset!("/assets/style.css");
@@ -325,7 +325,7 @@ fn App() -> Element {
                 Confirmation {
                     label: "Delete Track {controller.read().all_tracks[DELETING_TRACK().unwrap()].title}?",
                     confirm: move |_| {
-                        controller.write().delete_track(&*DB.read(), DELETING_TRACK().unwrap());
+                        controller.delete_track(&*DB.read(), DELETING_TRACK().unwrap());
                         DELETING_TRACK.set(None);
                     },
                     cancel: |_| {

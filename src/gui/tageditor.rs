@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use crate::app::MusicController;
+use crate::app::controller::MusicControllerStoreImplExt;
 use crate::gui::EDITING_TAG;
 use crate::app::track::Track;
 use crate::gui::DB;
@@ -36,7 +37,7 @@ pub fn TagEditorView(controller: SyncStore<MusicController>) -> Element {
                         button {
                             background: "var(--accent)",
                             onclick: move |_| {
-                                controller.write().update_tag(&*DB.read(), EDITING_TAG().unwrap().0, tag());
+                                controller.update_tag(&*DB.read(), EDITING_TAG().unwrap().0, tag());
                                 EDITING_TAG.set(None);
                             },
                             "Confirm"
@@ -85,6 +86,7 @@ pub fn TagEditor(mut controller: SyncStore<MusicController>, mut tag: Signal<Tra
                         let split = tag
                             .read()
                             .artists[0]
+                            .replace("feat.", ",")
                             .split(&[',', '&'][..])
                             .map(|s| s.trim().to_string())
                             .collect();
