@@ -174,8 +174,8 @@ fn SetUpRoute() -> Element {
 
 #[component]
 fn App() -> Element {
-    let loading_track_weights = use_signal(|| 0);
-    let tracks_count = use_signal(|| 0);
+    let mut loading_track_weights = use_signal(|| 0);
+    let mut tracks_count = use_signal(|| 0);
     let mut controller = use_store_sync(|| MusicController::empty());
     *gui::CONTROLLER.lock().unwrap() = Some(controller);
     
@@ -214,6 +214,15 @@ fn App() -> Element {
         while let Ok(res) = js.recv::<f64>().await {
             info!("Scrolled to view {}", res.round());
             VIEW.write().current = View::from_usize(res.round() as usize);
+        }
+    });
+
+    use_future(move || async move {
+        if let Some(rx) = ANALYZED_RX.lock().unwrap().as_mut() {
+            while let Some(msg) = rx.recv().await {
+                loading_track_weights.set(msg.0);
+                tracks_count.set(msg.1);
+            }
         }
     });
 

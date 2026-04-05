@@ -560,9 +560,7 @@ impl<Lens> Store<MusicController, Lens> {
             }
         }
 
-        save_to_cache(&conn, &tag).unwrap();
-
-        tag.save_to_disk().unwrap();
+        tag.save_to_disk(&conn).unwrap();
 
         *self.all_tracks().get(track).unwrap().write() = tag;
     }

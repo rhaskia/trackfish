@@ -1,9 +1,11 @@
 use super::queue::QueueType;
 use super::utils::similar;
+use crate::database;
 use crate::database::init_db;
 use id3::Tag;
 use id3::TagLike;
 use log::info;
+use rusqlite::Connection;
 use crate::database::{get_from_cache, save_to_cache};
 use ndarray::Array1;
 use rodio::Source;
@@ -78,7 +80,7 @@ impl Track {
             .is_some()
     }
 
-    pub fn save_to_disk(&self) -> anyhow::Result<()> {
+    pub fn save_to_disk(&self, conn: &Connection) -> anyhow::Result<()> {
         let mut tag = match Tag::read_from_path(&self.file) {
             Ok(tag) => tag,
             Err(id3::Error{kind: id3::ErrorKind::NoTag, ..}) => Tag::new(),
@@ -91,6 +93,8 @@ impl Track {
         tag.set_genre(self.genres.clone().join("\0"));
 
         tag.write_to_path(&self.file, id3::Version::Id3v24)?;
+
+        database::save_to_cache(conn, self)?;
 
         Ok(())
     }

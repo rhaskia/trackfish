@@ -78,6 +78,9 @@ pub const DB: GlobalSignal<Connection> = Signal::global(|| crate::database::init
 pub static CONTROLLER: Lazy<Mutex<Option<SyncStore<MusicController>>>> =
     Lazy::new(|| Mutex::new(None));
 
+/// Holds how many songs have been analyzed so that it can be shown to the user
+pub static ANALYZED_RX: Lazy<Mutex<Option<tokio::sync::mpsc::Receiver<(usize, usize)>>>> = Lazy::new(|| Mutex::new(None));
+
 /// Returns a track id of the first track in an album for a given album name
 /// The cover loading code works from track IDs so this works
 pub fn get_album_artwork(controller: SyncStore<MusicController>, album: String) -> usize {
@@ -227,6 +230,10 @@ pub fn init_tracks() -> JoinHandle<()> {
             let started = Instant::now();
             let mut tracks = Vec::new();
 
+            #[allow(unused_mut)]
+            let (analyzed_tx, mut analyzed_rx) = tokio::sync::mpsc::channel(5);
+            *ANALYZED_RX.lock().unwrap() = Some(analyzed_rx);
+
             if let Some(ctrl) = *CONTROLLER.lock().unwrap() {
                 let mut controller = ctrl.clone();
                 let maybe_tracks = load_tracks(&controller.settings().read().directory);
@@ -265,6 +272,11 @@ pub fn init_tracks() -> JoinHandle<()> {
             let mut buffer = Vec::new();
 
             info!("loading info {:?}", started.elapsed());
+            let rt = tokio::runtime::Runtime::new()
+                .unwrap();
+            rt.block_on(async {
+                analyzed_tx.send((0, len)).await
+            }).unwrap();
 
             for i in 0..len {
                 let track = tracks[i].clone();
@@ -282,8 +294,15 @@ pub fn init_tracks() -> JoinHandle<()> {
 
                 if i % 100 == 0 {
                     info!("{i}/{len} analyzed");
+                    rt.block_on(async {
+                        analyzed_tx.send((i, len)).await
+                    }).unwrap();
                 }
             }
+
+            rt.block_on(async {
+                analyzed_tx.send((len, len)).await
+            }).unwrap();
 
             match CONTROLLER.lock() {
                 Ok(res) => {

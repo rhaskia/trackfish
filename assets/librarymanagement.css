@@ -45,6 +45,23 @@
     flex: 1 1 0;
 }
 
+.bulkeditor {
+    height: 90vh;
+    color: white;
+}
+
+.bulkeditoritem {
+    border-bottom: 1px solid grey;
+    display: flex;
+    align-items: center;
+}
+
+.bulkeditorlist {
+    height: 90vh;
+    overflow-y: scroll;
+    color: white;
+}
+
 .taggingview {
     padding: 10px;
     display: flex;

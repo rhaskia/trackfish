@@ -11,7 +11,8 @@ use crate::gui::DB;
 
 pub enum LibraryMenu {
     Duplicates,
-    Autotagging
+    Autotagging,
+    BulkEditor,
 }
     
 #[component]
@@ -32,6 +33,11 @@ pub fn LibraryManagement(controller: SyncStore<MusicController>) -> Element {
                     onclick: move |_| menu.set(LibraryMenu::Autotagging),
                     "Autotagging"
                 }
+                button {
+                    class: "basicbutton",
+                    onclick: move |_| menu.set(LibraryMenu::BulkEditor),
+                    "Bulk Editor"
+                }
             }
 
             match *menu.read() {
@@ -41,6 +47,79 @@ pub fn LibraryManagement(controller: SyncStore<MusicController>) -> Element {
                 LibraryMenu::Autotagging => rsx! {
                     TaggingMenu { controller }
                 },
+                LibraryMenu::BulkEditor => rsx! {
+                    BulkEditor { controller } 
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
+    let mut changes = use_signal(Vec::new);
+    //let change = use_signal(String::new);
+
+    let find_containing = move |_| {
+        for i in 0..controller.all_tracks().read().len() {
+            if controller.all_tracks().get(i).unwrap().read().artists.iter().any(|a| a.ends_with("- Topic")) {
+                let artists = controller.all_tracks().get(i).unwrap().read().artists.clone();
+                let changed_artists = artists.iter().map(|a| a.replace(" - Topic", "")).collect::<Vec<String>>();
+                changes.push((i, artists, changed_artists));
+            }
+        }
+    };
+
+    let save_changes = move |_| {
+        let database = crate::database::init_db().unwrap();
+        for change in &*changes.read() {
+            if let Some(ref mut track) = controller.all_tracks().get(change.0) {
+                track.write().artists = change.2.clone();
+                track.write().save_to_disk(&database).unwrap();
+                log::info!("{:?}", track);
+                log::info!("{:?} => {:?}", change.1, change.2);
+            }
+        }
+    };
+
+    rsx!{
+        div {
+            button {
+                class: "basicbutton",
+                onclick: find_containing,
+                margin: "0 10px",
+                "Load edits"
+            },
+            button {
+                class: "basicbutton",
+                onclick: save_changes,
+                margin: "0 10px",
+                "Save changes"
+            }
+        }
+        div {
+            class: "bulkeditor",
+            div {
+                "{changes.read().len()} possible edits",
+            }
+            div {
+                class: "bulkeditorlist",
+                for (index, (i, original, changed)) in changes.read().iter().enumerate() {
+                    div {
+                        class: "bulkeditoritem",
+                        img {
+                            onclick: move |_| {
+                                changes.remove(index);
+                            },
+                            margin: "5px",
+                            margin_bottom: "auto",
+                            class: "trackbutton",
+                            loading: "lazy",
+                            src: CLOSE_ICON,
+                        },
+                        "{controller.all_tracks().get(*i).unwrap().read().title} {original:?} => {changed:?}",
+                    }
+                }
             }
         }
     }
