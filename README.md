@@ -19,10 +19,11 @@ Android is supported, and should compile fine if the Android SDK is set up prope
  - [x] Shuffle/Unshuffle
  - [x] Custom Music Folder
  - [x] All tracks search
- - [ ] Search 
+ - [ ] File watching
+ - [x] Search 
     - [x] Search for albums/artists/genres
     - [x] Search View
-    - [ ] Better search algorithm
+    - [x] Better search algorithm
  - [ ] Media notifications/control
     - [x] Android
     - [ ] Desktop
@@ -58,7 +59,7 @@ Android is supported, and should compile fine if the Android SDK is set up prope
  - [x] Auto Playlists
     - [x] Sort by metadata
     - [ ] Automatic re-caching onload or on any change?
-    - [ ] Sort by audio features
+    - [ ] Sort by audio features (might just be fun as a tool?)
  - [ ] Theming (loading of custom css)
  - [ ] Tagging/Collection Management
     - [x] Tag Editor
@@ -66,6 +67,7 @@ Android is supported, and should compile fine if the Android SDK is set up prope
     - [ ] Albums with missing tracks
     - [x] Song Options
     - [ ] Multi-select song options
+    - [ ] Bulk Editor (Regex matching for broken metadata)
  - [ ] Music Exploration?
     - [ ] Auto Downloads (yt-dlp?)
     - [ ] Last FM-based reccomendations
