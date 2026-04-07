@@ -63,11 +63,12 @@ Android is supported, and should compile fine if the Android SDK is set up prope
  - [ ] Theming (loading of custom css)
  - [ ] Tagging/Collection Management
     - [x] Tag Editor
-    - [ ] Auto Tagging (MusicBrainz?)
+    - [x] Auto Tagging (MusicBrainz?)
     - [ ] Albums with missing tracks
     - [x] Song Options
     - [ ] Multi-select song options
-    - [ ] Bulk Editor (Regex matching for broken metadata)
+    - [ ] Bulk Editor (Regex matching for broken metadata?)
+    - [ ] Remove genre from all tracks (in genre option menu)
  - [ ] Music Exploration?
     - [ ] Auto Downloads (yt-dlp?)
     - [ ] Last FM-based reccomendations
