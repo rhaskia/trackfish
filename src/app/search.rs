@@ -166,7 +166,7 @@ impl SearchManager {
         searcher.reader = Some(reader);
     } 
 
-    pub fn fill_genre_information(&mut self, genres: &Vec<(String, usize)>) {
+    pub fn fill_genre_information(&mut self, genres: &Vec<(String, (String, usize))>) {
         let searcher = &mut self.genres;
         let genre = searcher.schema.get_field("genre").unwrap();
         let id = searcher.schema.get_field("id").unwrap();

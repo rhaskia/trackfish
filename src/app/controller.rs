@@ -6,7 +6,7 @@ use super::{
     track::{Mood, Track, TrackInfo},
     utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
-use crate::database::save_to_cache;
+use crate::database::{init_db, save_to_cache};
 use crate::analysis::utils::cosine_similarity;
 use log::{info, warn, error};
 use ndarray::Array1;
@@ -58,7 +58,7 @@ pub struct MusicController {
     pub all_tracks: Vec<Track>,
     pub track_info: Vec<TrackInfo>,
     pub artists: HashMap<String, (String, usize)>,
-    pub genres: HashMap<String, usize>,
+    pub genres: HashMap<String, (String, usize)>,
     pub albums: HashMap<String, (usize, usize)>, // count, first track (for image purposes)
     pub listens: Vec<Listen>,
     pub shuffle: bool,
@@ -114,7 +114,8 @@ impl MusicController {
 
         for i in 0..all_tracks.len() {
             for genre in all_tracks[i].genres.clone() {
-                *genres.entry(genre.clone()).or_insert(0) += 1;
+                let stripped = strip_unnessecary(&genre);
+                genres.entry(stripped).or_insert((genre, 0)).1 += 1;
             }
 
             for artist in all_tracks[i].artists.clone() {
@@ -243,6 +244,27 @@ impl<Lens> Store<MusicController, Lens> {
             + "\n"
             + &relative_paths.join("\n\n");
         std::fs::write(&playlist.file, file).unwrap();
+    }
+
+    /// Renames all instances of a genre on tracks
+    fn rename_genre(&mut self, old_genre: String, new_genre: String) {
+        info!("Renaming genre {old_genre} to {new_genre}");
+        for i in 0..self.all_tracks().read().len() {
+            let track = self.all_tracks().get(i).unwrap();
+            info!("{i}");
+            
+            if track.read().genres.contains(&old_genre) {
+                info!("Updating track {i}'s {old_genre} to {new_genre}");
+                let mut new_tag = track();
+
+                if let Some(j) = new_tag.genres.iter().position(|g| g == &old_genre) {
+                    assert_eq!(new_tag.genres[j], old_genre);
+                    new_tag.genres[j] = new_genre.to_string();
+                    let conn = init_db().unwrap();
+                    self.update_tag(&conn, i, new_tag);
+                }
+            }
+        }
     }
 
     /// Plays a given track
@@ -499,10 +521,11 @@ impl<Lens> Store<MusicController, Lens> {
         }
 
         for genre in genres {
-            if *self.genres().get(genre.clone()).unwrap().read() == 1 {
+            let stripped = strip_unnessecary(&genre);
+            if self.genres().get(stripped.clone()).unwrap().read().1 == 1 {
                 self.genres().write().remove(&genre);
             } else {
-                if let Some(mut val) = self.genres().get(genre) { *val.write() -= 1; };
+                if let Some(mut val) = self.genres().get(genre) { val.write().1 -= 1; };
             }
         }
 
@@ -522,8 +545,10 @@ impl<Lens> Store<MusicController, Lens> {
             return;
         }
 
-        let old_album = self.all_tracks().read()[track].album.clone();
-        let old_artists = self.all_tracks().read()[track].artists.clone();
+        let old_track = self.all_tracks().get(track).unwrap(); 
+        let old_album = old_track.read().album.clone();
+        let old_artists = old_track.read().artists.clone();
+        let old_genres = old_track.read().genres.clone();
         info!("db2");
 
         if old_album != tag.album {
@@ -559,6 +584,27 @@ impl<Lens> Store<MusicController, Lens> {
                 }
             }
         }
+
+        if old_genres != tag.genres {
+            for genre in old_genres {
+                let stripped = strip_unnessecary(&genre);
+                if self.genres().read()[&stripped].1 == 1 {
+                    self.genres().write().remove(&stripped);
+                } else {
+                    if let Some(mut val) = self.genres().get(stripped) { val.write().1 -= 1; };
+                }
+            }
+
+            for genre in &tag.genres {
+                let stripped = strip_unnessecary(&genre);
+                if self.genres().read().contains_key(&stripped) {
+                    if let Some(mut val) = self.genres().get(stripped) { val.write().1 += 1; };
+                } else {
+                    self.genres().write().insert(stripped, (genre.to_string(), 1));
+                }
+            }
+        }
+        info!("updated");
 
         tag.save_to_disk(&conn).unwrap();
 

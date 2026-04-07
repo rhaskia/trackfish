@@ -1,7 +1,7 @@
 .librarymanagementview {
     display: flex;
     flex-direction: row;
-    height: 100%;
+    height: calc(100vh - 49px);
     min-width: 100vw;
     position: relative;
     overflow: hidden;
@@ -46,8 +46,10 @@
 }
 
 .bulkeditor {
-    height: 90vh;
     color: white;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .bulkeditoritem {
@@ -57,8 +59,8 @@
 }
 
 .bulkeditorlist {
-    height: 90vh;
     overflow-y: scroll;
+    flex: 1 1 0;
     color: white;
 }
 

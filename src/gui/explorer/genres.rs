@@ -1,6 +1,6 @@
 use super::TracksView;
-use crate::app::controller::MusicControllerStoreExt;
-use crate::app::utils::strip_unnessecary;
+use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
+use crate::app::utils::title_case;
 use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW, SEARCHER},
@@ -9,11 +9,14 @@ use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
+pub const RENAMING_GENRE: GlobalSignal<bool> = Signal::global(|| false);
+
 #[component]
 pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
-    let mut genres = use_signal(|| Vec::new());
+    let mut genres: Signal<Vec<(String, (String, usize))>> = use_signal(|| Vec::new());
     let mut is_searching = use_signal(|| false);
     let mut set_searcher_genres = use_signal(|| false);
+    let mut new_genre_name = use_signal(String::new);
 
     use_effect(move || {
         if genres.read().len() > 0 && !set_searcher_genres() {
@@ -26,8 +29,8 @@ pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
         let mut genres_unsorted = controller
             .genres()()
             .into_iter()
-            .collect::<Vec<(String, usize)>>();
-        genres_unsorted.sort_by(|(_, a), (_, b)| b.cmp(a));
+            .collect::<Vec<(String, (String, usize))>>();
+        genres_unsorted.sort_by(|(_, (_, a)), (_, (_, b))| b.cmp(a));
         genres.set(genres_unsorted);
     });
 
@@ -71,17 +74,17 @@ pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
                 display: if VIEW.read().genre.is_some() { "none" },
 
                 for i in 0..genres.read().len() {
-                    if genres.read()[i].1 > 1 {
+                    if genres.read()[i].1.1 > 1 {
                         div {
                             class: "thinitem",
                             id: "genre-{genres.read()[i].0}",
-                            onclick: move |_| set_genre(genres.read()[i].0.clone()),
+                            onclick: move |_| set_genre(title_case(&genres.read()[i].1.0)),
                             if genres.read()[i].0.is_empty() {
                                 "Unknown Genres"
                             } else {
-                                "{genres.read()[i].0}"
+                                "{title_case(&genres.read()[i].1.0)}"
                             }
-                            small { "{genres.read()[i].1} songs" }
+                            small { "{genres.read()[i].1.1} songs" }
                         }
                     }
                 }
@@ -94,12 +97,32 @@ pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
             if is_searching() {
                 GenreSearch { is_searching, genres, row_height }
             }
+
+            if RENAMING_GENRE() {
+                div { class: "optionsbg", onclick: move |_| RENAMING_GENRE.set(false),
+                    div { class: "playlistadder",
+                        input {
+                            r#type: "text",
+                            onclick: |e| e.stop_propagation(),
+                            onchange: move |e| new_genre_name.set(e.data.value()),
+                        }
+
+                        button {
+                            onclick: move |_| {
+                                let old_name = VIEW.read().genre.clone().unwrap();
+                                controller.rename_genre(old_name, new_genre_name());
+                            },
+                            "Rename"
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 #[component]
-pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize)>>, row_height: Signal<i32>) -> Element {
+pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, (String, usize))>>, row_height: Signal<i32>) -> Element {
     let mut search = use_signal(String::new);
 
     let matches = use_memo(move || {
@@ -152,6 +175,18 @@ pub fn GenreSearch(is_searching: Signal<bool>, genres: Signal<Vec<(String, usize
             }
 
             div { flex: 1 }
+        }
+    }
+}
+
+#[component]
+pub fn GenreOptions(controller: SyncStore<MusicController>) -> Element {
+    rsx!{
+        hr { }
+
+        button { onclick: move |_| RENAMING_GENRE.set(true), // Possibly use a name string later on
+            img { src: EDIT_ICON }
+            "Rename Genre"
         }
     }
 }

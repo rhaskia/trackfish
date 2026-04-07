@@ -60,12 +60,57 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
     let mut changes = use_signal(Vec::new);
     //let change = use_signal(String::new);
 
+    // let find_containing = move |_| {
+    //     for i in 0..controller.all_tracks().read().len() {
+    //         if controller.all_tracks().get(i).unwrap().read().artists.iter().any(|a| a.ends_with("- Topic")) {
+    //             let artists = controller.all_tracks().get(i).unwrap().read().artists.clone();
+    //             let changed_artists = artists.iter().map(|a| a.replace(" - Topic", "")).collect::<Vec<String>>();
+    //             changes.push((i, artists, changed_artists));
+    //         }
+    //     }
+    // };
+
+    // let find_containing = move |_| {
+    //     for i in 0..controller.all_tracks().read().len() {
+    //         if controller.all_tracks().get(i).unwrap().read().artists.iter().any(|a| a.contains(",") || a.contains("&")) {
+    //             let artists = controller.all_tracks().get(i).unwrap().read().artists.clone();
+    //             let changed_artists = artists.iter().map(|a| a.split([',', '&']).map(|s| s.trim().to_string()).collect::<Vec<String>>()).flatten().collect::<Vec<String>>();
+    //             let mut no_dups = Vec::new();
+    //             for artist in &changed_artists {
+    //                 if !no_dups.contains(artist) {
+    //                     no_dups.push(artist.clone())
+    //                 }
+    //             }
+    //             changes.push((i, artists, no_dups));
+    //         }
+    //     }
+    // };
+
+    // let find_containing = move |_| {
+    //     for i in 0..controller.all_tracks().read().len() {
+    //         if controller.all_tracks().get(i).unwrap().read().title.contains(" - ") {
+    //             let original = controller.all_tracks().get(i).unwrap()();
+    //             let mut changed = original.clone();
+    //             let mut s = original.title.split(" - ");
+    //             let artist = s.next().unwrap();
+    //             let title = s.next().unwrap();
+    //             changed.title = title.to_string();
+    //             changed.artists = vec![artist.to_string()];
+    //             changes.push((i, original, changed));
+    //         }
+    //     }
+    // };
+
     let find_containing = move |_| {
         for i in 0..controller.all_tracks().read().len() {
-            if controller.all_tracks().get(i).unwrap().read().artists.iter().any(|a| a.ends_with("- Topic")) {
-                let artists = controller.all_tracks().get(i).unwrap().read().artists.clone();
-                let changed_artists = artists.iter().map(|a| a.replace(" - Topic", "")).collect::<Vec<String>>();
-                changes.push((i, artists, changed_artists));
+            let title = controller.all_tracks().get(i).unwrap().read().title.to_ascii_lowercase();
+            if title.contains("official") || title.contains("audio") {
+                let original = controller.all_tracks().get(i).unwrap()();
+                let mut changed = original.clone();
+                let mut s = original.title.split(['[', '(']);
+                let title = s.next().unwrap().trim();
+                changed.title = title.to_string();
+                changes.push((i, original, changed));
             }
         }
     };
@@ -74,7 +119,7 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
         let database = crate::database::init_db().unwrap();
         for change in &*changes.read() {
             if let Some(ref mut track) = controller.all_tracks().get(change.0) {
-                track.write().artists = change.2.clone();
+                track.set(change.2.clone());
                 track.write().save_to_disk(&database).unwrap();
                 log::info!("{:?}", track);
                 log::info!("{:?} => {:?}", change.1, change.2);
@@ -117,7 +162,9 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
                             loading: "lazy",
                             src: CLOSE_ICON,
                         },
-                        "{controller.all_tracks().get(*i).unwrap().read().title} {original:?} => {changed:?}",
+                        "{original.title:?} => {changed.title:?}",
+                        br {}
+                        "{original.artists:?} => {changed.artists:?}",
                     }
                 }
             }
@@ -182,6 +229,15 @@ enum TaggingType {
     BadGenresNoAlbum
 }
 
+fn bad_genre(genre: &str) -> bool {
+    genre == "Trance" || genre == "Electronic" || genre == "Jazz" ||
+     genre == "Pop" || genre == "Ambient" || genre == "Rnb"
+}
+
+fn bad_genres(track: &Track) -> bool {
+    track.genres.iter().filter(|g| bad_genre(g)).count() >= 2
+}
+
 #[component]
 pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
     // tagging all untagged tracks or just those missing metadata
@@ -199,14 +255,54 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
     let mut tag = use_signal(Track::default);
     let mut started = use_signal(|| false);
 
+    let mut with_bad_genres = use_signal(Vec::new);
+    let mut no_album = use_signal(Vec::new);
+    let mut with_no_albums = use_signal(|| 0);
+    let mut no_genres = use_signal(Vec::new);
+    let mut reset = use_signal(|| false);
+
     use_future(move || async move {
         println!("getting tag");
 
+        for i in 0..controller.all_tracks().read().len() {
+            let track = controller.all_tracks().get(i).unwrap();
+            let album = &track.read().album;
+
+            if album.is_empty() || album.to_ascii_lowercase() == "music" {
+                no_album.push(i);
+            }
+
+            if track.read().genres.len() == 0 || track.read().genres[0].is_empty() {
+                no_genres.push(i);
+            }
+
+            if bad_genres(&*track.read()) {
+                with_bad_genres.push(i);
+            }
+        }
+
+        with_no_albums.set(no_album.len());
+
         loop {
-            if is_tagged(&*DB.read(), &controller.all_tracks().get(cached_index()).unwrap().read().file).unwrap() {
-                *cached_index.write() += 1;
+            if cache.read().len() > 10 {
+                tokio::time::sleep(Duration::from_millis(500)).await;
                 continue;
             }
+
+            if is_tagged(&*DB.read(), &controller.all_tracks().get(cached_index()).unwrap().read().file).unwrap() {
+                if no_album.read().len() > 0 {
+                    cached_index.set(no_album.write().pop().unwrap());
+                } else {
+                    if !reset() {
+                        reset.set(true);
+                        cached_index.set(0);
+                    } else {
+                        *cached_index.write() += 1;
+                    }
+                }
+                continue;
+            }
+
             info!("{:?} isnt tagged", controller.all_tracks().get(cached_index()).unwrap().read().file);
 
             let last_requested = Instant::now();
@@ -215,7 +311,17 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
             match recordings {
                 Ok(r) => {
                     cache.write().push((cached_index(), r));
-                    *cached_index.write() += 1;
+                    if no_album.read().len() > 0 {
+                        info!("no album poppped");
+                        cached_index.set(no_album.write().pop().unwrap());
+                    } else {
+                        if !reset() {
+                            reset.set(true);
+                            cached_index.set(0);
+                        } else {
+                            *cached_index.write() += 1;
+                        }
+                    }
                     tokio::time::sleep(Duration::from_secs(3)).await;
                 }
                 Err(err) => {
@@ -251,6 +357,11 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
 
     rsx!{
         div { class: "taggingview",
+            "{with_no_albums()} tracks without albums"
+            br {}
+            "{no_genres.read().len()} tracks without genres"
+            br {}
+            "{with_bad_genres.read().len()} tracks with bad genres"
 
             div { class: "tagsidebyside",
                 div { class: "oldtags tags",
@@ -343,8 +454,16 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                             "Request lastfm genres"
                         }
 
+                        a { 
+                            color: "var(--accent)",
+                            href: "https://last.fm/music/{tag.read().artists.get(0).cloned().unwrap_or_default()}/_/{tag.read().title}",
+                            "LastFM Page" 
+                        }
+
                         button { "Request cover art" }
                     }
+
+                    "{lastfm_genres:?}"
                 }
             }
 
@@ -359,6 +478,7 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                         info!("updated tag");
                         next(e).await;
                         info!("finished tag");
+                        *with_no_albums.write() -= 1;
                     },
                     "Confirm"
                 }

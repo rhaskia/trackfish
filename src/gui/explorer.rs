@@ -17,6 +17,7 @@ use super::{View, TRACKOPTION, VIEW};
 use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
 use crate::app::utils::similar;
 use crate::app::MusicController;
+use crate::gui::explorer::genres::GenreOptions;
 use dioxus::document::eval;
 use dioxus::prelude::*;
 use log::info;
@@ -369,6 +370,10 @@ pub fn ExplorerOptions(
                 button { onclick: move |_| adding_to_queue.set(true),
                     img { src: QUEUE_ICON }
                     "Add to a queue"
+                }
+
+                if VIEW.read().current == View::Genres {
+                    GenreOptions { controller }
                 }
             }
         }

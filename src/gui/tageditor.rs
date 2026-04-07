@@ -1,3 +1,4 @@
+use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use crate::app::MusicController;
@@ -122,10 +123,22 @@ pub fn TagEditor(mut controller: SyncStore<MusicController>, mut tag: Signal<Tra
                 div { class: "editormultipleline",
                     input {
                         flex: "1 1 0",
-                        id: "genre",
+                        id: "genre-input-{i}",
                         r#type: "text",
                         value: "{tag.read().genres[i]}",
                         onchange: move |e| tag.write().genres[i] = e.value(),
+                        onkeydown: move |e: Event<KeyboardData>| {
+                            if e.code() == Code::Enter {
+                                if i == tag.read().genres.len() - 1 {
+                                    tag.write().genres.push(String::new());
+                                }
+                                eval(&format!(r#"
+                                    setTimeout(function() {{
+                                        document.getElementById("genre-input-{}").focus()
+                                    }}, 100);
+                                "#, i + 1));
+                            }
+                        }
                     }
                     button {
                         onclick: move |_| {
