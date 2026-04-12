@@ -177,7 +177,7 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
         }
 
         if queue_editing.read().is_some() {
-            QueueOptions { controller, queue_editing }
+            QueueOptions { controller, queue_editing, selected_queue }
         }
     }
 }
@@ -186,12 +186,18 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
 pub fn QueueOptions(
     controller: SyncStore<MusicController>,
     queue_editing: Signal<Option<usize>>,
+    selected_queue: Signal<usize>,
 ) -> Element {
     rsx! {
         div { class: "optionsbg", onclick: move |_| queue_editing.set(None),
             div { class: "optionbox", style: "--width: 300px; --height: 100px;",
                 h3 { "{controller.queues().get(queue_editing().unwrap()).unwrap().read().queue_type}" }
-                button { onclick: move |_| controller.remove_queue(queue_editing.unwrap()),
+                button { 
+                    onclick: move |_| {
+                        controller.remove_queue(queue_editing.unwrap());
+                        *selected_queue.write() -= 1;
+                        // TODO: if no more queues, add all tracks queue
+                    },
                     img { src: REMOVE_ICON }
                     "Remove queue"
                 }

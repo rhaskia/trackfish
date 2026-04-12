@@ -187,6 +187,7 @@ pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
                 label: "Delete playlist {controller.playlists().get(deleting_playlist().unwrap()).unwrap().read().name}?",
                 confirm: move |_| controller.delete_playlist(deleting_playlist().unwrap()),
                 cancel: move |_| deleting_playlist.set(None),
+                visible: true,
             }
         }
 
@@ -208,6 +209,7 @@ pub fn PlaylistsView(controller: SyncStore<MusicController>) -> Element {
                 label: "Delete autoplaylist {controller.autoplaylists().get(deleting_autoplaylist().unwrap()).unwrap().read().name}?",
                 confirm: move |_| controller.delete_autoplaylist(deleting_autoplaylist().unwrap()),
                 cancel: move |_| deleting_autoplaylist.set(None),
+                visible: true,
             }
         }
     }

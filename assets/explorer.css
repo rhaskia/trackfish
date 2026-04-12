@@ -190,6 +190,11 @@
 
 #artistlist .thinitem {
     margin-left: 10px;
+    padding-bottom: 10.67px;
+}
+
+#genrelist .thinitem {
+    padding-bottom: 10.34px;
 }
 
 #artistlist .thinitem, #genrelist .thinitem {

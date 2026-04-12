@@ -92,13 +92,8 @@ fn init() {
 
 #[cfg(not(target_os = "android"))]
 fn load_image() -> Icon {
-    let png = &include_bytes!("../assets/icons/icon256.png")[..];
-    let header = minipng::decode_png_header(png).expect("bad PNG");
-    let mut buffer = vec![0; header.required_bytes_rgba8bpc()];
-    let mut image = minipng::decode_png(png, &mut buffer).expect("bad PNG");
-    image.convert_to_rgba8bpc().unwrap();
-    let pixels = image.pixels();
-    Icon::from_rgba(pixels.to_vec(), image.width(), image.height()).unwrap()
+    let pixels = include_bytes!("../assets/icons/iconraw");
+    Icon::from_rgba(pixels.to_vec(), 256, 256).unwrap()
 }
 
 #[cfg(not(target_os = "android"))]
@@ -340,6 +335,7 @@ fn App() -> Element {
                     cancel: |_| {
                         DELETING_TRACK.set(None);
                     },
+                    visible: true,
                 }
             }
         }

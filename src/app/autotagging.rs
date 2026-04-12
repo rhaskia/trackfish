@@ -33,44 +33,6 @@ pub async fn get_possible_track_recordings(track: Track) -> anyhow::Result<Vec<R
     Ok(recordings)
 }
 
-pub async fn get_lastfm_genres(track: &str, artist: &str, api_key: &str) -> anyhow::Result<Vec<String>> {
-    let genres = Vec::new();
-
-    let client = Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0")
-        .build()?;
-
-    let track = track.replace("&", "%26").replace(" ", "+");
-    let artist = artist.replace("&", "%26").replace(" ", "+");
-    let url = format!("https://last.fm/music/{artist}/_/{track}/+tags");
-
-    log::info!("requesting possible genres at url {url}");
-
-    let response = client.get(url).send()
-        .await?;
-
-    let body = response.text()
-        .await?;
-
-    log::info!("{body}");
-
-    let mut chars = body.chars();
-    let position = body.find("data-tealium-data=");
-    let _ = chars.nth(position.ok_or(anyhow::anyhow!("Found no tags"))?);
-
-    let mut result = Vec::new();
-    while let Some(c) = chars.next() {
-        if c == '\"' {
-            break;
-        }
-        result.push(c);
-    }
-
-    log::info!("{:?}", result.into_iter().collect::<String>());
-
-    Ok(genres)
-}
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecordingLookUp {

@@ -6,7 +6,7 @@ use super::{
     track::{Mood, Track, TrackInfo},
     utils::{similar, strip_unnessecary}, autoplaylist::AutoPlaylist,
 };
-use crate::database::{init_db, save_to_cache};
+use crate::database::init_db;
 use crate::analysis::utils::cosine_similarity;
 use log::{info, warn, error};
 use ndarray::Array1;
@@ -49,9 +49,6 @@ fn send_music_msg(msg: MusicMsg) {
         info!("no MUSIC_PLAYER_ACTIONS set");
     }
 }
-
-type MappedQueue<Lens> = Store<Queue, MappedMutSignal<Queue, Lens, fn(&MusicController) -> &Queue, fn(&mut MusicController) -> &mut Queue>>;
-type MappedTrack<Lens> = Store<Track, MappedMutSignal<Track, Lens, fn(&MusicController) -> &Track, fn(&mut MusicController) -> &mut Track>>;
 
 #[derive(PartialEq, Clone, Store)]
 pub struct MusicController {
@@ -265,6 +262,26 @@ impl<Lens> Store<MusicController, Lens> {
                 }
             }
         }
+    }
+
+    /// Removes all instances of a genre from tracks
+    /// Useful for nonsense genres that autotaggers sometimes apply
+    fn delete_genre(&mut self, genre: String) {
+        info!("Deleting genre {genre}");
+        let conn = init_db().unwrap();
+
+        let tracks: Vec<usize> = self.all_tracks().iter().enumerate()
+            .filter(|(_, t)| t.read().has_genre(&genre))
+            .map(|(idx, _)| idx).collect();
+
+        for i in tracks {
+            let genres = self.all_tracks().get(i).unwrap().read().genres.clone().into_iter().filter(|g| **g != genre).collect();
+
+            self.all_tracks().get(i).unwrap().write().genres = genres;
+            self.all_tracks().get(i).unwrap().write().save_to_disk(&conn).unwrap();
+        }
+
+        self.genres().remove(&strip_unnessecary(&genre));
     }
 
     /// Plays a given track
@@ -539,7 +556,6 @@ impl<Lens> Store<MusicController, Lens> {
 
     /// Updates track tag in memory and saves it to storage 
     fn update_tag(&mut self, conn: &Connection, track: usize, tag: Track) {
-        info!("db2");
         if tag == self.all_tracks().read()[track] {
             info!("Nothing to update with tag");
             return;
@@ -549,7 +565,6 @@ impl<Lens> Store<MusicController, Lens> {
         let old_album = old_track.read().album.clone();
         let old_artists = old_track.read().artists.clone();
         let old_genres = old_track.read().genres.clone();
-        info!("db2");
 
         if old_album != tag.album {
             if self.albums().read()[&old_album].0 == 1 {
@@ -621,6 +636,7 @@ impl<Lens> Store<MusicController, Lens> {
     
     /// Starts an album queue starting with a specified track
     fn play_album_at(&mut self, album: String, track: usize) {
+        info!("Playing album {album}");
         let tracks = self.get_tracks_where(|track| track.album == album);
         self.add_queue_at(tracks, QueueType::Album(album.clone()), track);
     }
@@ -671,21 +687,11 @@ impl<Lens> Store<MusicController, Lens> {
         info!("{track}");
         let track_idx = tracks.iter().position(|e| *e == track).unwrap();
 
-        for i in 0..self.queues().read().len() {
-            if self.queues().read()[i].queue_type == queue {
-                self.queues().get(i).unwrap().write().cached_order = tracks;
-                self.queues().get(i).unwrap().write().current_track = track_idx;
-                self.current_queue_index().set(i);
-                self.play_track(track);
-                self.play();
-                info!("{}, {}", self.queues().read()[i].current(), track);
-                return;
-            }
-        }
-
         self.queues().write().push(Queue::new(queue, tracks));
-        self.current_queue_index().set(self.queues().read().len() - 1);
-        self.queues().get(self.current_queue_index()()).unwrap().write().current_track = track_idx;
+        let queues_len = self.queues().read().len();
+        self.current_queue_index().set(queues_len - 1);
+        let current_queue_index = self.current_queue_index()();
+        self.queues().get(current_queue_index).unwrap().write().current_track = track_idx;
         self.play_track(track);
         self.play();
     }

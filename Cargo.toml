@@ -48,7 +48,6 @@ android_logger = "0.15"
 # Desktop only dependencies
 [target.'cfg(not(target_os = "android"))'.dependencies]
 rfd =  "=0.12.0"
-minipng = "1.0.0"
 
 [features]
 default = ["dioxus/desktop"]

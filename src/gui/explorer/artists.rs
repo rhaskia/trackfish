@@ -1,10 +1,12 @@
+use std::time::Duration;
+
 use super::TracksView;
 use crate::app::controller::MusicControllerStoreExt;
-use crate::app::utils::strip_unnessecary;
 use crate::{
     app::MusicController,
     gui::{icons::*, View, VIEW, SEARCHER},
 };
+use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
@@ -97,7 +99,18 @@ pub fn ArtistsSearch(
         }
     });
 
-    let row_height = 58;
+    let mut row_height = use_signal(|| 58.0);
+    
+    use_future(move || async move {
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        let mut js = eval(r#"
+            dioxus.send(document.getElementById('artist-0').clientHeight);
+        "#);
+
+        row_height.set(js.recv().await.unwrap());
+        info!("{row_height}");
+    });
 
     rsx! {
         div { class: "searchholder", onclick: move |_| is_searching.set(false),
@@ -121,7 +134,7 @@ pub fn ArtistsSearch(
                         div {
                             class: "thinitem",
                             onclick: move |_| {
-                                let scroll_amount = artists.read().iter().position(|a| a.1.0 == artist).unwrap() * row_height;
+                                let scroll_amount = artists.read().iter().position(|a| a.1.0 == artist).unwrap() as f64 * row_height();
 
                                 document::eval(
                                     &format!(

@@ -2,7 +2,7 @@ use super::TracksSearch;
 use super::{View, VIEW};
 use crate::app::MusicController;
 use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplExt};
-use crate::gui::{EDITING_TAG, TRACKOPTION, icons::*};
+use crate::gui::{TRACKOPTION, icons::*};
 use crate::gui::SEARCHER;
 use dioxus::document::eval;
 use dioxus::prelude::*;

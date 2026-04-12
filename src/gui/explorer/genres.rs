@@ -3,13 +3,14 @@ use crate::app::controller::{MusicControllerStoreExt, MusicControllerStoreImplEx
 use crate::app::utils::title_case;
 use crate::{
     app::MusicController,
-    gui::{icons::*, View, VIEW, SEARCHER},
+    gui::{icons::*, View, VIEW, SEARCHER, Confirmation},
 };
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use super::ExplorerSwitch;
 
 pub const RENAMING_GENRE: GlobalSignal<bool> = Signal::global(|| false);
+pub const DELETING_GENRE: GlobalSignal<bool> = Signal::global(|| false);
 
 #[component]
 pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
@@ -111,11 +112,23 @@ pub fn GenreList(controller: SyncStore<MusicController>) -> Element {
                             onclick: move |_| {
                                 let old_name = VIEW.read().genre.clone().unwrap();
                                 controller.rename_genre(old_name, new_genre_name());
+                                VIEW.write().genre = Some(title_case(&new_genre_name()));
                             },
                             "Rename"
                         }
                     }
                 }
+            }
+
+            Confirmation {
+                label: "Delete genre {VIEW.read().genre.clone().unwrap_or_default()}?",
+                confirm: move |_| {
+                    controller.delete_genre(VIEW.read().genre.clone().unwrap());
+                    DELETING_GENRE.set(false);
+                    VIEW.write().genre = None;
+                },
+                cancel: move |_| DELETING_GENRE.set(false),
+                visible: DELETING_GENRE(),
             }
         }
     }
@@ -187,6 +200,11 @@ pub fn GenreOptions(controller: SyncStore<MusicController>) -> Element {
         button { onclick: move |_| RENAMING_GENRE.set(true), // Possibly use a name string later on
             img { src: EDIT_ICON }
             "Rename Genre"
+        }
+
+        button { onclick: move |_| DELETING_GENRE.set(true), 
+            img { src: DELETE_ICON }
+            "Delete Genre"
         }
     }
 }

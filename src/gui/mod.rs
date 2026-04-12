@@ -13,7 +13,6 @@ pub mod trackview;
 #[cfg(target_os = "android")]
 pub mod media;
 use crate::app::track::TrackInfo;
-use crate::app::utils::strip_unnessecary;
 use crate::database::{hash_filename, init_db, row_to_weights};
 #[cfg(target_os = "android")]
 use crate::gui::media::{MediaMsg, MEDIA_MSG_TX};
