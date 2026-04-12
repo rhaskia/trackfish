@@ -60,7 +60,7 @@ pub fn AutoPlaylistView(controller: SyncStore<MusicController>) -> Element {
                         loading: "onvisible",
                     }
 
-                    span { "{controller.all_tracks().get(i).unwrap().read().title}" }
+                    span { "{controller.all_tracks().get(tracks.read()[i]).unwrap().read().title}" }
 
                     div { flex_grow: 1 }
 
