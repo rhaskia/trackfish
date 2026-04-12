@@ -126,6 +126,8 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
 
     rsx!{
         div {
+            class: "header",
+            padding: "0 10px",
             button {
                 class: "basicbutton",
                 onclick: move |_| {
@@ -138,13 +140,11 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
                         RemoveUnneededBrackets => remove_unneeded_brackets(),
                     }
                 },
-                margin: "0 10px",
                 "Load edits"
             },
             button {
                 class: "basicbutton",
                 onclick: save_changes,
-                margin: "0 10px",
                 "Save changes"
             }
             select {
@@ -162,16 +162,16 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
                 option { "Remove Topic" }
                 option { "Remove Unneeded Brackets" }
             }
-            "{change:?}"
         }
         div {
             class: "bulkeditor",
             div {
+                padding: "10px",
                 "{changes.read().len()} possible edits",
             }
             div {
                 class: "bulkeditorlist",
-                for (index, (_, original, changed)) in changes.read().iter().enumerate() {
+                for (index, (i, original, changed)) in changes.read().iter().enumerate() {
                     div {
                         class: "bulkeditoritem",
                         img {
@@ -183,6 +183,12 @@ pub fn BulkEditor(controller: SyncStore<MusicController>) -> Element {
                             class: "trackbutton",
                             loading: "lazy",
                             src: CLOSE_ICON,
+                        },
+                        img {
+                            class: "trackitemicon",
+                            loading: "onvisible",
+                            margin: "0 10px 0px 5px",
+                            src: "/trackimage/{i}?origin=bulkeditor",
                         },
                         "{original.title:?} => {changed.title:?}",
                         br {}
