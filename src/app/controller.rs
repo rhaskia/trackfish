@@ -429,9 +429,10 @@ impl<Lens> Store<MusicController, Lens> {
         }
 
         // next track exists in queue
+        let next_idx = self.current_queue().read().current_track + 1;
         if let Some(next) = self.current_queue().read()
             .cached_order
-            .get(self.current_queue().read().current_track + 1)
+            .get(next_idx)
             .cloned()
         {
             self.current_queue().write().current_track += 1;
@@ -453,7 +454,8 @@ impl<Lens> Store<MusicController, Lens> {
                 if self.queues().read().len() > self.current_queue_index()() + 1 {
                     *self.current_queue_index().write() += 1;
                     // TODO: shuffle next queue if needed
-                    self.play_track(self.current_queue().read().track(0))
+                    let track_idx = self.current_queue().read().track(0);
+                    self.play_track(track_idx)
                 }
             }
         }
@@ -465,7 +467,8 @@ impl<Lens> Store<MusicController, Lens> {
     fn set_queue_and_track(&mut self, queue: usize, track: usize) {
         self.current_queue_index().set(queue);
         self.queues().get(queue).unwrap().write().current_track = track;
-        self.play_track(self.queues().get(queue).unwrap().read().cached_order[track]);
+        let track = self.queues().get(queue).unwrap().read().cached_order[track];
+        self.play_track(track);
     }
 
     /// Returns tracks matching a certain QueueType
@@ -500,7 +503,8 @@ impl<Lens> Store<MusicController, Lens> {
         );
         playlist.tracks = queue.cached_order;
         self.playlists().write().push(playlist);
-        self.save_playlist(self.playlists().read().len() - 1);
+        let playlists_len = self.playlists().read().len();
+        self.save_playlist(playlists_len - 1);
 
         // TODO replace queue with playlist queue?
     }
@@ -516,11 +520,11 @@ impl<Lens> Store<MusicController, Lens> {
     }
 
     /// Deletes a track and updates controller information about album/artist/genre amounts 
-    fn delete_track(&mut self, conn: &Connection, track: usize) {
-        std::fs::remove_file(self.all_tracks().read()[track].file.clone()).unwrap();
-        let album = self.all_tracks().read()[track].album.clone();
-        let artists = self.all_tracks().read()[track].artists.clone();
-        let genres = self.all_tracks().read()[track].genres.clone();
+    fn delete_track(&mut self, conn: &Connection, track_idx: usize) {
+        let track = self.all_tracks().get(track_idx).unwrap()();
+        let Track { album, artists, genres, title, file, .. } = track;
+
+        std::fs::remove_file(&file).unwrap();
 
         if self.albums().get(album.clone()).unwrap().read().0 == 1 {
             self.albums().write().remove(&album);
@@ -546,12 +550,12 @@ impl<Lens> Store<MusicController, Lens> {
             }
         }
 
-        crate::database::remove_track_from_database(&conn, &self.all_tracks().read()[track].file).unwrap();
+        crate::database::remove_track_from_database(&conn, &file).unwrap();
 
-        info!("successfully deleted track {:?}", self.all_tracks().read()[track].title);
+        info!("successfully deleted track {:?}", title);
 
         // TODO: some better way of removing tracks during runtime
-        *self.all_tracks().get(track).unwrap().write() = Track::default();
+        *self.all_tracks().get(track_idx).unwrap().write() = Track::default();
     }   
 
     /// Updates track tag in memory and saves it to storage 
@@ -631,7 +635,8 @@ impl<Lens> Store<MusicController, Lens> {
         let tracks = self.get_tracks_where(|track| track.artists.contains(&artist));
         self.queues().write()
             .push(Queue::new(QueueType::Artist(artist), tracks));
-        *self.current_queue_index().write() = self.queues().read().len() - 1;
+        let queue_len = self.queues().read().len();
+        *self.current_queue_index().write() = queue_len - 1;
     }
     
     /// Starts an album queue starting with a specified track
@@ -661,18 +666,20 @@ impl<Lens> Store<MusicController, Lens> {
 
     /// Starts a playlist, with a given track to start
     fn play_playlist_at(&mut self, playlist: usize, track: usize) {
+        let name = self.playlists().read()[playlist].name.clone();
         self.add_queue_at(
             self.playlists().read()[playlist].tracks.clone(),
-            QueueType::Playlist(self.playlists().read()[playlist].name.clone(), playlist),
+            QueueType::Playlist(name, playlist),
             track,
         );
     }
 
     /// Starts an autoplaylist, with a given track to start
     fn play_autoplaylist_at(&mut self, tracks: Vec<usize>, autoplaylist: usize, track: usize) {
+        let name = self.autoplaylists().read()[autoplaylist].name.clone();
         self.add_queue_at(
             tracks,
-            QueueType::AutoPlaylist(self.autoplaylists().read()[autoplaylist].name.clone(), autoplaylist),
+            QueueType::AutoPlaylist(name, autoplaylist),
             track,
         );
     }
@@ -895,6 +902,11 @@ impl<Lens> Store<MusicController, Lens> {
     /// Gets a reference to a given queue
     fn get_queue(&self, idx: usize) -> Store<Queue, IndexWrite<usize, MappedMutSignal<Vec<Queue>, Lens, for<'a> fn(&'a MusicController) -> &'a Vec<Queue>, for<'a> fn(&'a mut MusicController) -> &'a mut Vec<Queue>>>> {
         self.queues().get(idx).unwrap()
+    }
+
+    fn get_queue_track(&self, queue_idx: usize, track_idx: usize) -> Store<Track, IndexWrite<usize, MappedMutSignal<std::vec::Vec<Track>, Lens, for<'a> fn(&'a MusicController) -> &'a Vec<Track>, for<'a> fn(&'a mut MusicController) -> &'a mut std::vec::Vec<Track>>>>{
+        let idx = self.queues().get(queue_idx).unwrap().read().cached_order[track_idx];
+        self.get_track(idx).unwrap()
     }
 
     /// Gets a reference to the current queue

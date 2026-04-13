@@ -18,6 +18,17 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
     let mut queue_height = use_signal(|| 0.0);
     let mut queue_editing = use_signal(|| None);
 
+    let mut window_size = use_signal(|| 0);
+    const ROW_HEIGHT: usize = 62;
+    const BUFFER_ROWS: usize = 5;
+
+    let mut start_index = use_signal(|| 0);
+    let queue_len = use_memo(move ||
+        controller.queues().get(selected_queue()).unwrap().read().len()
+    );
+    let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
+    let end_index = use_memo(move || (start_index() + rows_in_view()).min(queue_len()));
+
     use_effect(move || {
         selected_queue.set(controller.current_queue_index()());
     });
@@ -39,7 +50,7 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
             if let Ok(pos) = position {
                 mouse_y.set(pos as f32);
                 hovering_over
-                    .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
+                    .set(((mouse_y() + scroll_y()) / (ROW_HEIGHT as f32) - 0.5).floor() as usize);
             }
         }
     });
@@ -104,6 +115,12 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
                 scroll_y.set(scroll as f32);
                 hovering_over
                     .set((((mouse_y() + scroll_y()) - 31.0) / 62.0).floor() as usize);
+
+                let new_index = (scroll as f32 / ROW_HEIGHT as f32).floor() as usize;
+                if new_index != start_index() {
+                    start_index.set(new_index);
+                    info!("{start_index:?}..{end_index:?}");
+                }
             }
         }
     });
@@ -111,14 +128,29 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
     // Callback for moving item into other place in queue
     let move_queue_item = move |_: Event<MouseData>| {
         if let Some(current) = current_dragging() {
-            controller.write().queues[selected_queue()].swap(current, hovering_over())
+            controller.queues().get(selected_queue()).unwrap().write().swap(current, hovering_over())
         }
         current_dragging.set(None);
     };
 
-    let current_queue = move || {
-        controller.queues().get(controller.current_queue_index()()).unwrap()
-    };
+    use_future(move || async move {
+        let mut js = eval(
+            r#"
+            new ResizeObserver(() => {
+                let container = document.getElementById("queuelist");
+                dioxus.send(container.offsetHeight);
+            }).observe(document.getElementById("queuelist"));
+        "#,
+        );
+
+        loop {
+            let height = js.recv::<usize>().await;
+            if let Ok(height) = height {
+                window_size.set(height);
+                info!("window height {height}");
+            }
+        }
+    });
 
     rsx! {
         div {
@@ -150,12 +182,14 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
 
             // Current track out of track count in queue
             span { margin: "2px 10px",
-                "Track: {current_queue().read().current_track + 1}/{current_queue().read().len()}"
+                "Track: {controller.queues().get(selected_queue()).unwrap().read().current_track + 1}/{queue_len()}"
             }
 
             // Track items in selected queue
             div { id: "queuelist", class: "tracklist",
-                for idx in 0..controller.queues().get(selected_queue()).unwrap().read().cached_order.len().min(10) {
+                div { min_height: "{queue_len() * ROW_HEIGHT}px" }
+
+                for idx in start_index()..end_index() {
                     if current_dragging.read().is_some() {
                         if current_dragging().unwrap() > idx && hovering_over() == idx
                             || current_dragging().unwrap() < idx && hovering_over() == idx.max(1) - 1
@@ -168,7 +202,9 @@ pub fn QueueList(controller: SyncStore<MusicController>) -> Element {
                         selected_queue,
                         idx,
                         current_dragging,
+                        hovering_over,
                         mouse_y,
+                        scroll_y,
                         grab_y,
                         move_queue_item,
                     }
@@ -216,31 +252,35 @@ pub fn TrackItem(
     selected_queue: Signal<usize>,
     idx: usize,
     current_dragging: Signal<Option<usize>>,
+    hovering_over: Signal<usize>,
     mouse_y: Signal<f32>,
+    scroll_y: Signal<f32>,
     grab_y: Signal<f32>,
     move_queue_item: Callback<Event<MouseData>>,
 ) -> Element {
-    let title = use_memo(move || {
-        match controller
-            .all_tracks()
-            .get(controller.queues().get(selected_queue()).unwrap().read().track(idx))
-        {
-            Some(track) => track.read().title.clone(),
-            None => String::new(),
-        }
+    const ROW_HEIGHT: usize = 62;
+
+    let is_current_queue = use_memo(move || {
+        controller.current_queue_index()() == selected_queue()
     });
 
-    let is_current = use_memo(move || {
-        controller.queues().get(selected_queue()).unwrap().read().current_track == idx
-            && controller.current_queue_index()() == selected_queue()
+    let current_track = use_memo(move || {
+        controller.queues().get(selected_queue()).unwrap().read().current_track
     });
 
     rsx! {
         div {
             class: "trackitem noselect",
-            class: if is_current() { "current" },
+            class: if is_current_queue() && current_track() == idx { "current" },
             class: if current_dragging() == Some(idx) { "dragging" },
-            top: if current_dragging() == Some(idx) { "calc({(mouse_y() - grab_y())}px - 6px)" },
+            position: "absolute",
+            top: if current_dragging() == Some(idx) { 
+                "{(mouse_y() - grab_y()) + scroll_y() - 68.0}px"
+            } else if current_dragging().is_some() && hovering_over() >= idx {
+                "{(idx.max(1) - 1) * ROW_HEIGHT}px"
+            } else {
+                "{idx * ROW_HEIGHT}px"
+            },
             onclick: move |_| {
                 if current_dragging.read().is_some() {
                     return;
@@ -266,7 +306,7 @@ pub fn TrackItem(
                 src: "/trackimage/{controller.queues().get(selected_queue()).unwrap().read().track(idx)}?origin=queue",
             }
 
-            span { "{title}" }
+            span { "{controller.get_queue_track(selected_queue(), idx).read().title}" }
 
             div { flex_grow: 1 }
 

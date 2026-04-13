@@ -8,7 +8,6 @@ use dioxus::document::eval;
 use dioxus::prelude::*;
 use dioxus::stores::SyncStore;
 use log::info;
-use std::time::{Duration, Instant};
 
 fn display_time(total: u64) -> String {
     let seconds = total % 60;
@@ -38,10 +37,8 @@ pub fn AllTracks(controller: SyncStore<MusicController>) -> Element {
     const BUFFER_ROWS: usize = 5;
 
     let mut start_index = use_signal(|| 0);
-    let mut start_index_cache = use_signal(|| 0);
     let rows_in_view = use_memo(move || window_size() / ROW_HEIGHT + BUFFER_ROWS);
     let end_index = use_memo(move || (start_index() + rows_in_view()).min(tracks.read().len()));
-    let mut last_updated = Instant::now();
     
     use_effect(move || {
         if !set_searcher_tracks() && controller.all_tracks().read().len() != 0 {
@@ -87,25 +84,12 @@ pub fn AllTracks(controller: SyncStore<MusicController>) -> Element {
                 if let Ok(scroll_top) = scroll_top {
                     let new_index = (scroll_top as f32 / ROW_HEIGHT as f32).floor() as usize;
                     if new_index != start_index() {
-                        start_index_cache.set(new_index);
+                        start_index.set(new_index);
                         info!("{start_index:?}..{end_index:?}");
                     }
                 }
             }
         });
-    });
-
-    use_future(move || async move {
-        loop {
-            if last_updated.elapsed() < Duration::from_millis(250) {
-                continue;
-            }
-            if start_index_cache() != start_index() {
-                start_index.set(start_index_cache());
-                last_updated = Instant::now();
-            }
-            tokio::time::sleep(Duration::from_millis(50)).await;
-        }
     });
 
     rsx! {
