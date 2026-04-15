@@ -105,6 +105,30 @@ impl Recording {
         self.tags.iter().map(|t| t.name.clone()).collect()
     }
 
+    pub fn year(&self) -> String {
+        if let Some(ref date) = self.first_release_date {
+            return date[..4].to_string();
+        }
+
+        if let Some(releases) = &self.releases {
+            for release in releases {
+                if let Some(ref date) = release.date {
+                    return date[..4].to_string();
+                }
+            }
+        }
+
+        String::new()
+    }
+
+    pub fn trackno(&self) -> usize {
+        if let Some(releases) = &self.releases {
+            releases[0].media[0].track[0].number.parse().unwrap_or_default()
+        } else {
+            0
+        }
+    }
+
     pub fn mbid(&self) -> &str {
         &self.id
     }

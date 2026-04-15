@@ -100,10 +100,22 @@ pub fn TagEditor(mut controller: SyncStore<MusicController>, mut tag: Signal<Tra
                 div { class: "editormultipleline",
                     input {
                         flex: "1 1 0",
-                        id: "artist",
+                        id: "artist-input-{i}",
                         r#type: "text",
                         value: "{tag.read().artists[i]}",
                         oninput: move |e| tag.write().artists[i] = e.value(),
+                        onkeydown: move |e: Event<KeyboardData>| {
+                            if e.code() == Code::Enter {
+                                if i == tag.read().genres.len() - 1 {
+                                    tag.write().genres.push(String::new());
+                                }
+                                eval(&format!(r#"
+                                    setTimeout(function() {{
+                                        document.getElementById("artist-input-{}").focus()
+                                    }}, 100);
+                                "#, i + 1));
+                            }
+                        }
                     }
                     button {
                         onclick: move |_| {
@@ -150,6 +162,28 @@ pub fn TagEditor(mut controller: SyncStore<MusicController>, mut tag: Signal<Tra
             }
 
             button { onclick: move |_| tag.write().genres.push(String::new()), "+ Genre" }
+        }
+
+        div { class: "editorline",
+            label { r#for: "year", "Year" }
+            input {
+                name: "year",
+                id: "year",
+                r#type: "number",
+                value: "{tag.read().year}",
+                oninput: move |e| tag.write().year = e.value(),
+            }
+        }
+
+        div { class: "editorline",
+            label { r#for: "trackno", "Track No." }
+            input {
+                name: "trackno",
+                id: "trackno",
+                r#type: "number",
+                value: "{tag.read().trackno}",
+                oninput: move |e| tag.write().trackno = e.value().parse().unwrap_or_default(),
+            }
         }
     }
 }

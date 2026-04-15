@@ -186,6 +186,26 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                                     value: "{tags.read()[tag_index()].genres():?}",
                                 }
                             }
+                            div { class: "editorline",
+                                label { r#for: "year", "Year" }
+                                input {
+                                    disabled: true,
+                                    name: "year",
+                                    id: "year",
+                                    r#type: "text",
+                                    value: "{tags.read()[tag_index()].year()}",
+                                }
+                            }
+                            div { class: "editorline",
+                                label { r#for: "trackno", "Track No." }
+                                input {
+                                    disabled: true,
+                                    name: "trackno",
+                                    id: "trackno",
+                                    r#type: "text",
+                                    value: "{tags.read()[tag_index()].trackno()}",
+                                }
+                            }
                         }
 
                         button {
@@ -206,6 +226,8 @@ pub fn TaggingMenu(controller: SyncStore<MusicController>) -> Element {
                                 tag.write().album = tags.read()[tag_index()].album().to_string();
                                 tag.write().artists = tags.read()[tag_index()].artists();
                                 tag.write().genres = tags.read()[tag_index()].genres();
+                                tag.write().year = tags.read()[tag_index()].year();
+                                tag.write().trackno = tags.read()[tag_index()].trackno();
                             },
                             "Use Information"
                         }
